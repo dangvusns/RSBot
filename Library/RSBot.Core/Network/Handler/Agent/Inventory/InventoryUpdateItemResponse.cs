@@ -30,7 +30,8 @@ internal class InventoryUpdateItemResponse : IPacketHandler
     public void Invoke(Packet packet)
     {
         if (Game.ClientType == GameClientType.Global)
-            packet.ReadByte(); //???
+            if (packet.ReadByte() != 0) //sometimes appears 9 with unknown structure
+                return; 
 
         var sourceSlot = packet.ReadByte();
 
