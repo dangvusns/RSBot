@@ -47,7 +47,7 @@ public class Server : NetBase
             {
                 var bindIp = GlobalConfig.Get("RSBot.Network.BindIp", "0.0.0.0");
                 if (!string.IsNullOrWhiteSpace(bindIp) && bindIp != "0.0.0.0")
-                    _socket.Bind(new IPEndPoint(IPAddress.Parse(bindIp), port));
+                    _socket.Bind(new IPEndPoint(IPAddress.Parse(bindIp), 0));
 
                 if (ProxyConfig.TryGetProxy(ip, port, out var proxyConfig))
                 {
@@ -113,6 +113,15 @@ public class Server : NetBase
             receivedSize = _socket.EndReceive(ar, out var error);
             if (receivedSize == 0 || error != SocketError.Success)
             {
+                Log.Debug($"Socket closed: receivedSize={receivedSize}, error={error}");
+                if (_socket != null)
+                {
+                    try
+                    {
+                        Log.Debug($"Socket.Connected={_socket.Connected}, LocalEndPoint={_socket.LocalEndPoint}, RemoteEndPoint={_socket.RemoteEndPoint}");
+                    }
+                    catch { }
+                }
                 OnDisconnected();
                 return;
             }
@@ -121,6 +130,7 @@ public class Server : NetBase
         }
         catch (SocketException se)
         {
+            Log.Debug($"SocketException: Code={se.SocketErrorCode}, NativeErrorCode={se.NativeErrorCode}, Message={se.Message}");
             if (se.SocketErrorCode == SocketError.ConnectionReset) //Client OnDisconnected > Mostly occurs during GW->AS switch
                 OnDisconnected();
         }
@@ -136,8 +146,9 @@ public class Server : NetBase
                 if (receivedSize != 0 && _socket != null && _socket.Connected)
                     _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnBeginReceiveCallback, null);
             }
-            catch
+            catch (Exception ex)
             {
+                Log.Debug($"Exception in BeginReceive: {ex.Message}");
                 OnDisconnected();
             }
         }
