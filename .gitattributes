@@ -61,3 +61,7 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+# Batch files need CRLF on Windows
+*.cmd text eol=crlf
+*.bat text eol=crlf
