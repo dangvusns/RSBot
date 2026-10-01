@@ -93,11 +93,9 @@ public class Bootstrap : IBotbase
     /// <inheritdoc />
     public void Stop()
     {
+        // The current action is cancelled by Bot.Stop without blocking while holding the lock
         lock (Container.Lock)
         {
-            if (Game.Player.InAction)
-                SkillManager.CancelAction();
-
             Bundles.Stop();
         }
     }

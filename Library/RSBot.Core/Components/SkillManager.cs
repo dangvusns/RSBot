@@ -673,11 +673,15 @@ public static class SkillManager
     /// <summary>
     ///     Cancels the action.
     /// </summary>
+    /// <param name="timeout">The time to wait for the server to confirm, 0 or less sends the request without waiting.</param>
     /// <returns></returns>
-    public static bool CancelAction()
+    public static bool CancelAction(int timeout = 5_000)
     {
-        var packet = new Packet(0x7074);
-        packet.WriteByte(0x02); //Cancel
+        if (timeout <= 0)
+        {
+            PacketManager.SendPacket(CreateCancelActionPacket(), PacketDestination.Server);
+            return true;
+        }
 
         var callback = new AwaitCallback(
             response =>
@@ -689,9 +693,17 @@ public static class SkillManager
             0xB074
         );
 
-        PacketManager.SendPacket(packet, PacketDestination.Server, callback);
-        callback.AwaitResponse();
+        PacketManager.SendPacket(CreateCancelActionPacket(), PacketDestination.Server, callback);
+        callback.AwaitResponse(timeout);
 
         return callback.IsCompleted;
+    }
+
+    private static Packet CreateCancelActionPacket()
+    {
+        var packet = new Packet(0x7074);
+        packet.WriteByte(0x02); //Cancel
+
+        return packet;
     }
 }

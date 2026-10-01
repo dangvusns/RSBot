@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using RSBot.Core.Components;
 using RSBot.Core.Components.Tracing;
@@ -21,6 +22,13 @@ public class Bot
     ///     Gets or sets to the <see cref="CancellationToken" />
     /// </summary>
     public CancellationTokenSource TokenSource;
+
+    private readonly object _lock = new();
+
+    /// <summary>
+    ///     The task running the botbase ticks.
+    /// </summary>
+    private Task _workerTask;
 
     /// <summary>
     ///     Gets the base.
@@ -51,31 +59,52 @@ public class Bot
         // This also applies to the Start button and repeated start commands while already running.
         TraceManager.Stop();
 
-        if (Running || Botbase == null)
-            return;
+        lock (_lock)
+        {
+            if (Running || Botbase == null || (_workerTask != null && !_workerTask.IsCompleted))
+                return;
 
-        TokenSource = new CancellationTokenSource();
+            var tokenSource = new CancellationTokenSource();
+            TokenSource = tokenSource;
 
-        Task.Factory.StartNew(
-            async e =>
+            // Set before the worker starts, so a second start request can not launch another worker
+            Running = true;
+            _workerTask = Task.Run(() => RunAsync(tokenSource));
+        }
+    }
+
+    /// <summary>
+    ///     Runs the botbase ticks until the given token source is cancelled.
+    /// </summary>
+    /// <param name="tokenSource">The token source of this run.</param>
+    private async Task RunAsync(CancellationTokenSource tokenSource)
+    {
+        var token = tokenSource.Token;
+
+        try
+        {
+            EventManager.FireEvent("OnStartBot");
+            Botbase.Start();
+
+            while (!token.IsCancellationRequested)
             {
-                Running = true;
-
-                EventManager.FireEvent("OnStartBot");
-                Botbase.Start();
-
-                while (!TokenSource.IsCancellationRequested)
-                {
-                    if (!Game.Ready)
-                        continue;
-
+                if (Game.Ready)
                     Botbase.Tick();
-                    await Task.Delay(100);
-                }
-            },
-            TokenSource.Token,
-            TaskCreationOptions.LongRunning
-        );
+
+                // Always wait, otherwise the loop spins a CPU core while the game is not ready
+                await Task.Delay(100, token);
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex);
+        }
+        finally
+        {
+            if (ReferenceEquals(TokenSource, tokenSource))
+                Running = false;
+        }
     }
 
     /// <summary>
@@ -87,23 +116,61 @@ public class Bot
         ShoppingManager.Stop();
         PickupManager.Stop();
 
-        if (Botbase == null)
-            return;
+        CancellationTokenSource tokenSource;
 
-        if (!Running)
-            return;
+        lock (_lock)
+        {
+            if (Botbase == null || !Running)
+                return;
 
-        if (!TokenSource.IsCancellationRequested)
-            TokenSource.Cancel();
+            Running = false;
+            tokenSource = TokenSource;
+        }
+
+        if (tokenSource != null && !tokenSource.IsCancellationRequested)
+            tokenSource.Cancel();
+
+        CancelActionOnStop();
 
         EventManager.FireEvent("OnStopBot");
         Log.Notify($"Stopping bot {Botbase.Title}");
 
         Game.SelectedEntity = null;
         Botbase.Stop();
-        Running = false;
 
         Log.Notify($"Stoped bot {Botbase.Title}");
         Log.Status("Bot stopped");
+    }
+
+    /// <summary>
+    ///     Cancels the current action of the player in the background, so stopping the bot does not
+    ///     block while waiting for the server to confirm the cancellation.
+    /// </summary>
+    private void CancelActionOnStop()
+    {
+        var player = Game.Player;
+        if (player == null || !player.InAction)
+            return;
+
+        _ = CancelActionOnStopAsync();
+
+        async Task CancelActionOnStopAsync()
+        {
+            const int attempts = 5;
+            const int retryDelay = 1000;
+
+            for (var i = 0; i < attempts; i++)
+            {
+                if (Running || !Game.Ready || !ReferenceEquals(Game.Player, player) || !player.InAction)
+                    return;
+
+                SkillManager.CancelAction(0);
+
+                if (i == attempts - 1)
+                    return;
+
+                await Task.Delay(retryDelay).ConfigureAwait(false);
+            }
+        }
     }
 }
