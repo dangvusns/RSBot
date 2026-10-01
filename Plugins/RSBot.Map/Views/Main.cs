@@ -586,6 +586,10 @@ public partial class Main : DoubleBufferedControl
                 _navMeshRenderer?.Update(playerTransform);
         }
 
+        // Navigation updates above still run when its page is selected.
+        if (!mapCanvas.Visible)
+            return;
+
         bufferedGraphics.Graphics.Clear(Color.Black);
         RedrawMap();
         DrawObjects(bufferedGraphics.Graphics);

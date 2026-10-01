@@ -167,6 +167,7 @@ public partial class Main : DoubleBufferedControl
     /// <exception cref="System.NotImplementedException"></exception>
     private void RefreshTimer_Elapsed(object sender, EventArgs e)
     {
+        if (!Visible || !Enabled || IsDisposed) return;
         try
         {
             UpdateStatistics();
