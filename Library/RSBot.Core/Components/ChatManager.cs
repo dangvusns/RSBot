@@ -1,4 +1,5 @@
 using RSBot.Core.Extensions;
+using RSBot.Core.Event;
 using RSBot.Core.Network;
 using RSBot.Core.Objects;
 
@@ -34,6 +35,7 @@ public static class ChatManager
         packet.WriteConditonalString(message);
 
         PacketManager.SendPacket(packet, PacketDestination.Server);
+        EventManager.FireEvent("OnSendChat", type, message);
     }
 
     /// <summary>

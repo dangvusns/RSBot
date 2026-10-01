@@ -1,4 +1,7 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using RSBot.Core.Objects;
+using Action = System.Action;
 using RSBot.Core;
 using RSBot.Core.Event;
 using RSBot.Party.Bundle;
@@ -15,6 +18,12 @@ internal class PartySubscriber
     {
         EventManager.SubscribeEvent("OnPartyRequest", OnPartyRequest);
         EventManager.SubscribeEvent("OnLoadCharacter", Container.Refresh);
+        EventManager.SubscribeEvent("OnSendChat", new Action<ChatType, string>(OnSendChat));
+    }
+
+    private static void OnSendChat(ChatType type, string message)
+    {
+        Container.Commands?.QueueSentChat(type, message);
     }
 
     /// <summary>

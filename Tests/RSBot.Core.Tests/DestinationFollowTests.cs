@@ -50,6 +50,18 @@ public class DestinationFollowTests
     }
 
     [Fact]
+    public void NewDestinationAfterArrivalIsNotReportedAsFailedMovementRetry()
+    {
+        var h = Create();
+        h.Evaluate(Motion.Stationary(20, 0));
+        h.Self = new Vector2(20, 0);
+        h.After(500, Motion.Stationary(20, 0));
+        var decision = h.After(1000, Motion.Click(20, 0, 40, 0));
+        Assert.Equal(TraceAction.Move, decision.Action);
+        Assert.Equal("follow point changed", decision.Reason);
+    }
+
+    [Fact]
     public void ManualClickRestoresFollowingEvenWhileFollowerIsMoving()
     {
         var h = Create();

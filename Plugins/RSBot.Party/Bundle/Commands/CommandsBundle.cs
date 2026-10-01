@@ -8,6 +8,7 @@ using RSBot.Core.Objects;
 using RSBot.Core.Objects.Spawn;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -33,6 +34,8 @@ internal class CommandsBundle
     /// The prefix of the optional config keys that tune the trace (distances, intervals, debug logging).
     /// </summary>
     private const string TraceConfigPrefix = "RSBot.Party.Trace.";
+    private readonly object _sentCommandLock = new();
+    private Task _sentCommandTask = Task.CompletedTask;
 
     /// <summary>
     /// Initializes a new instance of the CommandsBundle class with a predefined set of command actions.
@@ -55,6 +58,45 @@ internal class CommandsBundle
         _commands["radius"] = SetBotRadius;
         _commands["area"] = SetBotArea;
         _commands["setarea"] = SetBotArea;
+    }
+
+    /// <summary>
+    ///     Applies the party leader's own management commands on a worker, in send order.
+    ///     Incoming self echoes are ignored, so one outgoing message produces one local action.
+    /// </summary>
+    public void QueueSentChat(ChatType type, string message)
+    {
+        if (!Game.Ready || !Game.Party.IsInParty || !Game.Party.IsLeader
+            || (type != ChatType.Party && type != ChatType.All && type != ChatType.AllGM && type != ChatType.Private)
+            || string.IsNullOrWhiteSpace(message))
+            return;
+
+        var text = message.Trim();
+        var separator = text.IndexOf(' ');
+        var name = separator < 0 ? text : text.Substring(0, separator);
+        var args = separator < 0 ? string.Empty : text.Substring(separator + 1).Trim();
+        if (!(name.Equals("start", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("stop", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("radius", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("area", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("setarea", StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        var character = Game.Player;
+        lock (_sentCommandLock)
+            _sentCommandTask = _sentCommandTask.ContinueWith(_ =>
+            {
+                try
+                {
+                    if (!Game.Ready || Game.Player != character || !Game.Party.IsLeader)
+                        return;
+                    _commands[name](null, args);
+                }
+                catch (Exception e)
+                {
+                    Log.Fatal(e);
+                }
+            }, TaskScheduler.Default);
     }
 
     /// <summary>
@@ -88,7 +130,7 @@ internal class CommandsBundle
     /// <param name="radius">The radius. Must be a positive floating-point value.</param>
     private void SetBotRadius(SpawnedPlayer player, string radius)
     {
-        if (!float.TryParse(radius, out var r) || r <= 0)
+        if (!TryParseNumber(radius, out var r) || r <= 0)
         {
             Reply(player, "Usage: radius <number>");
             return;
@@ -114,22 +156,30 @@ internal class CommandsBundle
                 return;
             }
 
-            if (float.TryParse(parts[0], out var x) && float.TryParse(parts[1], out var y) && float.TryParse(parts[2], out var radius))
+            if (!TryParseNumber(parts[0], out var x) || !TryParseNumber(parts[1], out var y)
+                || !TryParseNumber(parts[2], out var radius) || radius <= 0)
             {
-                var pos = new Position(x, y);
-
-                PlayerConfig.Set("RSBot.Area.Region", pos.Region);
-                PlayerConfig.Set("RSBot.Area.X", pos.XOffset);
-                PlayerConfig.Set("RSBot.Area.Y", pos.YOffset);
-                PlayerConfig.Set("RSBot.Area.Radius", radius);
-
-                EventManager.FireEvent("OnSetTrainingArea");
+                Reply(player, "Usage: area x,y,radius (radius must be positive)");
+                return;
             }
+
+            var pos = new Position(x, y);
+            PlayerConfig.Set("RSBot.Area.Region", pos.Region);
+            PlayerConfig.Set("RSBot.Area.X", pos.XOffset);
+            PlayerConfig.Set("RSBot.Area.Y", pos.YOffset);
+            PlayerConfig.Set("RSBot.Area.Radius", radius);
+            EventManager.FireEvent("OnSetTrainingArea");
         }
         catch (Exception e)
         {
             Log.Fatal(e);
         }
+    }
+
+    private static bool TryParseNumber(string value, out float number)
+    {
+        return float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out number)
+            && float.IsFinite(number);
     }
 
     /// <summary>
@@ -345,6 +395,11 @@ internal class CommandsBundle
     {
         try
         {
+            if (player == null)
+            {
+                Log.Warn("[Commands] " + text);
+                return;
+            }
             ChatManager.SendPrivate(player.Name, text);
         }
         catch (Exception e)

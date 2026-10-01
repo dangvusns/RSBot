@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using RSBot.Core.Components;
+using RSBot.Core.Components.Tracing;
 using RSBot.Core.Event;
 using RSBot.Core.Plugins;
 
@@ -46,6 +47,10 @@ public class Bot
     /// </summary>
     public void Start()
     {
+        // Stop self-driven Party/Social following before bot ticks can issue movement or attacks.
+        // This also applies to the Start button and repeated start commands while already running.
+        TraceManager.Stop();
+
         if (Running || Botbase == null)
             return;
 

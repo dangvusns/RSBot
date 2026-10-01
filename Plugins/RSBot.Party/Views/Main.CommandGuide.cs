@@ -48,11 +48,11 @@ public partial class Main
         }
 
         AddGuideLabel("CommandGuideTitle", "Available chat commands", true);
-        AddGuideLabel("CommandGuideIntro", "Send commands through in-game chat. Only enabled commanders in your list or the party leader are obeyed. [player] is optional; omit it to follow the sender.");
+        AddGuideLabel("CommandGuideIntro", "Send commands through in-game chat. Only enabled commanders in your list or the party leader are obeyed. [player] is optional; omit it to follow the sender. Party leaders also apply start, stop, radius and area/setarea locally.");
         AddGuideLabel("CommandGuideTrace", "• trace / traceme — Follow and stand at the player's destination.\n   Examples: traceme · trace LilQuanVu1");
         AddGuideLabel("CommandGuideNoTrace", "• notrace — Stop following.\n   Example: notrace");
         AddGuideLabel("CommandGuideSit", "• sitdown — Toggle sitting or standing.\n   Example: sitdown");
-        AddGuideLabel("CommandGuideStart", "• start — Start the bot.\n   Example: start");
+        AddGuideLabel("CommandGuideStart", "• start — Exit following and start the bot.\n   Example: start");
         AddGuideLabel("CommandGuideStop", "• stop — Stop the bot. Use notrace to stop following.\n   Example: stop");
         AddGuideLabel("CommandGuideReturn", "• town / return — Return to town using a return scroll.\n   Examples: town · return");
         AddGuideLabel("CommandGuideTeleport", "• teleport from,to — Use a nearby teleporter to reach a matching destination.\n   Example: teleport ferry,donwhang");

@@ -214,6 +214,12 @@ public static class TraceEvaluator
             && (!input.SelfHasDestination
                 || Vector2.Distance(input.SelfDestination, runtime.LastMoveDestination) > options.ArrivalTolerance))
             reason = "restore follow after manual movement";
+        else if (options.DestinationFollow
+            && Vector2.Distance(destination, runtime.LastMoveDestination) > options.DestinationChangeThreshold)
+            reason = "follow point changed";
+        else if (options.DestinationFollow
+            && Vector2.Distance(target, runtime.LastMoveTarget) > options.TargetMovementThreshold)
+            reason = "target moved";
         else if (!input.SelfMoving && sinceLastMove >= options.IdleRetryInterval)
             reason = "idle while out of range";
         else if (Vector2.Distance(destination, runtime.LastMoveDestination) > options.DestinationChangeThreshold)

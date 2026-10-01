@@ -60,6 +60,10 @@ internal class ChatResponse : IPacketHandler
                 var sender = packet.ReadString();
                 message = packet.ReadConditonalString();
 
+                // Local outgoing commands are handled once at send time.
+                if (sender == Game.Player.Name)
+                    return;
+
                 if (!SpawnManager.TryGetEntity(p => p.Name == sender, out player))
                     return;
 
