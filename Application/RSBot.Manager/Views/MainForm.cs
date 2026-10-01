@@ -85,7 +85,10 @@ internal sealed class MainForm : Form
             WrapContents = false,
             Padding = new Padding(0, 4, 0, 0),
         };
-        right.Controls.Add(folderButton);
+        var settingsButton = Theme.CreateButton("Cài đặt");
+        settingsButton.Click += (_, _) => EditSettings();
+
+        right.Controls.AddRange(new Control[] { folderButton, settingsButton });
 
         var header = new Panel { Dock = DockStyle.Top, Height = Theme.Scale(this, 112) };
         header.Controls.Add(left);
@@ -132,6 +135,7 @@ internal sealed class MainForm : Form
         };
         _grid.ColumnHeaderMouseClick += Grid_ColumnHeaderMouseClick;
         _grid.CellMouseDown += Grid_CellMouseDown;
+        _grid.CellPainting += Grid_CellPainting;
         _grid.CellDoubleClick += (_, e) =>
         {
             if (e.RowIndex >= 0 && e.ColumnIndex > 0)
@@ -275,16 +279,19 @@ internal sealed class MainForm : Form
                 : Theme.Text;
             state.ToolTipText = instance.LastError ?? string.Empty;
 
-            Set(row, "hpmp", inGame ? $"{status.Hp:N0}/{status.MaxHp:N0} · {status.Mp:N0}/{status.MaxMp:N0}" : Empty);
-            Set(row, "online", status != null ? FormatDuration(status.UptimeSeconds) : Empty);
-            var greenHour = row.Cells["greenhour"];
-            greenHour.Value = DescribeGreenHour(status);
-            greenHour.Style.ForeColor = status?.GreenSecondsLeft switch
+            if (status == null && !instance.Account.CanReadPassword)
             {
-                null => Theme.Muted,
-                0 => Theme.Orange,
-                _ => Theme.Good,
-            };
+                state.Value = "Cần nhập lại mật khẩu";
+                state.Style.ForeColor = Theme.Orange;
+            }
+
+            // The bars are drawn in Grid_CellPainting; the text only changes the cell so it is repainted
+            Set(row, "hpmp", inGame ? $"{status.Hp}/{status.MaxHp}/{status.Mp}/{status.MaxMp}" : Empty);
+            Set(row, "online", status != null ? FormatDuration(status.UptimeSeconds) : Empty);
+            var (greenText, greenColor) = DescribeGreenHour(status);
+            var greenHour = row.Cells["greenhour"];
+            greenHour.Value = greenText;
+            greenHour.Style.ForeColor = greenColor;
             Set(row, "gold", inGame ? status.Gold.ToString("N0") : Empty);
             Set(row, "goldPicked", status != null ? status.GoldPicked.ToString("N0") : Empty);
             Set(row, "elixirs", status != null ? status.ElixirsPicked.ToString("N0") : Empty);
@@ -341,14 +348,31 @@ internal sealed class MainForm : Form
     }
 
     /// <summary>
-    ///     Green time: full experience. Orange time ("Cam"): half experience after the green hours are used up.
+    ///     Green time ("Xanh"): full experience. Orange time ("Cam"): half experience after the green hours.
+    ///     Red ("Đỏ"): both are used up. Uses the server's fatigue time when it sends one, otherwise the
+    ///     time the bot counted in game since the daily reset and the hours from the settings.
     /// </summary>
-    private static string DescribeGreenHour(BotStatus status)
+    private static (string Text, Color Color) DescribeGreenHour(BotStatus status)
     {
-        if (status?.GreenSecondsLeft == null)
-            return Empty;
+        if (status?.GreenSecondsLeft != null)
+            return status.GreenSecondsLeft > 0
+                ? ($"Xanh · còn {FormatDuration(status.GreenSecondsLeft.Value)}", Theme.Good)
+                : ("Cam", Theme.Orange);
 
-        return status.GreenSecondsLeft > 0 ? $"Xanh · còn {FormatDuration(status.GreenSecondsLeft.Value)}" : "Cam";
+        if (status?.PlayedSecondsToday == null)
+            return (Empty, Theme.Muted);
+
+        var played = status.PlayedSecondsToday.Value;
+        var green = ManagerStore.Data.GreenHours * 3600L;
+        var orange = green + ManagerStore.Data.OrangeHours * 3600L;
+
+        if (played < green)
+            return ($"Xanh · còn {FormatDuration(green - played)}", Theme.Good);
+
+        if (played < orange)
+            return ($"Cam · còn {FormatDuration(orange - played)}", Theme.Orange);
+
+        return ("Đỏ · hết giờ", Theme.Bad);
     }
 
     private static string FormatDuration(long seconds)
@@ -356,6 +380,59 @@ internal sealed class MainForm : Form
         var time = TimeSpan.FromSeconds(seconds);
 
         return $"{(int)time.TotalHours}:{time.Minutes:00}";
+    }
+
+    /// <summary>
+    ///     Draws HP and MP as two bars with their values instead of text.
+    /// </summary>
+    private void Grid_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
+    {
+        if (e.RowIndex < 0 || e.ColumnIndex < 0 || _grid.Columns[e.ColumnIndex].Name != "hpmp")
+            return;
+
+        var status = (_grid.Rows[e.RowIndex].Tag as BotInstance)?.Status;
+        if (status?.State is not ("InGame" or "Running"))
+            return; // default painting shows the "—"
+
+        e.PaintBackground(e.CellBounds, true);
+
+        var padding = Theme.Scale(_grid, 8);
+        var gap = Theme.Scale(_grid, 3);
+        var barHeight = Math.Min(Theme.Scale(_grid, 14), (e.CellBounds.Height - padding - gap) / 2);
+        var width = e.CellBounds.Width - padding * 2;
+        var top = e.CellBounds.Top + (e.CellBounds.Height - barHeight * 2 - gap) / 2;
+
+        var hp = new Rectangle(e.CellBounds.Left + padding, top, width, barHeight);
+        var mp = new Rectangle(hp.Left, hp.Bottom + gap, width, barHeight);
+
+        DrawBar(e.Graphics, hp, status.Hp, status.MaxHp, Theme.HpBar);
+        DrawBar(e.Graphics, mp, status.Mp, status.MaxMp, Theme.MpBar);
+
+        e.Handled = true;
+    }
+
+    private static void DrawBar(Graphics graphics, Rectangle bounds, int value, int maximum, Color color)
+    {
+        using (var track = new SolidBrush(Theme.BarTrack))
+            graphics.FillRectangle(track, bounds);
+
+        var ratio = maximum > 0 ? Math.Clamp(value / (double)maximum, 0, 1) : 0;
+        var filled = new Rectangle(bounds.Left, bounds.Top, (int)(bounds.Width * ratio), bounds.Height);
+        if (filled.Width > 0)
+            using (var fill = new SolidBrush(color))
+                graphics.FillRectangle(fill, filled);
+
+        using (var border = new Pen(Theme.Border))
+            graphics.DrawRectangle(border, bounds.Left, bounds.Top, bounds.Width - 1, bounds.Height - 1);
+
+        TextRenderer.DrawText(
+            graphics,
+            $"{value:N0} / {maximum:N0}",
+            Theme.BarText,
+            bounds,
+            Color.White,
+            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine
+        );
     }
 
     private void Grid_ColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
@@ -518,6 +595,16 @@ internal sealed class MainForm : Form
 
         ManagerStore.SetBotFolder(dialog.SelectedPath);
         ReloadAccounts();
+    }
+
+    private void EditSettings()
+    {
+        using var dialog = new SettingsDialog(ManagerStore.Data);
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+            return;
+
+        ManagerStore.SaveData();
+        RefreshGrid();
     }
 
     private bool RequireBotFolder()

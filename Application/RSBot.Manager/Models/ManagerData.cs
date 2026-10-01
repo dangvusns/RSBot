@@ -12,6 +12,21 @@ namespace RSBot.Manager.Models;
 public class ManagerData
 {
     public List<ManagerAccount> Accounts { get; set; } = new();
+
+    /// <summary>
+    ///     Daily full experience hours of a character ("Giờ Xanh"), used when the server sends no fatigue time.
+    /// </summary>
+    public int GreenHours { get; set; } = 8;
+
+    /// <summary>
+    ///     Half experience hours after the green hours ("Cam").
+    /// </summary>
+    public int OrangeHours { get; set; } = 1;
+
+    /// <summary>
+    ///     When the daily hours start again, "HH:mm" in local time.
+    /// </summary>
+    public string ResetTime { get; set; } = "00:00";
 }
 
 public class ManagerAccount
@@ -35,22 +50,13 @@ public class ManagerAccount
     [JsonIgnore]
     public string ProfileName => LoginId;
 
+    /// <summary>
+    ///     The password, or an empty string when it cannot be decrypted (see <see cref="CanReadPassword" />).
+    /// </summary>
     [JsonIgnore]
     public string Password
     {
-        get
-        {
-            if (string.IsNullOrEmpty(PasswordProtected))
-                return string.Empty;
-
-            var bytes = ProtectedData.Unprotect(
-                Convert.FromBase64String(PasswordProtected),
-                null,
-                DataProtectionScope.CurrentUser
-            );
-
-            return Encoding.UTF8.GetString(bytes);
-        }
+        get => TryReadPassword(out var password) ? password : string.Empty;
         set
         {
             var bytes = ProtectedData.Protect(
@@ -60,6 +66,36 @@ public class ManagerAccount
             );
 
             PasswordProtected = Convert.ToBase64String(bytes);
+        }
+    }
+
+    /// <summary>
+    ///     False when the password was saved on another PC or by another Windows user: DPAPI only decrypts
+    ///     for the user who encrypted it, so the password has to be entered again.
+    /// </summary>
+    [JsonIgnore]
+    public bool CanReadPassword => TryReadPassword(out _);
+
+    private bool TryReadPassword(out string password)
+    {
+        password = string.Empty;
+        if (string.IsNullOrEmpty(PasswordProtected))
+            return true;
+
+        try
+        {
+            var bytes = ProtectedData.Unprotect(
+                Convert.FromBase64String(PasswordProtected),
+                null,
+                DataProtectionScope.CurrentUser
+            );
+
+            password = Encoding.UTF8.GetString(bytes);
+            return true;
+        }
+        catch (Exception ex) when (ex is CryptographicException or FormatException)
+        {
+            return false;
         }
     }
 }
@@ -108,6 +144,11 @@ public class BotStatus
     ///     null when the server sends no fatigue time.
     /// </summary>
     public long? GreenSecondsLeft { get; set; }
+
+    /// <summary>
+    ///     Seconds the character was in game since the daily reset, counted by the bot. Null when not in game.
+    /// </summary>
+    public long? PlayedSecondsToday { get; set; }
 
     public float PosX { get; set; }
 

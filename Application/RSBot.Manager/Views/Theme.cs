@@ -25,6 +25,11 @@ internal static class Theme
     public static readonly Font Bold = new("Segoe UI", 10f, FontStyle.Bold);
     public static readonly Font ButtonFont = new("Segoe UI", 9.5f, FontStyle.Bold);
     public static readonly Font Total = new("Segoe UI", 11f, FontStyle.Bold);
+    public static readonly Font BarText = new("Segoe UI", 7.5f, FontStyle.Bold);
+
+    public static readonly Color BarTrack = Color.FromArgb(24, 21, 15);
+    public static readonly Color HpBar = Color.FromArgb(196, 58, 52);
+    public static readonly Color MpBar = Color.FromArgb(52, 112, 200);
 
     /// <summary>
     ///     Converts a size designed at 100% display scaling to the scaling of the control's screen.

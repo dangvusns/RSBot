@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -237,7 +238,10 @@ internal sealed class AccountDialog : DialogBase
         _loginId.ReadOnly = true;
         _character.Text = _account.Character;
         _server.Text = _account.Server;
-        _password.Text = _account.Password;
+        if (_account.CanReadPassword)
+            _password.Text = _account.Password;
+        else
+            _password.PlaceholderText = "Nhập lại mật khẩu (lưu trên máy khác)";
 
         _template.SelectedItem = string.IsNullOrEmpty(_account.TemplateProfile)
             ? NoTemplate
@@ -323,5 +327,50 @@ internal sealed class AreaDialog : DialogBase
         X = (float)_x.Value;
         Y = (float)_y.Value;
         Radius = (int)_radius.Value;
+    }
+}
+
+/// <summary>
+///     The daily green and orange hours used for "Giờ Xanh" when the server sends no fatigue time.
+/// </summary>
+internal sealed class SettingsDialog : DialogBase
+{
+    private readonly ManagerData _data;
+    private readonly NumericUpDown _greenHours;
+    private readonly NumericUpDown _orangeHours;
+    private readonly TextBox _resetTime;
+
+    public SettingsDialog(ManagerData data)
+        : base("Cài đặt")
+    {
+        _data = data;
+
+        _greenHours = AddField("Giờ xanh (giờ/ngày)", CreateNumber(0, 24, data.GreenHours));
+        _orangeHours = AddField("Giờ cam (giờ/ngày)", CreateNumber(0, 24, data.OrangeHours));
+        _resetTime = AddField("Giờ reset (HH:mm)", Theme.CreateTextBox());
+        _resetTime.Text = data.ResetTime;
+
+        AddField(string.Empty, new Label
+        {
+            Text = "Thời gian được tính khi nhân vật ở trong game, cho từng nhân vật.",
+            AutoSize = true,
+            MaximumSize = new Size(FieldWidth, 0),
+            ForeColor = Theme.Muted,
+        });
+    }
+
+    protected override string ValidateInput()
+    {
+        if (!TimeSpan.TryParseExact(_resetTime.Text.Trim(), @"hh\:mm", CultureInfo.InvariantCulture, out _))
+            return "Giờ reset phải có dạng HH:mm, ví dụ 00:00";
+
+        return null;
+    }
+
+    protected override void Apply()
+    {
+        _data.GreenHours = (int)_greenHours.Value;
+        _data.OrangeHours = (int)_orangeHours.Value;
+        _data.ResetTime = _resetTime.Text.Trim();
     }
 }

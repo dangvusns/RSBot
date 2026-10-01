@@ -381,3 +381,5 @@ FodyWeavers.xsd
 !RSBot.Log
 
 temp
+# Packages made by pack.ps1
+RSBot-Manager*.zip

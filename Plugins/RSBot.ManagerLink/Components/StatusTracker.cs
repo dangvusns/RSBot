@@ -57,6 +57,7 @@ internal static class StatusTracker
             // Since RSBot was opened, which is when "Mở Bot" was clicked in the manager
             uptimeSeconds = (long)(DateTime.Now - _processStartedAt).TotalSeconds,
             greenSecondsLeft = GetGreenSecondsLeft(),
+            playedSecondsToday = OnlineTimeTracker.GetPlayedSeconds(),
             posX = ready ? player.Position.X : 0,
             posY = ready ? player.Position.Y : 0,
             region = ready ? (ushort)player.Position.Region : (ushort)0,

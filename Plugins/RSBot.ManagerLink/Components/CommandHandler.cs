@@ -25,6 +25,12 @@ internal static class CommandHandler
         switch (command)
         {
             case "status":
+                // The manager sends its daily reset time of the green hours with every request
+                if (args.ValueKind == JsonValueKind.Object
+                    && args.TryGetProperty("resetTime", out var reset)
+                    && TimeSpan.TryParse(reset.GetString(), out var resetTime))
+                    OnlineTimeTracker.SetResetTime(resetTime);
+
                 return StatusTracker.CreateSnapshot();
 
             case "start":

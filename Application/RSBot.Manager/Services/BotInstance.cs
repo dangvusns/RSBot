@@ -117,7 +117,7 @@ public sealed class BotInstance : IDisposable
 
         try
         {
-            var data = await SendAsync("status");
+            var data = await SendAsync("status", new { resetTime = ManagerStore.Data.ResetTime });
             Status = data.Deserialize<BotStatus>(_jsonOptions);
             IsStarting = false;
         }

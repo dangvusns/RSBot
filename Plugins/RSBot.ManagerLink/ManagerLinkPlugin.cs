@@ -41,6 +41,7 @@ public class ManagerLinkPlugin : IPlugin
     public void Initialize()
     {
         StatusTracker.Initialize();
+        OnlineTimeTracker.Initialize();
 
         if (Enabled)
             PipeServer.Start();
