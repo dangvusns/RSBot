@@ -81,6 +81,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RSBot.FileSystem", "Library
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RSBot.NavMeshApi", "Library\RSBot.NavMeshApi\RSBot.NavMeshApi.csproj", "{E4DC5C65-9956-4696-9B89-043B20029EAA}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RSBot.Core.Tests", "Tests\RSBot.Core.Tests\RSBot.Core.Tests.csproj", "{7C1D9E52-3B4A-4F68-A0D3-5E2B8C6F1A47}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -379,6 +381,12 @@ Global
 		{260ED56F-B14C-4799-A8AA-F0511A1E1CB3}.Release|x64.Build.0 = Release|Any CPU
 		{260ED56F-B14C-4799-A8AA-F0511A1E1CB3}.Release|x86.ActiveCfg = Release|Any CPU
 		{260ED56F-B14C-4799-A8AA-F0511A1E1CB3}.Release|x86.Build.0 = Release|Any CPU
+		{7C1D9E52-3B4A-4F68-A0D3-5E2B8C6F1A47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C1D9E52-3B4A-4F68-A0D3-5E2B8C6F1A47}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7C1D9E52-3B4A-4F68-A0D3-5E2B8C6F1A47}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7C1D9E52-3B4A-4F68-A0D3-5E2B8C6F1A47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C1D9E52-3B4A-4F68-A0D3-5E2B8C6F1A47}.Release|x64.ActiveCfg = Release|Any CPU
+		{7C1D9E52-3B4A-4F68-A0D3-5E2B8C6F1A47}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -408,6 +416,7 @@ Global
 		{43159571-287D-42E1-B262-A39DE07D6763} = {06762F99-9EA8-4E3E-91E8-73F2ED402CFB}
 		{E4DC5C65-9956-4696-9B89-043B20029EAA} = {06762F99-9EA8-4E3E-91E8-73F2ED402CFB}
 		{260ED56F-B14C-4799-A8AA-F0511A1E1CB3} = {AC1664CE-FD32-4A07-8C5C-0C96D973960C}
+		{7C1D9E52-3B4A-4F68-A0D3-5E2B8C6F1A47} = {06762F99-9EA8-4E3E-91E8-73F2ED402CFB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9E2A0162-C6BF-4792-97DC-C8824F69B98C}
