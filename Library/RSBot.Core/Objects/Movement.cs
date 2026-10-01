@@ -45,6 +45,12 @@ public struct Movement
     /// </summary>
     public float Angle;
 
+    /// <summary>
+    ///     Gets or sets a value indicating whether the entity turns on the spot instead of walking along the angle.
+    ///     Only meaningful for a movement without destination.
+    /// </summary>
+    public bool Spinning;
+
     internal double MovingX,
         MovingY;
     internal TimeSpan RemainingTime;
@@ -64,7 +70,7 @@ public struct Movement
         }
         else
         {
-            packet.ReadByte(); //0 = Spinning, 1 = Sky-/Key-walking
+            result.Spinning = packet.ReadByte() == 0; //0 = Spinning, 1 = Sky-/Key-walking
             result.HasAngle = true;
             result.Angle = packet.ReadShort();
         }
@@ -111,7 +117,7 @@ public struct Movement
         }
         else
         {
-            packet.ReadByte(); //0 = Spinning, 1 = Sky-/Key-walking
+            result.Spinning = packet.ReadByte() == 0; //0 = Spinning, 1 = Sky-/Key-walking
             result.HasAngle = true;
             result.Angle = packet.ReadShort();
         }

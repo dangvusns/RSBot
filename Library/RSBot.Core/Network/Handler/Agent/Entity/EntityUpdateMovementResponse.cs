@@ -65,6 +65,7 @@ internal class EntityUpdateMovementResponse : IPacketHandler
         {
             // Movement through angle
             entity.Move(movement.Angle);
+            entity.Movement.Spinning = movement.Spinning;
             EventManager.FireEvent("OnEntityMoveAngle", uniqueId);
 
             return;
@@ -77,5 +78,6 @@ internal class EntityUpdateMovementResponse : IPacketHandler
 
         // Movement through click
         entity.Move(movement.Destination);
+        entity.Movement.Spinning = false;
     }
 }
