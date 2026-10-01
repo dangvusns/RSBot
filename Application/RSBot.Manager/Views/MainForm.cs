@@ -33,10 +33,15 @@ internal sealed class MainForm : Form
         Theme.ApplyForm(this);
 
         Text = "RSBot Manager";
-        Size = new Size(1500, 900);
-        MinimumSize = new Size(1000, 500);
+        // Designed at 100% scaling, never larger than the screen
+        var screen = Screen.PrimaryScreen.WorkingArea;
+        Size = new Size(
+            Math.Min(Theme.Scale(this, 1400), screen.Width * 9 / 10),
+            Math.Min(Theme.Scale(this, 820), screen.Height * 9 / 10)
+        );
+        MinimumSize = new Size(Theme.Scale(this, 900), Theme.Scale(this, 450));
         StartPosition = FormStartPosition.CenterScreen;
-        Padding = new Padding(14);
+        Padding = new Padding(Theme.Scale(this, 14));
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
 
         // Header: bot folder and the actions for the checked bots
@@ -85,7 +90,7 @@ internal sealed class MainForm : Form
         };
         right.Controls.AddRange(new Control[] { folderButton, settingsButton });
 
-        var header = new Panel { Dock = DockStyle.Top, Height = 110 };
+        var header = new Panel { Dock = DockStyle.Top, Height = Theme.Scale(this, 112) };
         header.Controls.Add(left);
         header.Controls.Add(right);
 
@@ -117,7 +122,7 @@ internal sealed class MainForm : Form
         };
         footerButtons.Controls.AddRange(new Control[] { addButton, editButton, deleteButton });
 
-        var footer = new Panel { Dock = DockStyle.Bottom, Height = 64, BackColor = Theme.Panel };
+        var footer = new Panel { Dock = DockStyle.Bottom, Height = Theme.Scale(this, 64), BackColor = Theme.Panel };
         footer.Controls.Add(_totalsLabel);
         footer.Controls.Add(footerButtons);
 
@@ -170,30 +175,37 @@ internal sealed class MainForm : Form
             Name = "check",
             HeaderText = "☐",
             AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
-            Width = 44,
+            Width = Theme.Scale(_grid, 44),
             SortMode = DataGridViewColumnSortMode.NotSortable,
         });
 
-        AddTextColumn("account", "Tài khoản", 110);
-        AddTextColumn("character", "Nhân vật", 110);
-        AddTextColumn("state", "Trạng thái", 130);
-        AddTextColumn("hpmp", "HP / MP", 150);
-        AddTextColumn("online", "Online", 70);
-        AddTextColumn("bluehour", "Giờ Xanh", 120);
-        AddTextColumn("gold", "Gold hiện có", 110);
-        AddTextColumn("goldPicked", "Gold nhặt", 100);
+        AddTextColumn("account", "Tài khoản", 140, 130);
+        AddTextColumn("character", "Nhân vật", 140, 130);
+        AddTextColumn("state", "Trạng thái", 150, 140);
+        AddTextColumn("hpmp", "HP / MP", 170, 160);
+        AddTextColumn("online", "Online", 80, 70);
+        AddTextColumn("bluehour", "Giờ Xanh", 150, 140);
+        AddTextColumn("gold", "Gold hiện có", 120, 110);
+        AddTextColumn("goldPicked", "Gold nhặt", 110, 100);
 
         foreach (var counter in ManagerStore.Data.Counters.Keys)
-            AddTextColumn("counter:" + counter, counter, 80);
+            AddTextColumn("counter:" + counter, counter, 90, 70);
     }
 
-    private void AddTextColumn(string name, string header, int weight)
+    /// <summary>
+    ///     Adds a column that fills the free width but never gets narrower than its header text
+    ///     or <paramref name="minimumWidth" /> (at 100% scaling). The grid scrolls when they do not fit.
+    /// </summary>
+    private void AddTextColumn(string name, string header, int weight, int minimumWidth)
     {
+        var headerWidth = TextRenderer.MeasureText(header, Theme.Bold).Width + Theme.Scale(_grid, 28);
+
         _grid.Columns.Add(new DataGridViewTextBoxColumn
         {
             Name = name,
             HeaderText = header,
             FillWeight = weight,
+            MinimumWidth = Math.Max(headerWidth, Theme.Scale(_grid, minimumWidth)),
             ReadOnly = true,
             SortMode = DataGridViewColumnSortMode.NotSortable,
         });

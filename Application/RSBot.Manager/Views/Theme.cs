@@ -1,3 +1,4 @@
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -23,6 +24,15 @@ internal static class Theme
     public static readonly Font Bold = new("Segoe UI", 10f, FontStyle.Bold);
     public static readonly Font ButtonFont = new("Segoe UI", 9.5f, FontStyle.Bold);
     public static readonly Font Total = new("Segoe UI", 11f, FontStyle.Bold);
+
+    /// <summary>
+    ///     Converts a size designed at 100% display scaling to the scaling of the control's screen.
+    ///     Fonts follow the Windows scaling by themselves, fixed pixel sizes do not.
+    /// </summary>
+    public static int Scale(Control control, int pixels)
+    {
+        return (int)Math.Round(pixels * control.DeviceDpi / 96f);
+    }
 
     public static void ApplyForm(Form form)
     {
@@ -93,8 +103,9 @@ internal static class Theme
         grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         grid.MultiSelect = false;
         grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-        grid.ColumnHeadersHeight = 48;
-        grid.RowTemplate.Height = 48;
+        grid.ColumnHeadersHeight = Scale(grid, 44);
+        grid.RowTemplate.Height = Scale(grid, 40);
+        grid.ScrollBars = ScrollBars.Both;
         grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
         grid.ColumnHeadersDefaultCellStyle.BackColor = Panel;
@@ -102,6 +113,7 @@ internal static class Theme
         grid.ColumnHeadersDefaultCellStyle.Font = Bold;
         grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = Panel;
         grid.ColumnHeadersDefaultCellStyle.Padding = new Padding(6, 0, 0, 0);
+        grid.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.False;
 
         grid.DefaultCellStyle.BackColor = Row;
         grid.DefaultCellStyle.ForeColor = Text;

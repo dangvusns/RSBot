@@ -14,6 +14,7 @@ namespace RSBot.Manager.Views;
 /// </summary>
 internal abstract class DialogBase : Form
 {
+    private readonly TableLayoutPanel _root;
     private readonly TableLayoutPanel _fields;
 
     protected DialogBase(string title)
@@ -26,28 +27,39 @@ internal abstract class DialogBase : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
-        AutoSize = true;
-        AutoSizeMode = AutoSizeMode.GrowAndShrink;
-        Padding = new Padding(16);
+
+        FieldWidth = Theme.Scale(this, 340);
+
+        // The form is sized from this panel in OnLoad; a self-sizing form ignores docked children
+        _root = new TableLayoutPanel
+        {
+            ColumnCount = 1,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+        };
 
         _fields = new TableLayoutPanel
         {
             ColumnCount = 2,
             AutoSize = true,
-            Dock = DockStyle.Top,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Margin = new Padding(0),
         };
         _fields.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        _fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 320));
+        _fields.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
         var buttons = new FlowLayoutPanel
         {
             FlowDirection = FlowDirection.RightToLeft,
             AutoSize = true,
-            Dock = DockStyle.Bottom,
-            Padding = new Padding(0, 12, 0, 0),
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            WrapContents = false,
+            Anchor = AnchorStyles.Right,
+            Margin = new Padding(0, Theme.Scale(this, 14), 0, 0),
         };
 
         var save = Theme.CreateButton("Lưu", true);
+        save.Margin = new Padding(0);
         save.Click += (_, _) =>
         {
             var error = ValidateInput();
@@ -64,26 +76,88 @@ internal abstract class DialogBase : Form
         var cancel = Theme.CreateButton("Hủy");
         cancel.DialogResult = DialogResult.Cancel;
 
-        buttons.Controls.Add(cancel);
         buttons.Controls.Add(save);
+        buttons.Controls.Add(cancel);
 
-        Controls.Add(_fields);
-        Controls.Add(buttons);
+        _root.Controls.Add(_fields, 0, 0);
+        _root.Controls.Add(buttons, 0, 1);
+        Controls.Add(_root);
 
         AcceptButton = save;
         CancelButton = cancel;
     }
 
+    /// <summary>
+    ///     The width of the input column.
+    /// </summary>
+    protected int FieldWidth { get; }
+
+    protected override void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
+
+        var padding = Theme.Scale(this, 18);
+        var size = _root.GetPreferredSize(Size.Empty);
+
+        _root.Location = new Point(padding, padding);
+        ClientSize = new Size(size.Width + padding * 2, size.Height + padding * 2);
+
+        // CenterParent was applied with the old size
+        if (Owner != null)
+            Location = new Point(
+                Owner.Left + (Owner.Width - Width) / 2,
+                Owner.Top + (Owner.Height - Height) / 2
+            );
+    }
+
     protected T AddField<T>(string label, T control)
         where T : Control
     {
-        control.Dock = DockStyle.Fill;
-        control.Margin = new Padding(0, 4, 0, 4);
+        control.Width = FieldWidth;
+        control.Anchor = AnchorStyles.Left;
+        control.Margin = new Padding(0, Theme.Scale(this, 5), 0, Theme.Scale(this, 5));
 
         _fields.Controls.Add(Theme.CreateLabel(label));
         _fields.Controls.Add(control);
 
         return control;
+    }
+
+    /// <summary>
+    ///     A masked text box with a button that shows or hides the text.
+    /// </summary>
+    protected TextBox AddPasswordField(string label)
+    {
+        var textBox = Theme.CreateTextBox();
+        textBox.UseSystemPasswordChar = true;
+        textBox.Dock = DockStyle.Fill;
+        textBox.Margin = new Padding(0, 0, Theme.Scale(this, 8), 0);
+
+        var toggle = Theme.CreateButton("Hiện");
+        toggle.Margin = new Padding(0);
+        toggle.Padding = new Padding(Theme.Scale(this, 8), 0, Theme.Scale(this, 8), 0);
+        toggle.TabStop = false;
+        toggle.Click += (_, _) =>
+        {
+            textBox.UseSystemPasswordChar = !textBox.UseSystemPasswordChar;
+            toggle.Text = textBox.UseSystemPasswordChar ? "HIỆN" : "ẨN";
+        };
+
+        var row = new TableLayoutPanel
+        {
+            ColumnCount = 2,
+            RowCount = 1,
+            Height = Math.Max(textBox.PreferredHeight, toggle.PreferredSize.Height),
+            Margin = new Padding(0),
+        };
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        row.Controls.Add(textBox, 0, 0);
+        row.Controls.Add(toggle, 1, 0);
+
+        AddField(label, row);
+
+        return textBox;
     }
 
     protected static ComboBox CreateComboBox(ComboBoxStyle style)
@@ -144,12 +218,11 @@ internal sealed class AccountDialog : DialogBase
         _existing = existing;
 
         _loginId = AddField("Tài khoản", Theme.CreateTextBox());
-        _password = AddField("Mật khẩu", Theme.CreateTextBox());
+        _password = AddPasswordField("Mật khẩu");
         _character = AddField("Nhân vật", Theme.CreateTextBox());
         _server = AddField("Server", CreateComboBox(ComboBoxStyle.DropDown));
         _template = AddField("Profile mẫu", CreateComboBox(ComboBoxStyle.DropDownList));
 
-        _password.UseSystemPasswordChar = true;
         _server.Items.AddRange(ProfileWriter.GetKnownServers());
 
         _template.Items.Add(NoTemplate);
@@ -164,7 +237,7 @@ internal sealed class AccountDialog : DialogBase
         _loginId.ReadOnly = true;
         _character.Text = _account.Character;
         _server.Text = _account.Server;
-        _password.PlaceholderText = "Để trống nếu không đổi";
+        _password.Text = _account.Password;
 
         _template.SelectedItem = string.IsNullOrEmpty(_account.TemplateProfile)
             ? NoTemplate
@@ -190,7 +263,7 @@ internal sealed class AccountDialog : DialogBase
         if (_isNew && _existing.Any(a => a.LoginId.Equals(loginId, StringComparison.OrdinalIgnoreCase)))
             return "Tài khoản này đã có trong danh sách.";
 
-        if (_isNew && string.IsNullOrEmpty(_password.Text))
+        if (string.IsNullOrEmpty(_password.Text))
             return "Nhập mật khẩu.";
 
         if (string.IsNullOrWhiteSpace(_character.Text))
@@ -211,8 +284,7 @@ internal sealed class AccountDialog : DialogBase
         _account.Character = _character.Text.Trim();
         _account.Server = _server.Text.Trim();
 
-        if (!string.IsNullOrEmpty(_password.Text))
-            _account.Password = _password.Text;
+        _account.Password = _password.Text;
 
         if (_isNew)
             _account.TemplateProfile = _template.SelectedItem as string == NoTemplate
@@ -278,7 +350,7 @@ internal sealed class SettingsDialog : DialogBase
             Text = "Bộ đếm: mỗi dòng \"Tên=MÃ_1;MÃ_2\", dùng * làm ký tự đại diện, ví dụ LKD=ITEM_ETC_ARCHEMY_*\r\n"
                 + "Giờ Xanh: mỗi dòng một khung giờ \"HH:mm-HH:mm\", ví dụ 20:00-22:00",
             AutoSize = true,
-            MaximumSize = new Size(480, 0),
+            MaximumSize = new Size(FieldWidth, 0),
             ForeColor = Theme.Muted,
         };
         AddField(string.Empty, help);
@@ -289,7 +361,7 @@ internal sealed class SettingsDialog : DialogBase
         var textBox = Theme.CreateTextBox();
         textBox.Multiline = true;
         textBox.ScrollBars = ScrollBars.Vertical;
-        textBox.Height = 110;
+        textBox.Height = Theme.Scale(textBox, 120);
         textBox.Text = text;
 
         return textBox;
