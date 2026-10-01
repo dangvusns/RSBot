@@ -47,6 +47,42 @@ public class ExchangeInstance
     public SpawnedPlayer ExchangePlayer => SpawnManager.GetEntity<SpawnedPlayer>(_exchangePlayerUniqueId);
 
     /// <summary>
+    ///     Invites the specified player to an exchange (0x7081).
+    /// </summary>
+    /// <param name="playerUniqueId">The unique id of the player.</param>
+    public static void Invite(uint playerUniqueId)
+    {
+        var packet = new Packet(0x7081);
+        packet.WriteUInt(playerUniqueId);
+
+        PacketManager.SendPacket(packet, PacketDestination.Server);
+    }
+
+    /// <summary>
+    ///     Confirms (locks) the exchange (0x7082).
+    /// </summary>
+    public void Confirm()
+    {
+        PacketManager.SendPacket(new Packet(0x7082), PacketDestination.Server);
+    }
+
+    /// <summary>
+    ///     Approves the exchange after both sides confirmed (0x7083).
+    /// </summary>
+    public void Approve()
+    {
+        PacketManager.SendPacket(new Packet(0x7083), PacketDestination.Server);
+    }
+
+    /// <summary>
+    ///     Cancels the exchange (0x7084).
+    /// </summary>
+    public void Cancel()
+    {
+        PacketManager.SendPacket(new Packet(0x7084), PacketDestination.Server);
+    }
+
+    /// <summary>
     ///     Updates the items.
     /// </summary>
     /// <param name="packet">The packet.</param>

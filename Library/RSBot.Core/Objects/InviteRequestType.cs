@@ -2,6 +2,7 @@
 
 public enum InviteRequestType : byte
 {
+    Exchange = 1,
     Party1 = 2,
     Party2 = 3,
     Resurrection1 = 4,

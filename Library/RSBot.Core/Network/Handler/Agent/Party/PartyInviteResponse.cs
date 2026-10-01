@@ -46,6 +46,10 @@ internal class PartyInviteResponse : IPacketHandler
             case InviteRequestType.Resurrection2:
                 EventManager.FireEvent("OnResurrectionRequest");
                 break;
+
+            case InviteRequestType.Exchange:
+                EventManager.FireEvent("OnExchangeRequest");
+                break;
         }
     }
 }

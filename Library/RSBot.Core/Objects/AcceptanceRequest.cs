@@ -62,6 +62,11 @@ public class AcceptanceRequest
                 packet.WriteByte(1);
                 packet.WriteByte(2);
                 break;
+
+            case InviteRequestType.Exchange:
+                packet.WriteByte(1);
+                packet.WriteByte(0);
+                break;
         }
 
         PacketManager.SendPacket(packet, PacketDestination.Server);

@@ -13,7 +13,7 @@ internal class ExchangeApprovedResponse : IPacketHandler
     /// <inheritdoc />
     public void Invoke(Packet packet)
     {
-        Game.Player.Exchange.Complete();
+        Game.Player.Exchange?.Complete();
         Game.Player.Exchange = null;
 
         Log.Notify("Exchange completed.");

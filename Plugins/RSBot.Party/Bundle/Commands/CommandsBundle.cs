@@ -3,7 +3,6 @@ using RSBot.Core.Client.ReferenceObjects;
 using RSBot.Core.Components;
 using RSBot.Core.Components.Tracing;
 using RSBot.Core.Event;
-using RSBot.Core.Extensions;
 using RSBot.Core.Network;
 using RSBot.Core.Objects;
 using RSBot.Core.Objects.Spawn;
@@ -363,20 +362,7 @@ internal class CommandsBundle
     {
         try
         {
-            var packet = new Packet(0x7025);
-            packet.WriteByte(ChatType.Private);
-            packet.WriteByte(1); //chatIndex
-
-            if (Game.ClientType > GameClientType.Vietnam)
-                packet.WriteByte(0); // has linking
-
-            if (Game.ClientType >= GameClientType.Chinese_Old)
-                packet.WriteByte(0);
-
-            packet.WriteString(player.Name);
-            packet.WriteConditonalString(text);
-
-            PacketManager.SendPacket(packet, PacketDestination.Server);
+            ChatManager.SendPrivate(player.Name, text);
         }
         catch (Exception e)
         {
