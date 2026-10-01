@@ -28,15 +28,22 @@ internal class CommandsBundle
     private readonly Dictionary<string, Action<SpawnedPlayer, string>> _commands;
 
     /// <summary>
+    /// Keeps the character tracing the commander until "notrace" is received.
+    /// </summary>
+    private readonly TraceController _traceController = new();
+
+    /// <summary>
     /// Initializes a new instance of the CommandsBundle class with a predefined set of command actions.
     /// </summary>
     /// <remarks>This constructor sets up the internal command dictionary using case-insensitive string
-    /// comparison. The available commands include "trace" and "sitdown", each mapped to their respective action
-    /// handlers.</remarks>
+    /// comparison. The available commands include "trace" (game follow), "traceme" (walks to the spots the commander
+    /// clicks), "notrace" and "sitdown", each mapped to their respective action handlers.</remarks>
     internal CommandsBundle()
     {
         _commands = new(StringComparer.InvariantCultureIgnoreCase);
         _commands["trace"] = SendTraceRequest;
+        _commands["traceme"] = StartTrace;
+        _commands["notrace"] = StopTrace;
         _commands["sitdown"] = SendSitdownRequest;
         _commands["start"] = (p, m) => { Kernel.Bot.Start(); };
         _commands["stop"] = (p, m) => { Kernel.Bot.Stop(); };
@@ -138,7 +145,8 @@ internal class CommandsBundle
     /// <summary>
     /// Send trace request by speficied uniqueId
     /// </summary>
-    /// <param name="uniqueId">The unique id</param>
+    /// <param name="player">The commander.</param>
+    /// <param name="message">The received message.</param>
     private void SendTraceRequest(SpawnedPlayer player, string message)
     {
         var packet = new Packet(0x7074);
@@ -148,6 +156,26 @@ internal class CommandsBundle
         packet.WriteUInt(player.UniqueId);
 
         PacketManager.SendPacket(packet, PacketDestination.Server);
+    }
+
+    /// <summary>
+    /// Starts tracing the commander who sent the message until "notrace" is received.
+    /// </summary>
+    /// <param name="player">The commander.</param>
+    /// <param name="message">The received message.</param>
+    private void StartTrace(SpawnedPlayer player, string message)
+    {
+        _traceController.Start(player);
+    }
+
+    /// <summary>
+    /// Stops tracing the commander.
+    /// </summary>
+    /// <param name="player">The commander.</param>
+    /// <param name="message">The received message.</param>
+    private void StopTrace(SpawnedPlayer player, string message)
+    {
+        _traceController.Stop();
     }
 
     /// <summary>
