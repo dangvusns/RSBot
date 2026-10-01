@@ -70,8 +70,12 @@ internal class TargetBundle : IBundle
             }
         );
 
+        // Counterattacks stay inside the training area, unless the player follows the party master away from it
         var attacker = GetFromCurrentAttackers();
-        if (attacker != null && Container.Bot.Area.IsInSight(attacker) && Game.SelectedEntity == null)
+        if (attacker != null && !IsFollowingPartyMaster() && !Container.Bot.Area.IsInSight(attacker))
+            attacker = null;
+
+        if (attacker != null && Game.SelectedEntity == null)
         {
             Log.Debug("[TargetBundle] Emergency situation: Attacking the weaker mob first!");
 
@@ -83,7 +87,6 @@ internal class TargetBundle : IBundle
 
         if (
             attacker != null
-            && Container.Bot.Area.IsInSight(attacker)
             && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity.UniqueId, out var selectedMonster)
             && (byte)attacker.Rarity < (byte)selectedMonster.Rarity
         )
@@ -115,6 +118,13 @@ internal class TargetBundle : IBundle
 
         if (monster.TrySelect())
             Bundles.Movement.LastEntityWasBehindObstacle = false;
+    }
+
+    private static bool IsFollowingPartyMaster()
+    {
+        return PlayerConfig.Get("RSBot.Party.AlwaysFollowPartyMaster", false)
+            && Game.Party.IsInParty
+            && !Game.Party.IsLeader;
     }
 
     private SpawnedMonster GetFromCurrentAttackers()
