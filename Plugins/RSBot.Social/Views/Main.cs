@@ -12,6 +12,7 @@ using RSBot.Core.Objects;
 using RSBot.Core.Objects.Exchange;
 using RSBot.Core.Objects.Spawn;
 using RSBot.Social.Bundle;
+using Action = System.Action;
 
 namespace RSBot.Social.Views;
 
