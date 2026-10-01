@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using RSBot.Core;
 using RSBot.Core.Components;
+using RSBot.Core.Components.Tracing;
 using RSBot.Core.Objects.Spawn;
 
 namespace RSBot.Training.Bundle.Movement;
@@ -25,6 +26,11 @@ internal class MovementBundle : IBundle
     public bool LastEntityWasBehindObstacle { get; set; }
 
     /// <summary>
+    ///     The trace of the party master while the player follows it.
+    /// </summary>
+    private TraceSession _masterTrace;
+
+    /// <summary>
     ///     Invokes this instance.
     /// </summary>
     public void Invoke()
@@ -38,24 +44,12 @@ internal class MovementBundle : IBundle
         if (playerUnderAttack && !LastEntityWasBehindObstacle)
             return;
 
+        // Handled before the moving check: a trace renews its destination while the character is walking
+        if (FollowPartyMaster())
+            return;
+
         if (Game.Player.Movement.Moving)
             return;
-
-        if (
-            PlayerConfig.Get("RSBot.Party.AlwaysFollowPartyMaster", false)
-            && Game.Party.IsInParty
-            && !Game.Party.IsLeader
-        )
-        {
-            if (Game.Player.InAction)
-                return;
-
-            var player = Game.Party.Leader?.Player;
-            if (player != null && player.Position.DistanceToPlayer() >= 10)
-                Game.Player.MoveTo(player.Position);
-
-            return;
-        }
 
         var distance = Game.Player.Position.DistanceTo(Container.Bot.Area.Position);
         var hasCollision = Game.Player.Position.HasCollisionBetween(Container.Bot.Area.Position);
@@ -106,5 +100,59 @@ internal class MovementBundle : IBundle
     public void Stop()
     {
         LastEntityWasBehindObstacle = false;
+
+        StopMasterTrace();
+    }
+
+    /// <summary>
+    ///     Follows the party master when the player set it up to. The follow rules (distance, hysteresis, trajectory,
+    ///     target lost) are owned by the trace engine; this bundle only decides when moving is allowed.
+    /// </summary>
+    /// <returns><c>true</c> if the player follows the party master, which suppresses walking around the training area.</returns>
+    private bool FollowPartyMaster()
+    {
+        if (
+            !PlayerConfig.Get("RSBot.Party.AlwaysFollowPartyMaster", false)
+            || !Game.Party.IsInParty
+            || Game.Party.IsLeader
+        )
+        {
+            StopMasterTrace();
+
+            return false;
+        }
+
+        if (Game.Player.InAction)
+            return true;
+
+        var leader = Game.Party.Leader;
+        if (leader == null)
+            return true;
+
+        if (_masterTrace == null || _masterTrace.TargetName != leader.Name)
+        {
+            StopMasterTrace();
+
+            _masterTrace = new TraceSession(
+                leader.Name,
+                TraceMode.Smart,
+                TraceOptions.PartyMaster().ApplyConfig("RSBot.Party.Trace."),
+                false
+            );
+            _masterTrace.Start();
+        }
+
+        _masterTrace.Step();
+
+        return true;
+    }
+
+    /// <summary>
+    ///     Stops following the party master.
+    /// </summary>
+    private void StopMasterTrace()
+    {
+        _masterTrace?.Stop(false);
+        _masterTrace = null;
     }
 }

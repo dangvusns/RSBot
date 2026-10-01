@@ -1,4 +1,5 @@
 ﻿using RSBot.Core;
+using RSBot.Core.Components.Tracing;
 using RSBot.Core.Event;
 using RSBot.Core.Network;
 using RSBot.Core.Objects;
@@ -28,9 +29,9 @@ internal class CommandsBundle
     private readonly Dictionary<string, Action<SpawnedPlayer, string>> _commands;
 
     /// <summary>
-    /// Keeps the character tracing the commander until "notrace" is received.
+    /// The prefix of the optional config keys that tune the trace (distances, intervals, debug logging).
     /// </summary>
-    private readonly TraceController _traceController = new();
+    private const string TraceConfigPrefix = "RSBot.Party.Trace.";
 
     /// <summary>
     /// Initializes a new instance of the CommandsBundle class with a predefined set of command actions.
@@ -41,8 +42,8 @@ internal class CommandsBundle
     internal CommandsBundle()
     {
         _commands = new(StringComparer.InvariantCultureIgnoreCase);
-        _commands["trace"] = SendTraceRequest;
-        _commands["traceme"] = StartTrace;
+        _commands["trace"] = StartGameTrace;
+        _commands["traceme"] = StartSmartTrace;
         _commands["notrace"] = StopTrace;
         _commands["sitdown"] = SendSitdownRequest;
         _commands["start"] = (p, m) => { Kernel.Bot.Start(); };
@@ -143,29 +144,40 @@ internal class CommandsBundle
     }
 
     /// <summary>
-    /// Send trace request by speficied uniqueId
+    /// Traces the commander who sent the message with the native trace of the game until "notrace" is received.
     /// </summary>
     /// <param name="player">The commander.</param>
     /// <param name="message">The received message.</param>
-    private void SendTraceRequest(SpawnedPlayer player, string message)
+    private void StartGameTrace(SpawnedPlayer player, string message)
     {
-        var packet = new Packet(0x7074);
-        packet.WriteByte(1);
-        packet.WriteByte(3);
-        packet.WriteByte(1);
-        packet.WriteUInt(player.UniqueId);
-
-        PacketManager.SendPacket(packet, PacketDestination.Server);
+        TraceManager.Start(
+            player.Name,
+            TraceMode.GameTrace,
+            TraceOptions.Close().ApplyConfig(TraceConfigPrefix),
+            player
+        );
     }
 
     /// <summary>
-    /// Starts tracing the commander who sent the message until "notrace" is received.
+    /// Traces the commander who sent the message by the bot until "notrace" is received. The bot is stopped meanwhile,
+    /// so it does not walk the character away.
     /// </summary>
     /// <param name="player">The commander.</param>
     /// <param name="message">The received message.</param>
-    private void StartTrace(SpawnedPlayer player, string message)
+    private void StartSmartTrace(SpawnedPlayer player, string message)
     {
-        _traceController.Start(player);
+        if (Kernel.Bot.Running)
+        {
+            Kernel.Bot.Stop();
+            Log.Notify("Bot stopped while tracing");
+        }
+
+        TraceManager.Start(
+            player.Name,
+            TraceMode.Smart,
+            TraceOptions.Close().ApplyConfig(TraceConfigPrefix),
+            player
+        );
     }
 
     /// <summary>
@@ -175,7 +187,7 @@ internal class CommandsBundle
     /// <param name="message">The received message.</param>
     private void StopTrace(SpawnedPlayer player, string message)
     {
-        _traceController.Stop();
+        TraceManager.Stop();
     }
 
     /// <summary>
