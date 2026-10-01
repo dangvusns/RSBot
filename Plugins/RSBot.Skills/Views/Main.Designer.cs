@@ -59,6 +59,7 @@
             numResDelay = new SDUI.Controls.NumUpDown();
             comboResurrectionSkill = new SDUI.Controls.ComboBox();
             checkAcceptResurrection = new SDUI.Controls.CheckBox();
+            checkAcceptResurrectionPartyOnly = new SDUI.Controls.CheckBox();
             label3 = new SDUI.Controls.Label();
             checkResurrectParty = new SDUI.Controls.CheckBox();
             groupBoxAdvancedBuff = new SDUI.Controls.GroupBox();
@@ -444,6 +445,7 @@
             groupBoxAutomatedResurrection.Controls.Add(numResDelay);
             groupBoxAutomatedResurrection.Controls.Add(comboResurrectionSkill);
             groupBoxAutomatedResurrection.Controls.Add(checkAcceptResurrection);
+            groupBoxAutomatedResurrection.Controls.Add(checkAcceptResurrectionPartyOnly);
             groupBoxAutomatedResurrection.Controls.Add(label3);
             groupBoxAutomatedResurrection.Controls.Add(checkResurrectParty);
             groupBoxAutomatedResurrection.Location = new System.Drawing.Point(7, 5);
@@ -577,6 +579,22 @@
             checkAcceptResurrection.Text = "Auto accept resurrection";
             checkAcceptResurrection.UseVisualStyleBackColor = false;
             checkAcceptResurrection.CheckedChanged += settings_CheckedChanged;
+            //
+            // checkAcceptResurrectionPartyOnly
+            //
+            checkAcceptResurrectionPartyOnly.AutoSize = true;
+            checkAcceptResurrectionPartyOnly.BackColor = System.Drawing.Color.Transparent;
+            checkAcceptResurrectionPartyOnly.Depth = 0;
+            checkAcceptResurrectionPartyOnly.Location = new System.Drawing.Point(240, 63);
+            checkAcceptResurrectionPartyOnly.Margin = new System.Windows.Forms.Padding(0);
+            checkAcceptResurrectionPartyOnly.MouseLocation = new System.Drawing.Point(-1, -1);
+            checkAcceptResurrectionPartyOnly.Name = "checkAcceptResurrectionPartyOnly";
+            checkAcceptResurrectionPartyOnly.Ripple = true;
+            checkAcceptResurrectionPartyOnly.Size = new System.Drawing.Size(190, 30);
+            checkAcceptResurrectionPartyOnly.TabIndex = 10;
+            checkAcceptResurrectionPartyOnly.Text = "Only from party members";
+            checkAcceptResurrectionPartyOnly.UseVisualStyleBackColor = false;
+            checkAcceptResurrectionPartyOnly.CheckedChanged += settings_CheckedChanged;
             // 
             // label3
             // 
@@ -1147,6 +1165,7 @@
         private SDUI.Controls.Label label3;
         private SDUI.Controls.CheckBox checkResurrectParty;
         private SDUI.Controls.CheckBox checkAcceptResurrection;
+        private SDUI.Controls.CheckBox checkAcceptResurrectionPartyOnly;
         private SDUI.Controls.CheckBox checkCastBuffsInTowns;
         private SDUI.Controls.GroupBox groupBoxAutomatedResurrection;
         private SDUI.Controls.GroupBox groupBoxAdvancedBuff;

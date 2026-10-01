@@ -965,8 +965,19 @@ public partial class Main : DoubleBufferedControl
     private void OnResurrectionRequest()
     {
         const string key = "RSBot.Skills.";
-        if (Game.AcceptanceRequest != null && PlayerConfig.Get<bool>(key + checkAcceptResurrection.Name))
-            Game.AcceptanceRequest.Accept();
+        var request = Game.AcceptanceRequest;
+        if (request == null || !PlayerConfig.Get<bool>(key + checkAcceptResurrection.Name))
+            return;
+
+        // Party only: the requester has to be visible and a member of the own party
+        if (PlayerConfig.Get<bool>(key + checkAcceptResurrectionPartyOnly.Name))
+        {
+            var name = request.Player?.Name;
+            if (name == null || Game.Party?.GetMemberByName(name) == null)
+                return;
+        }
+
+        request.Accept();
     }
 
     /// <summary>
