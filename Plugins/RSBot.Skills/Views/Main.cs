@@ -24,7 +24,9 @@ namespace RSBot.Skills.Views;
 public partial class Main : DoubleBufferedControl
 {
     private System.Windows.Forms.Timer _buffTimer;
-    private bool _didFirstDraw;
+    private readonly HashSet<System.Windows.Forms.ListView> _coolingLists = new();
+    private readonly System.Windows.Forms.ListView[] _cooldownViews;
+    private readonly List<(string Name, Delegate Handler)> _subscriptions = new();
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="Main" /> class.
@@ -33,6 +35,7 @@ public partial class Main : DoubleBufferedControl
     {
         InitializeComponent();
         SubscribeEvents();
+        _cooldownViews = new System.Windows.Forms.ListView[] { listActiveBuffs, listAttackingSkills, listBuffs, listSkills };
         checkAcceptResurrectionPartyOnly.Enabled = checkAcceptResurrection.Checked;
         checkAcceptResurrection.CheckedChanged += (s, e) =>
             checkAcceptResurrectionPartyOnly.Enabled = checkAcceptResurrection.Checked;
@@ -67,27 +70,43 @@ public partial class Main : DoubleBufferedControl
         listSkills.DrawItem += ListSkill_DrawItem;
 
         // Ensure timer is disposed when control is disposed
-        this.Disposed += (s, e) => { _buffTimer?.Stop(); _buffTimer?.Dispose(); };
+        Disposed += (s, e) =>
+        {
+            _buffTimer.Stop();
+            _buffTimer.Dispose();
+            foreach (var subscription in _subscriptions)
+                EventManager.UnsubscribeEvent(subscription.Name, subscription.Handler);
+            _subscriptions.Clear();
+        };
     }
 
     /// <summary>
     ///     Subscribes the events.
     /// </summary>
+    private void SubscribeViewEvent(string name, System.Action handler) =>
+        SubscribeViewEvent(name, (Delegate)handler);
+
+    private void SubscribeViewEvent(string name, Delegate handler)
+    {
+        _subscriptions.Add((name, handler));
+        EventManager.SubscribeEvent(name, handler);
+    }
+
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnLoadCharacter", OnLoadCharacter);
+        SubscribeViewEvent("OnLoadCharacter", OnLoadCharacter);
 
-        EventManager.SubscribeEvent("OnSkillLearned", new Action<SkillInfo>(OnSkillLearned));
-        EventManager.SubscribeEvent("OnSkillUpgraded", new Action<SkillInfo, SkillInfo>(OnSkillUpgraded));
-        EventManager.SubscribeEvent("OnWithdrawSkill", new Action<SkillInfo, SkillInfo>(OnWithdrawSkill));
-        EventManager.SubscribeEvent("OnLearnSkillMastery", new Action<MasteryInfo>(OnLearnSkillMastery));
+        SubscribeViewEvent("OnSkillLearned", new Action<SkillInfo>(OnSkillLearned));
+        SubscribeViewEvent("OnSkillUpgraded", new Action<SkillInfo, SkillInfo>(OnSkillUpgraded));
+        SubscribeViewEvent("OnWithdrawSkill", new Action<SkillInfo, SkillInfo>(OnWithdrawSkill));
+        SubscribeViewEvent("OnLearnSkillMastery", new Action<MasteryInfo>(OnLearnSkillMastery));
 
-        EventManager.SubscribeEvent("OnAddBuff", new Action<SkillInfo>(OnAddBuff));
-        EventManager.SubscribeEvent("OnRemoveBuff", new Action<SkillInfo>(OnRemoveBuff));
-        EventManager.SubscribeEvent("OnResurrectionRequest", OnResurrectionRequest);
-        EventManager.SubscribeEvent("OnExpSpUpdate", OnSpUpdated);
-        EventManager.SubscribeEvent("OnAddItemPerk", new Action<uint, uint>(OnAddItemPerk));
-        EventManager.SubscribeEvent("OnRemoveItemPerk", new Action<uint, ItemPerk>(OnRemoveItemPerk));
+        SubscribeViewEvent("OnAddBuff", new Action<SkillInfo>(OnAddBuff));
+        SubscribeViewEvent("OnRemoveBuff", new Action<SkillInfo>(OnRemoveBuff));
+        SubscribeViewEvent("OnResurrectionRequest", OnResurrectionRequest);
+        SubscribeViewEvent("OnExpSpUpdate", OnSpUpdated);
+        SubscribeViewEvent("OnAddItemPerk", new Action<uint, uint>(OnAddItemPerk));
+        SubscribeViewEvent("OnRemoveItemPerk", new Action<uint, ItemPerk>(OnRemoveItemPerk));
     }
 
     /// <summary>
@@ -662,77 +681,45 @@ public partial class Main : DoubleBufferedControl
 
     private void BuffTimer_Tick(object sender, EventArgs e)
     {
-        // Hidden pages keep their data, but do not render cooldown overlays.
-        if (!Visible || !Enabled) return;
-        try
+        if (!Visible || !Enabled || FindForm()?.WindowState == FormWindowState.Minimized) return;
+        foreach (var list in _cooldownViews)
         {
-            if (listActiveBuffs.Visible) listActiveBuffs.Invalidate();
-            if (listAttackingSkills.Visible) listAttackingSkills.Invalidate();
-            if (listBuffs.Visible) listBuffs.Invalidate();
-            if (listSkills.Visible) listSkills.Invalidate();
+            if (!list.Visible) continue;
+            var cooling = list.Items.Cast<ListViewItem>()
+                .Any(item => item.Tag is SkillInfo skill && skill.HasCooldown);
+            // One final repaint removes an overlay after its cooldown expires.
+            if (cooling || _coolingLists.Remove(list)) list.Invalidate();
+            if (cooling) _coolingLists.Add(list);
         }
-        catch { }
     }
 
-    void DrawRectCooldown(Graphics g, Rectangle rect, float percent, Color baseColor)
+    private static void DrawRectCooldown(Graphics graphics, Rectangle rect, float percent, Color color)
     {
         percent = Math.Clamp(percent, 0f, 1f);
-        if (percent <= 0f)
+        if (percent <= 0f || rect.Width <= 0 || rect.Height <= 0)
             return;
 
-        int w = rect.Width;
-        int h = rect.Height;
-
-        using var bmp = new Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-        using var bg = Graphics.FromImage(bmp);
-
-        bg.Clear(Color.Transparent);
-
-        float cx = w / 2f;
-        float cy = h / 2f;
-
-        float maxAngle = 360f * percent;
-
-        float fadeStart = 0.15f;
-        float fadeFactor = percent < fadeStart
-            ? percent / fadeStart
-            : 1f;
-
-        int alpha = (int)(160 * fadeFactor);
-        int glowAlpha = (int)(90 * fadeFactor);
-
-        for (int y = 0; y < h; y++)
+        var fade = Math.Min(1f, percent / 0.15f);
+        using var brush = new SolidBrush(Color.FromArgb((int)(160 * fade), color));
+        if (percent >= 1f)
         {
-            for (int x = 0; x < w; x++)
-            {
-                float dx = x - cx;
-                float dy = cy - y;
-
-                float angle = (float)(Math.Atan2(dx, dy) * 180.0 / Math.PI);
-                if (angle < 0) angle += 360f;
-
-                angle = 360f - angle;
-
-                if (angle <= maxAngle)
-                {
-                    bmp.SetPixel(x, y, Color.FromArgb(alpha, baseColor));
-                }
-            }
+            graphics.FillRectangle(brush, rect);
+            return;
         }
 
-        using (var glowBrush = new SolidBrush(Color.FromArgb(glowAlpha, baseColor)))
+        // A large pie clipped to the icon retains a rectangular countdown without a temporary bitmap.
+        var state = graphics.Save();
+        try
         {
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.FillRectangle(glowBrush,
-                rect.Left - 1,
-                rect.Top - 1,
-                rect.Width + 2,
-                rect.Height + 2);
+            graphics.SetClip(rect, CombineMode.Intersect);
+            var radius = (float)Math.Sqrt(rect.Width * rect.Width + rect.Height * rect.Height);
+            graphics.FillPie(brush,
+                rect.Left + rect.Width / 2f - radius,
+                rect.Top + rect.Height / 2f - radius,
+                radius * 2, radius * 2, -90, -360 * percent);
         }
-
-        g.DrawImageUnscaled(bmp, rect.Location);
+        finally { graphics.Restore(state); }
     }
-
 
     private void ListSkill_DrawItem(object sender, DrawListViewItemEventArgs e)
     {
@@ -820,8 +807,7 @@ public partial class Main : DoubleBufferedControl
 
             using var textBrush = new SolidBrush(Color.White);
 
-            using var font = new Font("Arial", 9, FontStyle.Bold);
-            g.DrawString(label, font, textBrush, cooldownRect, sf);
+            g.DrawString(label, listView.Font, textBrush, cooldownRect, sf);
         }
         catch
         {

@@ -212,27 +212,35 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
         if (!SpawnManager.TryGetEntities<SpawnedPlayer>(out var entities) || entities == null)
             entities = Enumerable.Empty<SpawnedPlayer>();
 
-        var players = entities.OrderBy(p => p.DistanceToPlayer).ToList();
-        var selected = GetSelectedUniqueId();
-
+        var players = entities.ToList();
+        var current = players.Select(player => player.UniqueId).ToHashSet();
+        var rows = _listPlayers.Items.Cast<ListViewItem>().ToDictionary(item => (uint)item.Tag);
         _refreshingPlayers = true;
         _listPlayers.BeginUpdate();
         try
         {
-            _listPlayers.Items.Clear();
+            foreach (var row in rows)
+                if (!current.Contains(row.Key)) _listPlayers.Items.Remove(row.Value);
 
+            foreach (var player in players.Where(player => !rows.ContainsKey(player.UniqueId)).OrderBy(player => player.DistanceToPlayer))
+            {
+                var item = new ListViewItem(new string[6]) { Tag = player.UniqueId };
+                _listPlayers.Items.Add(item);
+                rows.Add(player.UniqueId, item);
+            }
             foreach (var player in players)
             {
-                var item = new ListViewItem(player.Name ?? string.Empty) { Tag = player.UniqueId };
-                item.SubItems.Add(player.Guild?.Name ?? string.Empty);
-                item.SubItems.Add(player.Job == JobType.None ? string.Empty : player.Job.ToString());
-                item.SubItems.Add(player.PvpCape == PvpFlag.None ? string.Empty : player.PvpCape.ToString());
-                item.SubItems.Add(player.Stall?.Name ?? string.Empty);
-                item.SubItems.Add(Math.Round(player.DistanceToPlayer).ToString("0"));
-
-                _listPlayers.Items.Add(item);
-                if (selected == player.UniqueId)
-                    item.Selected = true;
+                var item = rows[player.UniqueId];
+                var values = new[] {
+                    player.Name ?? string.Empty,
+                    player.Guild?.Name ?? string.Empty,
+                    player.Job == JobType.None ? string.Empty : player.Job.ToString(),
+                    player.PvpCape == PvpFlag.None ? string.Empty : player.PvpCape.ToString(),
+                    player.Stall?.Name ?? string.Empty,
+                    Math.Round(player.DistanceToPlayer).ToString("0"),
+                };
+                for (var index = 0; index < values.Length; index++)
+                    if (item.SubItems[index].Text != values[index]) item.SubItems[index].Text = values[index];
             }
         }
         finally
@@ -240,40 +248,40 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
             _listPlayers.EndUpdate();
             _refreshingPlayers = false;
         }
-        _lblPlayers.Text = string.Format(TextFor("PlayersCount", "Players around: {0}"), players.Count);
+        var countText = string.Format(TextFor("PlayersCount", "Players around: {0}"), players.Count);
+        if (_lblPlayers.Text != countText) _lblPlayers.Text = countText;
         RefreshEquipment();
         UpdateWhisperState();
     }
 
     private void RefreshEquipment()
     {
+        var player = GetSelectedPlayer();
+        var equipment = new List<(string Name, string Plus)>();
+        void Add(Dictionary<RefObjItem, byte> items, string prefix)
+        {
+            if (items == null) return;
+            foreach (var pair in items.ToArray())
+                equipment.Add((prefix + pair.Key.GetRealName(), pair.Value > 0 ? "+" + pair.Value : string.Empty));
+        }
+        if (player != null)
+        {
+            Add(player.Inventory, string.Empty);
+            Add(player.Avatars, TextFor("AvatarPrefix", "Avatar: "));
+        }
+        if (_listEquipment.Items.Count == equipment.Count && equipment.Select((entry, index) =>
+            _listEquipment.Items[index].Text == entry.Name &&
+            _listEquipment.Items[index].SubItems[1].Text == entry.Plus).All(same => same))
+            return;
+
         _listEquipment.BeginUpdate();
         try
         {
             _listEquipment.Items.Clear();
-
-            var player = GetSelectedPlayer();
-            if (player != null)
-            {
-                AddEquipment(player.Inventory, string.Empty);
-                AddEquipment(player.Avatars, TextFor("AvatarPrefix", "Avatar: "));
-            }
+            foreach (var entry in equipment)
+                _listEquipment.Items.Add(new ListViewItem(new[] { entry.Name, entry.Plus }));
         }
         finally { _listEquipment.EndUpdate(); }
-    }
-
-    private void AddEquipment(Dictionary<RefObjItem, byte> items, string prefix)
-    {
-        if (items == null)
-            return;
-
-        foreach (var pair in items.ToArray())
-        {
-            var item = new ListViewItem(prefix + pair.Key.GetRealName());
-            item.SubItems.Add(pair.Value > 0 ? "+" + pair.Value : string.Empty);
-
-            _listEquipment.Items.Add(item);
-        }
     }
 
     private void SendWhisper()
@@ -567,7 +575,7 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
 
     private void RefreshVisibleTab()
     {
-        if (!Visible || !Enabled || !Game.Ready || Game.Player == null)
+        if (!Visible || !Enabled || FindForm()?.WindowState == FormWindowState.Minimized || !Game.Ready || Game.Player == null)
             return;
 
         try

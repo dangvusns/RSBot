@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -32,6 +33,16 @@ public partial class Main : UIWindow
     private string _playerName;
     private readonly Dictionary<string, UIWindow> _pluginWindows = new(8);
     private bool _isWindowLoaded;
+    private readonly ToolStripStatusLabel _connectionStatus = new();
+    private readonly ToolStripStatusLabel _botStatus = new();
+    private readonly ToolStripStatusLabel _uiFeedback = new();
+    private readonly List<(string Name, Delegate Handler)> _subscriptions = new();
+    private System.Windows.Forms.Timer _statusTimer;
+    private ToolTip _startToolTip;
+    private volatile string _latestStatusText;
+    private string _feedbackKey;
+    private string _feedbackFallback;
+    private DateTime _feedbackUntil;
 
     #endregion Members
 
@@ -43,6 +54,7 @@ public partial class Main : UIWindow
     public Main()
     {
         InitializeComponent();
+        InitializeStatusUi();
         CheckForIllegalCrossThreadCalls = false;
         SystemEvents.UserPreferenceChanged += SystemEvents_UserPreferenceChanged;
         RegisterEvents();
@@ -119,22 +131,103 @@ public partial class Main : UIWindow
     /// </summary>
     private void RegisterEvents()
     {
-        EventManager.SubscribeEvent("OnChangeStatusText", new Action<string>(OnChangeStatusText));
-        EventManager.SubscribeEvent("OnShowBotWindow", OnShowBotWindow);
-        EventManager.SubscribeEvent("OnLoadPlugins", OnLoadPlugins);
-        EventManager.SubscribeEvent("OnLoadDivisionInfo", new Action<DivisionInfo>(OnLoadDivisionInfo));
-        EventManager.SubscribeEvent("OnLoadBotbases", OnLoadBotbases);
-        EventManager.SubscribeEvent("OnLoadCharacter", OnLoadCharacter);
-        EventManager.SubscribeEvent("OnStartBot", OnStartBot);
-        EventManager.SubscribeEvent("OnStopBot", OnStopBot);
-        EventManager.SubscribeEvent("OnAgentServerDisconnected", OnAgentServerDisconnected);
-        EventManager.SubscribeEvent("OnShowScriptRecorder", new Action<int, bool>(OnShowScriptRecorder));
-        EventManager.SubscribeEvent("OnAddSidebarElement", new Action<Control>(OnAddSidebarElement));
-        EventManager.SubscribeEvent("OnPluginEnabled", new Action<IPlugin>(OnPluginStateChanged));
-        EventManager.SubscribeEvent("OnPluginDisabled", new Action<IPlugin>(OnPluginStateChanged));
-        EventManager.SubscribeEvent("OnPluginLoaded", new Action<IPlugin>(OnPluginLoaded));
-        EventManager.SubscribeEvent("OnPluginUnloaded", new Action<IPlugin>(OnPluginUnloaded));
-        EventManager.SubscribeEvent("OnPluginListChanged", OnPluginListChanged);
+        SubscribeViewEvent("OnChangeStatusText", new Action<string>(OnChangeStatusText));
+        SubscribeViewEvent("OnShowBotWindow", OnShowBotWindow);
+        SubscribeViewEvent("OnLoadPlugins", OnLoadPlugins);
+        SubscribeViewEvent("OnLoadDivisionInfo", new Action<DivisionInfo>(OnLoadDivisionInfo));
+        SubscribeViewEvent("OnLoadBotbases", OnLoadBotbases);
+        SubscribeViewEvent("OnLoadCharacter", OnLoadCharacter);
+        SubscribeViewEvent("OnAgentServerDisconnected", OnAgentServerDisconnected);
+        SubscribeViewEvent("OnShowScriptRecorder", new Action<int, bool>(OnShowScriptRecorder));
+        SubscribeViewEvent("OnAddSidebarElement", new Action<Control>(OnAddSidebarElement));
+        SubscribeViewEvent("OnPluginEnabled", new Action<IPlugin>(OnPluginStateChanged));
+        SubscribeViewEvent("OnPluginDisabled", new Action<IPlugin>(OnPluginStateChanged));
+        SubscribeViewEvent("OnPluginLoaded", new Action<IPlugin>(OnPluginLoaded));
+        SubscribeViewEvent("OnPluginUnloaded", new Action<IPlugin>(OnPluginUnloaded));
+        SubscribeViewEvent("OnPluginListChanged", OnPluginListChanged);
+    }
+
+    private void SubscribeViewEvent(string name, Action handler) =>
+        SubscribeViewEvent(name, (Delegate)handler);
+
+    private void SubscribeViewEvent(string name, Delegate handler)
+    {
+        _subscriptions.Add((name, handler));
+        EventManager.SubscribeEvent(name, handler);
+    }
+
+    private static string UiText(string key, string fallback) =>
+        LanguageManager.GetLangBySpecificKey("RSBot", key, fallback);
+
+    private void InitializeStatusUi()
+    {
+        components ??= new Container();
+        stripStatus.Items.Insert(0, _connectionStatus);
+        stripStatus.Items.Insert(1, _botStatus);
+        stripStatus.Items.Insert(2, _uiFeedback);
+        _uiFeedback.Spring = true;
+        _uiFeedback.TextAlign = ContentAlignment.MiddleLeft;
+        _startToolTip = new ToolTip(components);
+        btnStartStop.TabStop = true;
+        btnSave.TabStop = true;
+        _statusTimer = new System.Windows.Forms.Timer(components) { Interval = 250 };
+        _statusTimer.Tick += (s, e) =>
+        {
+            if (Visible && WindowState != FormWindowState.Minimized) RefreshStatusUi();
+        };
+        Shown += (s, e) => RefreshStatusUi();
+        _statusTimer.Start();
+        Disposed += (s, e) =>
+        {
+            foreach (var subscription in _subscriptions)
+                EventManager.UnsubscribeEvent(subscription.Name, subscription.Handler);
+            _subscriptions.Clear();
+            SystemEvents.UserPreferenceChanged -= SystemEvents_UserPreferenceChanged;
+        };
+        RefreshStatusUi();
+    }
+
+    private string GetStartBlocker()
+    {
+        if (Kernel.Proxy?.IsConnectedToAgentserver != true)
+            return UiText("UiStartConnect", "Connect a character to start the bot.");
+        if (!Game.Ready || Game.Player == null)
+            return UiText("UiStartLoading", "Wait for the character to finish loading.");
+        if (Kernel.Bot?.Botbase == null)
+            return UiText("UiStartSelectBot", "Select a bot mode before starting.");
+        return string.Empty;
+    }
+
+    private void ShowUiFeedback(string key, string fallback)
+    {
+        _feedbackKey = key;
+        _feedbackFallback = fallback;
+        _feedbackUntil = DateTime.UtcNow.AddSeconds(5);
+        RefreshStatusUi();
+    }
+
+    private void RefreshStatusUi()
+    {
+        if (IsDisposed || Disposing) return;
+        var connected = Kernel.Proxy?.IsConnectedToAgentserver == true;
+        var running = Kernel.Bot?.Running == true;
+        var connection = connected ? UiText("UiConnected", "Connection: connected")
+            : UiText("UiDisconnected", "Connection: disconnected");
+        var bot = running ? UiText("UiBotRunning", "Bot: running") : UiText("UiBotStopped", "Bot: stopped");
+        if (_connectionStatus.Text != connection) _connectionStatus.Text = connection;
+        if (_botStatus.Text != bot) _botStatus.Text = bot;
+        var reason = running ? string.Empty : GetStartBlocker();
+        var enabled = running || reason.Length == 0;
+        if (btnStartStop.Enabled != enabled) btnStartStop.Enabled = enabled;
+        var buttonText = LanguageManager.GetLang(running ? "StopBot" : "StartBot");
+        if (btnStartStop.Text != buttonText) btnStartStop.Text = buttonText;
+        var color = running ? Color.FromArgb(190, 65, 65) : Color.FromArgb(33, 150, 243);
+        if (btnStartStop.Color != color) btnStartStop.Color = color;
+        if (_startToolTip.GetToolTip(btnStartStop) != reason) _startToolTip.SetToolTip(btnStartStop, reason);
+        var feedback = DateTime.UtcNow < _feedbackUntil ? UiText(_feedbackKey, _feedbackFallback) : reason;
+        if (_uiFeedback.Text != feedback) _uiFeedback.Text = feedback;
+        if (_latestStatusText != null && lblIngameStatus.Text != _latestStatusText)
+            lblIngameStatus.Text = _latestStatusText;
     }
 
     private void OnAddSidebarElement(Control obj)
@@ -420,8 +513,17 @@ public partial class Main : UIWindow
 
     private void btnSave_Click(object sender, EventArgs e)
     {
-        GlobalConfig.Save();
-        PlayerConfig.Save();
+        try
+        {
+            GlobalConfig.Save();
+            PlayerConfig.Save();
+            ShowUiFeedback("UiSettingsSaved", "Settings saved.");
+        }
+        catch (Exception exception)
+        {
+            ShowUiFeedback("UiSettingsSaveFailed", "Settings could not be saved. See the Log tab.");
+            Log.Fatal(exception);
+        }
     }
 
     /// <summary>
@@ -547,37 +649,24 @@ public partial class Main : UIWindow
     /// </summary>
     private void btnStartStop_Click(object sender, EventArgs e)
     {
-        if (Kernel.Proxy == null)
-            return;
-
-        if (!Kernel.Proxy.IsConnectedToAgentserver)
-            return;
-
-        if (Kernel.Bot == null)
-        {
-            Log.NotifyLang("NotifyPleaseSelectProperBotBase");
-            return;
-        }
-
-        if (Game.Player == null)
-        {
-            Log.WarnLang("NotifyPlayerWasNull");
-            return;
-        }
-
-        if (!Kernel.Bot.Running)
-        {
-            Kernel.Bot.Start();
-
-            Log.StatusLang("Running");
-        }
-        else
+        if (Kernel.Bot?.Running == true)
         {
             Log.NotifyLang("StopingBot", Kernel.Bot.Botbase.Title);
-
             Kernel.Bot.Stop();
             Log.StatusLang("Ready");
         }
+        else
+        {
+            var reason = GetStartBlocker();
+            if (!string.IsNullOrEmpty(reason))
+            {
+                _uiFeedback.Text = reason;
+                return;
+            }
+            Kernel.Bot.Start();
+            Log.StatusLang("Running");
+        }
+        RefreshStatusUi();
     }
 
     /// <summary>
@@ -848,22 +937,6 @@ public partial class Main : UIWindow
     #region Core events
 
     /// <summary>
-    ///     Called when [start bot].
-    /// </summary>
-    private void OnStartBot()
-    {
-        btnStartStop.Text = LanguageManager.GetLang("StopBot");
-    }
-
-    /// <summary>
-    ///     Called when [stop bot].
-    /// </summary>
-    private void OnStopBot()
-    {
-        btnStartStop.Text = LanguageManager.GetLang("StartBot");
-    }
-
-    /// <summary>
     ///     Called when [load botbases].
     /// </summary>
     private void OnLoadBotbases()
@@ -935,7 +1008,8 @@ public partial class Main : UIWindow
     /// <param name="text">The text.</param>
     private void OnChangeStatusText(string text)
     {
-        lblIngameStatus.Text = text;
+        // Packet events only publish state; the UI timer coalesces updates.
+        _latestStatusText = text;
     }
 
     /// <summary>

@@ -1,119 +1,59 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Windows.Forms;
 using RSBot.Core;
 using RSBot.Core.Components;
-using RSBot.Core.Event;
 using SDUI.Controls;
 
 namespace RSBot.Views.Controls;
 
 public partial class Character : DoubleBufferedControl
 {
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="Character" /> class.
-    /// </summary>
+    private readonly Timer _refreshTimer;
+
     public Character()
     {
         InitializeComponent();
-
-        SubscribeEvents();
+        components ??= new Container();
+        _refreshTimer = new Timer(components) { Interval = 200 };
+        _refreshTimer.Tick += (s, e) => RefreshCharacter();
+        VisibleChanged += (s, e) => UpdateTimer();
+        UpdateTimer();
     }
 
-    /// <summary>
-    ///     Subscribes the events.
-    /// </summary>
-    private void SubscribeEvents()
+    private void UpdateTimer()
     {
-        EventManager.SubscribeEvent("OnLoadCharacter", OnLoadCharacter);
-        EventManager.SubscribeEvent("OnLoadCharacterStats", OnLoadCharacterStats);
-        EventManager.SubscribeEvent("OnLevelUp", new Action<byte>(OnLevelUp));
-        EventManager.SubscribeEvent("OnExpSpUpdate", OnExpUpdate);
-        EventManager.SubscribeEvent("OnUpdateHPMP", OnLoadCharacterStats);
-        EventManager.SubscribeEvent("OnUpdateGold", OnUpdateGold);
-        EventManager.SubscribeEvent("OnUpdateSP", OnUpdateSP);
-        EventManager.SubscribeEvent("OnAgentServerDisconnected", OnAgentServerDisconnected);
-        EventManager.SubscribeEvent("OnInitialized", OnInitialized);
+        if (IsDisposed || Disposing) return;
+        _refreshTimer.Enabled = Visible;
+        if (Visible) RefreshCharacter();
     }
 
-    private void OnLevelUp(byte oldLevel)
+    private void RefreshCharacter()
     {
-        lblLevel.Text = $"lv.{Game.Player.Level}";
+        if (!Visible || FindForm()?.WindowState == FormWindowState.Minimized) return;
+        var player = Game.Ready ? Game.Player : null;
+        SetText(lblPlayerName, player?.Name ?? LanguageManager.GetLang("LabelPlayerName"));
+        SetText(lblLevel, player == null ? "0" : $"lv.{player.Level}");
+        SetText(lblInt, player?.Intelligence.ToString() ?? "0");
+        SetText(lblStr, player?.Strength.ToString() ?? "0");
+        SetText(lblGold, player?.Gold.ToString("#,#0") ?? "0");
+        SetText(lblSP, player?.SkillPoints.ToString("#,#0") ?? "0");
+        SetProgress(progressHP, player?.Health ?? 0, player?.MaximumHealth ?? 0);
+        SetProgress(progressMP, player?.Mana ?? 0, player?.MaximumMana ?? 0);
+        var maximumExperience = player == null ? 0 : Game.ReferenceManager.GetRefLevel(player.Level)?.Exp_C ?? 0;
+        SetProgress(progressEXP, player?.Experience ?? 0, maximumExperience);
     }
 
-    private void OnInitialized()
+    private static void SetText(Control control, string text)
     {
-        lblPlayerName.Text = LanguageManager.GetLang("LabelPlayerName");
+        if (control.Text != text) control.Text = text;
     }
 
-    private void OnUpdateSP()
+    private static void SetProgress(SDUI.Controls.ProgressBar progress, long value, long maximum)
     {
-        lblSP.Text = Game.Player.SkillPoints.ToString("#,#0");
-    }
-
-    private void OnUpdateGold()
-    {
-        lblGold.Text = Game.Player.Gold.ToString("#,#0");
-    }
-
-    /// <summary>
-    ///     On Hp/MP update
-    /// </summary>
-    private void OnLoadCharacterStats()
-    {
-        lblInt.Text = Game.Player.Intelligence.ToString();
-        lblStr.Text = Game.Player.Strength.ToString();
-
-        if (Game.Player.MaximumHealth == 0)
-            return;
-
-        if (Game.Player.MaximumMana == 0)
-            return;
-
-        progressHP.Maximum = Game.Player.MaximumHealth;
-        progressMP.Maximum = Game.Player.MaximumMana;
-        progressHP.Value = Game.Player.Health;
-        progressMP.Value = Game.Player.Mana;
-    }
-
-    /// <summary>
-    ///     On Exp update
-    /// </summary>
-    /// <exception cref="System.NotImplementedException"></exception>
-    private void OnExpUpdate()
-    {
-        progressEXP.Value = Game.Player.Experience;
-        progressEXP.Maximum = Game.ReferenceManager.GetRefLevel(Game.Player.Level).Exp_C;
-    }
-
-    /// <summary>
-    ///     s the on load character.
-    /// </summary>
-    private void OnLoadCharacter()
-    {
-        lblPlayerName.Text = Game.Player.Name;
-
-        OnLevelUp(Game.Player.Level);
-        OnLoadCharacterStats();
-        OnExpUpdate();
-        OnUpdateSP();
-        OnUpdateGold();
-    }
-
-    /// <summary>
-    ///     Reset UI after character disconnect
-    /// </summary>
-    private void OnAgentServerDisconnected()
-    {
-        lblPlayerName.Text = LanguageManager.GetLang("LabelPlayerName");
-        lblLevel.Text = "0";
-        lblStr.Text = "0";
-        lblInt.Text = "0";
-        lblGold.Text = "0";
-        lblSP.Text = "0";
-        progressHP.Value = 0;
-        progressMP.Value = 0;
-        progressEXP.Value = 0;
-        progressHP.Maximum = 0;
-        progressMP.Maximum = 0;
-        progressEXP.Maximum = 0;
+        maximum = Math.Max(0, maximum);
+        value = Math.Clamp(value, 0, maximum);
+        if (progress.Maximum != maximum) progress.Maximum = maximum;
+        if (progress.Value != value) progress.Value = value;
     }
 }

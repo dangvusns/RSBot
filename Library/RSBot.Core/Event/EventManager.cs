@@ -9,6 +9,7 @@ namespace RSBot.Core.Event;
 public class EventManager
 {
     private static readonly List<(string name, Delegate handler)> _listeners = new();
+    private static readonly object _listenerLock = new();
 
     /// <summary>
     ///     Registers the event.
@@ -20,7 +21,8 @@ public class EventManager
         if (handler == null)
             return;
 
-        _listeners.Add((name, handler));
+        lock (_listenerLock)
+            _listeners.Add((name, handler));
     }
 
     /// <summary>
@@ -33,7 +35,17 @@ public class EventManager
         if (handler == null)
             return;
 
-        _listeners.Add((name, handler));
+        lock (_listenerLock)
+            _listeners.Add((name, handler));
+    }
+
+    /// <summary>
+    ///     Removes a handler when its owner is disposed.
+    /// </summary>
+    public static void UnsubscribeEvent(string name, Delegate handler)
+    {
+        lock (_listenerLock)
+            _listeners.RemoveAll(listener => listener.name == name && listener.handler == handler);
     }
 
     /// <summary>
@@ -45,11 +57,13 @@ public class EventManager
     {
         try
         {
-            var targets = (
-                from o in _listeners
-                where o.name == name && o.handler.Method.GetParameters().Length == parameters.Length
-                select o.handler
-            ).ToArray();
+            Delegate[] targets;
+            lock (_listenerLock)
+                targets = (
+                    from listener in _listeners
+                    where listener.name == name && listener.handler.Method.GetParameters().Length == parameters.Length
+                    select listener.handler
+                ).ToArray();
 
             foreach (var target in targets)
                 if (Thread.CurrentThread.Name == "Network.PacketProcessor")
