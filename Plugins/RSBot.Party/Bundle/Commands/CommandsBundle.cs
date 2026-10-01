@@ -136,7 +136,7 @@ internal class CommandsBundle
             return;
         }
 
-        PlayerConfig.Set("RSBot.Area.Radius", r);
+        PlayerConfig.Set("RSBot.Area.Radius", (int)MathF.Round(r));
         EventManager.FireEvent("OnSetTrainingArea");
     }
 
@@ -167,7 +167,9 @@ internal class CommandsBundle
             PlayerConfig.Set("RSBot.Area.Region", pos.Region);
             PlayerConfig.Set("RSBot.Area.X", pos.XOffset);
             PlayerConfig.Set("RSBot.Area.Y", pos.YOffset);
-            PlayerConfig.Set("RSBot.Area.Radius", radius);
+            PlayerConfig.Set("RSBot.Area.Z", pos.ZOffset);
+            // The botbase reads the radius as an integer; a stored "10.5" would fail to parse and fall back to 50.
+            PlayerConfig.Set("RSBot.Area.Radius", (int)MathF.Round(radius));
             EventManager.FireEvent("OnSetTrainingArea");
         }
         catch (Exception e)
