@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>disable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <OutputPath>.\..\..\Build</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Description>Runs and controls several RSBot instances, one per account</Description>
+    <Copyright>Copyright © 2026, RSBot Team</Copyright>
+    <PackageProjectUrl>https://github.com/SDClowen/RSBot</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/SDClowen/RSBot</RepositoryUrl>
+    <OutputType>WinExe</OutputType>
+    <ApplicationIcon>..\RSBot\app.ico</ApplicationIcon>
+    <InformationalVersion>1.0.0</InformationalVersion>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Library\RSBot.Core\RSBot.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+</Project>

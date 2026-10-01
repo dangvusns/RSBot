@@ -1,0 +1,118 @@
+using System;
+using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json.Serialization;
+
+namespace RSBot.Manager.Models;
+
+/// <summary>
+///     Everything the manager saves in User/Manager/manager.json.
+/// </summary>
+public class ManagerData
+{
+    public List<ManagerAccount> Accounts { get; set; } = new();
+
+    /// <summary>
+    ///     Column name to the item code name wildcards it counts, for example "LKD": ["ITEM_ETC_ARCHEMY_*"].
+    /// </summary>
+    public Dictionary<string, string[]> Counters { get; set; } = new()
+    {
+        ["LKD"] = Array.Empty<string>(),
+        ["Tấm lót"] = Array.Empty<string>(),
+        ["Trang bị"] = Array.Empty<string>(),
+    };
+
+    /// <summary>
+    ///     Daily server event windows shown in the "Giờ Xanh" column, as "HH:mm-HH:mm".
+    /// </summary>
+    public List<string> BlueHourWindows { get; set; } = new();
+}
+
+public class ManagerAccount
+{
+    public string LoginId { get; set; }
+
+    /// <summary>
+    ///     The password encrypted with DPAPI for the current Windows user.
+    /// </summary>
+    public string PasswordProtected { get; set; }
+
+    public string Character { get; set; }
+
+    public string Server { get; set; }
+
+    public string TemplateProfile { get; set; }
+
+    /// <summary>
+    ///     The RSBot profile of this account. One profile per account, named after the login id.
+    /// </summary>
+    [JsonIgnore]
+    public string ProfileName => LoginId;
+
+    [JsonIgnore]
+    public string Password
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(PasswordProtected))
+                return string.Empty;
+
+            var bytes = ProtectedData.Unprotect(
+                Convert.FromBase64String(PasswordProtected),
+                null,
+                DataProtectionScope.CurrentUser
+            );
+
+            return Encoding.UTF8.GetString(bytes);
+        }
+        set
+        {
+            var bytes = ProtectedData.Protect(
+                Encoding.UTF8.GetBytes(value ?? string.Empty),
+                null,
+                DataProtectionScope.CurrentUser
+            );
+
+            PasswordProtected = Convert.ToBase64String(bytes);
+        }
+    }
+}
+
+/// <summary>
+///     The answer of the "status" pipe command, see RSBot.ManagerLink StatusTracker.
+/// </summary>
+public class BotStatus
+{
+    public string State { get; set; }
+
+    public string Profile { get; set; }
+
+    public int ProcessId { get; set; }
+
+    public string CharName { get; set; }
+
+    public int Hp { get; set; }
+
+    public int MaxHp { get; set; }
+
+    public int Mp { get; set; }
+
+    public int MaxMp { get; set; }
+
+    public ulong Gold { get; set; }
+
+    public ulong GoldPicked { get; set; }
+
+    public Dictionary<string, long> ItemCounts { get; set; } = new();
+
+    public long OnlineSeconds { get; set; }
+
+    public float PosX { get; set; }
+
+    public float PosY { get; set; }
+
+    public bool Clientless { get; set; }
+
+    public bool ClientRunning { get; set; }
+}

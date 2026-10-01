@@ -24,6 +24,11 @@ internal partial class Main : DoubleBufferedControl
     private bool _clientVisible;
 
     /// <summary>
+    ///     Set by RSBot.Manager "Go Client" when automated login is off, so the client starts after the disconnect.
+    /// </summary>
+    private bool _startClientAfterDisconnect;
+
+    /// <summary>
     ///     Initializes a new instance of the <see cref="Main" /> class.
     /// </summary>
     public Main()
@@ -53,6 +58,9 @@ internal partial class Main : DoubleBufferedControl
         EventManager.SubscribeEvent("OnCharacterListReceived", OnCharacterListReceived);
         EventManager.SubscribeEvent("OnInitialized", OnInitialized);
         EventManager.SubscribeEvent("OnProfileChanged", OnProfileChanged);
+        EventManager.SubscribeEvent("OnManagerSetClientVisible", new Action<bool>(OnManagerSetClientVisible));
+        EventManager.SubscribeEvent("OnManagerGoClientless", OnManagerGoClientless);
+        EventManager.SubscribeEvent("OnManagerGoClient", OnManagerGoClient);
     }
 
     private void OnProfileChanged()
@@ -363,6 +371,14 @@ internal partial class Main : DoubleBufferedControl
         btnGoClientless.Enabled = false;
         btnStartClient.Enabled = true;
         btnStartClientless.Enabled = true;
+
+        if (_startClientAfterDisconnect)
+        {
+            _startClientAfterDisconnect = false;
+
+            if (userAuthenticated)
+                await StartClientProcess().ConfigureAwait(false);
+        }
     }
 
     /// <summary>
@@ -527,6 +543,14 @@ internal partial class Main : DoubleBufferedControl
         )
             return;
 
+        GoClientless();
+    }
+
+    /// <summary>
+    ///     Switches the running game to clientless and closes the client.
+    /// </summary>
+    private void GoClientless()
+    {
         ClientlessManager.GoClientless();
         ClientManager.Kill();
 
@@ -654,6 +678,74 @@ internal partial class Main : DoubleBufferedControl
     private void checkBoxBotTrayMinimized_CheckedChanged(object sender, EventArgs e)
     {
         GlobalConfig.Set("RSBot.General.TrayWhenMinimize", checkBoxBotTrayMinimized.Checked);
+    }
+
+    /// <summary>
+    ///     Called when RSBot.Manager shows or hides the client.
+    /// </summary>
+    private void OnManagerSetClientVisible(bool visible)
+    {
+        RunOnUi(() =>
+        {
+            if (_clientVisible != visible)
+                btnClientHideShow_Click(btnClientHideShow, EventArgs.Empty);
+        });
+    }
+
+    /// <summary>
+    ///     Called when RSBot.Manager asks to go clientless. Skips the confirmation the button shows.
+    /// </summary>
+    private void OnManagerGoClientless()
+    {
+        RunOnUi(() =>
+        {
+            if (!Game.Clientless)
+                GoClientless();
+        });
+    }
+
+    /// <summary>
+    ///     Called when RSBot.Manager asks to play with the client again.
+    ///     A clientless session cannot be handed to a client, so it is closed and the client logs in again.
+    /// </summary>
+    private void OnManagerGoClient()
+    {
+        RunOnUi(() =>
+        {
+            if (Game.Clientless && Kernel.Proxy != null && Kernel.Proxy.IsConnectedToAgentserver)
+            {
+                Game.Clientless = false;
+                btnStartClientless.Text = LanguageManager.GetLang("Start") + " Clientless";
+                Log.Notify("[Manager] Closing the clientless session to log in with the client");
+
+                // OnAgentServerDisconnected starts the client once the session is closed; starting it here
+                // could let that handler kill the new client
+                _startClientAfterDisconnect = !GlobalConfig.Get<bool>("RSBot.General.EnableAutomatedLogin");
+                Kernel.Proxy.Shutdown();
+                return;
+            }
+
+            Game.Clientless = false;
+            btnStartClient_Click(btnStartClient, EventArgs.Empty);
+        });
+    }
+
+    /// <summary>
+    ///     Runs the action on the UI thread. Uses the bot window when this tab has no handle yet.
+    /// </summary>
+    private void RunOnUi(Action action)
+    {
+        if (IsHandleCreated)
+        {
+            BeginInvoke(action);
+            return;
+        }
+
+        var form = Application.OpenForms.Cast<Form>().FirstOrDefault(f => f.IsHandleCreated);
+        if (form != null)
+            form.BeginInvoke(action);
+        else
+            Log.Warn("[Manager] The bot window is not ready yet");
     }
 
     private void btnClientHideShow_Click(object sender, EventArgs e)

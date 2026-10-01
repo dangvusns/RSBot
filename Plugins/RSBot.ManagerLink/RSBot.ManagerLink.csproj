@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>disable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <OutputPath>.\..\..\Build\Data\Plugins</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Description>A plugin that lets RSBot.Manager control this bot instance through a named pipe</Description>
+    <Copyright>Copyright ©  2018 - 2026, RSBot Team</Copyright>
+    <PackageProjectUrl>https://github.com/SDClowen/RSBot</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/SDClowen/RSBot</RepositoryUrl>
+    <OutputType>Library</OutputType>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Library\RSBot.Core\RSBot.Core.csproj" />
+  </ItemGroup>
+</Project>
