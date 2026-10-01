@@ -33,6 +33,9 @@ public partial class Main : DoubleBufferedControl
     {
         InitializeComponent();
         SubscribeEvents();
+        checkAcceptResurrectionPartyOnly.Enabled = checkAcceptResurrection.Checked;
+        checkAcceptResurrection.CheckedChanged += (s, e) =>
+            checkAcceptResurrectionPartyOnly.Enabled = checkAcceptResurrection.Checked;
 
         listAttackingSkills.SmallImageList = ListViewExtensions.StaticImageList;
         listBuffs.SmallImageList = ListViewExtensions.StaticImageList;
@@ -45,7 +48,9 @@ public partial class Main : DoubleBufferedControl
         // Start periodic invalidation for active-buff overlays
         _buffTimer = new() { Interval = 100 };
         _buffTimer.Tick += BuffTimer_Tick;
-        _buffTimer.Start();
+        VisibleChanged += (s, e) => { if (!IsDisposed && !Disposing) _buffTimer.Enabled = Visible && Enabled; };
+        EnabledChanged += (s, e) => { if (!IsDisposed && !Disposing) _buffTimer.Enabled = Visible && Enabled; };
+        _buffTimer.Enabled = Visible && Enabled;
 
         // Use owner-draw to reliably draw overlay on each item after default rendering
         listActiveBuffs.OwnerDraw = true;
@@ -657,13 +662,14 @@ public partial class Main : DoubleBufferedControl
 
     private void BuffTimer_Tick(object sender, EventArgs e)
     {
-        // Periodically redraw active buffs so remaining time/arc updates smoothly
+        // Hidden pages keep their data, but do not render cooldown overlays.
+        if (!Visible || !Enabled) return;
         try
         {
-            listActiveBuffs.Invalidate();
-            listAttackingSkills.Invalidate();
-            listBuffs.Invalidate();
-            listSkills.Invalidate();
+            if (listActiveBuffs.Visible) listActiveBuffs.Invalidate();
+            if (listAttackingSkills.Visible) listAttackingSkills.Invalidate();
+            if (listBuffs.Visible) listBuffs.Invalidate();
+            if (listSkills.Visible) listSkills.Invalidate();
         }
         catch { }
     }
