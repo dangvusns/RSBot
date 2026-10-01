@@ -70,6 +70,15 @@ internal class AutoPartyBundle
             AlwaysFollowThePartyMaster = PlayerConfig.Get("RSBot.Party.AlwaysFollowPartyMaster", false),
         };
 
+        ApplyPartySettingsFromConfig();
+    }
+
+    /// <summary>
+    ///     Applies the configured party settings while the player is not in a party, so the settings of a
+    ///     previously joined party are not used for the next party the player creates.
+    /// </summary>
+    private void ApplyPartySettingsFromConfig()
+    {
         if (!Game.Party.IsInParty)
             Game.Party.Settings = new PartySettings(
                 Config.ExperienceAutoShare,
@@ -154,6 +163,9 @@ internal class AutoPartyBundle
     /// </summary>
     public void CheckForPlayers()
     {
+        if (Config == null)
+            return;
+
         if (
             Game.Party.IsInParty
             && !Game.Party.IsLeader
@@ -162,6 +174,8 @@ internal class AutoPartyBundle
         )
             if (Config.LeaveIfMasterNotName != Game.Party.Leader.Name)
                 Game.Party.Leave();
+
+        ApplyPartySettingsFromConfig();
 
         // Don't try to invite if we can't invite
         if (!Game.Party.CanInvite)
