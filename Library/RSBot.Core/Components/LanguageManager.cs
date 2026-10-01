@@ -185,6 +185,9 @@ public class LanguageManager
     /// <param name="file">The language file path</param>
     public static void Translate(Control view, string language = "en_US")
     {
+        // Install once, even when a plugin does not have a language file.
+        RSBot.Core.Extensions.TabControlExtensions.AutoSizeHeaders(view);
+
         var type = view.GetType();
 
         var controlName = type.FullName;

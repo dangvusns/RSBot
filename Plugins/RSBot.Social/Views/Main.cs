@@ -26,8 +26,8 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
 
     private readonly List<Action> _translations = new();
     private SDUI.Controls.Button _sendWhisper;
-    private SDUI.Controls.Label _lblRecipient;
-    private SDUI.Controls.Label _lblSaved;
+    private System.Windows.Forms.Label _lblRecipient;
+    private System.Windows.Forms.Label _lblSaved;
     private string _feedbackKey;
     private string _feedbackDefault;
     private string _feedbackArgument;
@@ -41,8 +41,8 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
     private TextBox _txtWhisper;
 
     private SDUI.Controls.ListView _listGuild;
-    private SDUI.Controls.Label _lblGuild;
-    private SDUI.Controls.Label _lblNotice;
+    private System.Windows.Forms.Label _lblGuild;
+    private System.Windows.Forms.Label _lblNotice;
     private GuildInfo _shownGuild;
 
     private SDUI.Controls.ComboBox _comboExchangeMode;
@@ -103,23 +103,24 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
 
     private void BuildPlayersTab()
     {
-        var top = new SDUI.Controls.Panel { Dock = DockStyle.Top, Height = 40, BackColor = Color.Transparent };
-        _lblPlayers = new SDUI.Controls.Label { Location = new Point(8, 10), Size = new Size(300, 20), Text = "Players around: 0" };
-
-        var refresh = new SDUI.Controls.Button { Location = new Point(320, 6), Size = new Size(90, 26), Text = "Refresh", Radius = 6 };
-        refresh.Click += (s, e) => RefreshPlayers();
-
-        Localize(refresh, "Refresh", "Refresh");
-        _lblPlayers.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        _lblPlayers.Name = "PlayersCount";
-        refresh.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        top.Resize += (s, e) =>
+        var top = CreateLayout(2);
+        top.Dock = DockStyle.Top;
+        top.Padding = new Padding(8);
+        top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        top.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        _lblPlayers = new SDUI.Controls.Label
         {
-            refresh.Left = Math.Max(8, top.ClientSize.Width - refresh.Width - 8);
-            _lblPlayers.Width = Math.Max(20, refresh.Left - 16);
+            Name = "PlayersCount", Dock = DockStyle.Fill, Text = "Players around: 0",
+            TextAlign = ContentAlignment.MiddleLeft,
         };
-        top.Controls.Add(_lblPlayers);
-        top.Controls.Add(refresh);
+        var refresh = new SDUI.Controls.Button
+        {
+            AutoSize = true, MinimumSize = new Size(90, 30), Text = "Refresh", Radius = 6,
+        };
+        refresh.Click += (s, e) => RefreshPlayers();
+        Localize(refresh, "Refresh", "Refresh");
+        top.Controls.Add(_lblPlayers, 0, 0);
+        top.Controls.Add(refresh, 1, 0);
 
         _listPlayers = CreateList(("Name", 140), ("Guild", 140), ("Job", 70), ("PvP cape", 70), ("Stall", 150), ("Distance", 70));
         _listPlayers.Name = "PlayersList";
@@ -137,22 +138,29 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
         _listEquipment.Dock = DockStyle.Bottom;
         _listEquipment.Height = 150;
 
-        var whisper = new SDUI.Controls.Panel { Dock = DockStyle.Bottom, Height = 70, BackColor = Color.Transparent };
-        _txtWhisper = new TextBox { Name = "WhisperMessage", Location = new Point(8, 7), Size = new Size(400, 23) };
-
-        _sendWhisper = new SDUI.Controls.Button { Location = new Point(416, 5), Size = new Size(110, 26), Text = "Whisper", Radius = 6 };
-        _sendWhisper.Click += (s, e) => SendWhisper();
-
-        whisper.Controls.Add(_txtWhisper);
-        Localize(_sendWhisper, "Whisper", "Whisper");
-        _lblRecipient = new SDUI.Controls.Label { Name = "Recipient", Dock = DockStyle.Bottom, Height = 30 };
-        whisper.Controls.Add(_sendWhisper);
-        whisper.Controls.Add(_lblRecipient);
-        whisper.Resize += (s, e) =>
+        var whisper = CreateLayout(2);
+        whisper.Dock = DockStyle.Bottom;
+        whisper.Padding = new Padding(8);
+        whisper.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        whisper.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        whisper.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        whisper.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        _txtWhisper = new TextBox
         {
-            _sendWhisper.Left = Math.Max(8, whisper.ClientSize.Width - _sendWhisper.Width - 8);
-            _txtWhisper.Width = Math.Max(20, _sendWhisper.Left - 16);
+            Name = "WhisperMessage", Anchor = AnchorStyles.Left | AnchorStyles.Right,
         };
+        _sendWhisper = new SDUI.Controls.Button
+        {
+            AutoSize = true, MinimumSize = new Size(110, 30), Text = "Whisper", Radius = 6,
+        };
+        _sendWhisper.Click += (s, e) => SendWhisper();
+        Localize(_sendWhisper, "Whisper", "Whisper");
+        _lblRecipient = CreateWrappingLabel("Recipient");
+        whisper.Controls.Add(_txtWhisper, 0, 0);
+        whisper.Controls.Add(_sendWhisper, 1, 0);
+        whisper.Controls.Add(_lblRecipient, 0, 1);
+        whisper.SetColumnSpan(_lblRecipient, 2);
+        SizeWrappingLabels(whisper, _lblRecipient);
         _txtWhisper.TextChanged += (s, e) => UpdateWhisperState();
         _txtWhisper.KeyDown += (s, e) =>
         {
@@ -349,14 +357,15 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
 
     private void BuildGuildTab()
     {
-        var top = new SDUI.Controls.Panel { Dock = DockStyle.Top, Height = 80, BackColor = Color.Transparent };
-        _lblGuild = new SDUI.Controls.Label { Dock = DockStyle.Top, Height = 40, Text = "No guild data yet" };
-        _lblNotice = new SDUI.Controls.Label { Dock = DockStyle.Fill, Text = string.Empty };
-
-        _lblGuild.Name = "GuildSummary";
-        _lblNotice.Name = "GuildNotice";
-        top.Controls.Add(_lblNotice);
-        top.Controls.Add(_lblGuild);
+        var top = CreateLayout(1);
+        top.Dock = DockStyle.Top;
+        top.Padding = new Padding(8);
+        top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        _lblGuild = CreateWrappingLabel("GuildSummary", "No guild data yet");
+        _lblNotice = CreateWrappingLabel("GuildNotice");
+        top.Controls.Add(_lblGuild, 0, 0);
+        top.Controls.Add(_lblNotice, 0, 1);
+        SizeWrappingLabels(top, _lblGuild, _lblNotice);
 
         _listGuild = CreateList(("Name", 140), ("Nickname", 120), ("Level", 60), ("GP", 90), ("Status", 70), ("Rank", 80));
 
@@ -419,14 +428,13 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
         {
             Name = "ExchangeInvitations",
             Text = "Exchange invitations",
-            Location = new Point(8, 8),
-            Size = new Size(520, 250),
-            Padding = new Padding(4, 12, 4, 4),
+            Dock = DockStyle.Top,
+            Padding = new Padding(16, 32, 16, 16),
             Radius = 10,
             ShadowDepth = 4,
         };
 
-        var label = new SDUI.Controls.Label { Location = new Point(16, 32), Size = new Size(480, 20), Text = "When a player invites me to an exchange:" };
+        var label = CreateWrappingLabel("ExchangePrompt", "When a player invites me to an exchange:");
 
         _comboExchangeMode = new SDUI.Controls.ComboBox { Name = "ExchangeMode", DrawMode = DrawMode.OwnerDrawFixed, Location = new Point(16, 56), Size = new Size(480, 23), DropDownStyle = ComboBoxStyle.DropDownList };
         _comboExchangeMode.Items.AddRange(
@@ -444,22 +452,39 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
         _checkAutoConfirm = CreateCheck("Confirm when the partner confirmed", 100);
         _checkAutoApprove = CreateCheck("Approve when both sides confirmed", 135);
 
-        var hint = new SDUI.Controls.Label
+        var hint = CreateWrappingLabel("ExchangeHint",
+            "Items are never added automatically. Check the offer of the partner before you enable auto approve.");
+        _lblSaved = CreateWrappingLabel("SaveStatus",
+            "Changes apply immediately and are saved automatically.");
+        var modeDescription = CreateWrappingLabel("ExchangeModeDescription");
+        var content = CreateLayout(1);
+        content.Dock = DockStyle.Top;
+        content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        var row = 0;
+        foreach (var control in new Control[] { label, _comboExchangeMode, modeDescription,
+            _checkAutoConfirm, _checkAutoApprove, hint, _lblSaved })
         {
-            Location = new Point(16, 180),
-            Size = new Size(480, 50),
-            Text = "Items are never added automatically. Check the offer of the partner before you enable auto approve.",
+            control.Margin = new Padding(0, 0, 0, 8);
+            content.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            content.Controls.Add(control, 0, row++);
+        }
+        _comboExchangeMode.Dock = DockStyle.Top;
+        group.Controls.Add(content);
+        SizeWrappingLabels(content, label, modeDescription, hint, _lblSaved);
+        _comboExchangeMode.SelectedIndexChanged += (s, e) =>
+            modeDescription.Text = _comboExchangeMode.SelectedItem?.ToString() ?? string.Empty;
+        Action sizeCombo = () =>
+        {
+            _comboExchangeMode.ItemHeight = Math.Max(22, _comboExchangeMode.Font.Height + 8);
+            var widest = _comboExchangeMode.Items.Cast<object>()
+                .Select(item => TextRenderer.MeasureText(item.ToString(), _comboExchangeMode.Font).Width)
+                .DefaultIfEmpty(0).Max();
+            _comboExchangeMode.DropDownWidth = Math.Max(_comboExchangeMode.Width, widest + 32);
         };
+        _comboExchangeMode.FontChanged += (s, e) => sizeCombo();
+        _comboExchangeMode.SizeChanged += (s, e) => sizeCombo();
+        _translations.Add(() => sizeCombo());
 
-        group.Controls.Add(label);
-        group.Controls.Add(_comboExchangeMode);
-        group.Controls.Add(_checkAutoConfirm);
-        group.Controls.Add(_checkAutoApprove);
-        group.Controls.Add(hint);
-
-        _lblSaved = new SDUI.Controls.Label { Name = "SaveStatus", AutoSize = true,
-            Text = "Changes apply immediately and are saved automatically." };
-        group.Controls.Add(_lblSaved);
         Localize(group, "ExchangeInvitations", "Exchange invitations");
         Localize(label, "ExchangePrompt", label.Text);
         Localize(_checkAutoConfirm, "AutoConfirm", _checkAutoConfirm.Text);
@@ -483,24 +508,25 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
             finally { _loadingSettings = loading; }
         });
         tabExchange.AutoScroll = true;
+        tabExchange.Padding = new Padding(8);
+        // Checkboxes are single-line controls: allow horizontal scrolling at very narrow widths.
         Action layout = () =>
         {
-            group.Width = Math.Max(280, tabExchange.ClientSize.Width - 32);
-            var width = group.Width - 32;
-            var y = 32;
-            foreach (var control in new Control[] { label, _comboExchangeMode, _checkAutoConfirm, _checkAutoApprove, hint, _lblSaved })
-            {
-                control.AutoSize = false;
-                control.SetBounds(16, y, width, control == _comboExchangeMode ? _comboExchangeMode.PreferredHeight : Math.Max(30, control.GetPreferredSize(new Size(width, 0)).Height + 8));
-                y += control.Height + 8;
-            }
-            group.Height = y + 8;
+            var minimumWidth = Math.Max(_checkAutoConfirm.PreferredSize.Width,
+                _checkAutoApprove.PreferredSize.Width) + group.Padding.Horizontal;
+            group.MinimumSize = new Size(minimumWidth, 0);
+            group.Height = content.PreferredSize.Height + group.Padding.Vertical;
         };
-        tabExchange.Resize += (s, e) => layout();
-        _lblSaved.TextChanged += (s, e) => layout();
-        group.TextChanged += (s, e) => layout();
-        _translations.Add(layout);
+        content.SizeChanged += (s, e) => layout();
+        tabExchange.FontChanged += (s, e) => layout();
+        _translations.Add(() =>
+        {
+            modeDescription.Text = _comboExchangeMode.SelectedItem?.ToString() ?? string.Empty;
+            sizeCombo();
+            layout();
+        });
         tabExchange.Controls.Add(group);
+        layout();
     }
 
     private SDUI.Controls.CheckBox CreateCheck(string text, int y)
@@ -558,6 +584,48 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
     }
 
 
+    private static TableLayoutPanel CreateLayout(int columns) => new()
+    {
+        ColumnCount = columns,
+        AutoSize = true,
+        AutoSizeMode = AutoSizeMode.GrowAndShrink,
+        BackColor = Color.Transparent,
+        Margin = Padding.Empty,
+    };
+
+    private static System.Windows.Forms.Label CreateWrappingLabel(string name, string text = "") => new()
+    {
+        Name = name,
+        Text = text,
+        AutoSize = true,
+        Dock = DockStyle.Top,
+        BackColor = Color.Transparent,
+        UseMnemonic = false,
+        Margin = new Padding(0, 4, 0, 4),
+    };
+
+    private static void SizeWrappingLabels(TableLayoutPanel layout, params System.Windows.Forms.Label[] labels)
+    {
+        var updating = false;
+        void UpdateWidths()
+        {
+            if (updating) return;
+            updating = true;
+            try
+            {
+                foreach (var label in labels)
+                {
+                    var width = Math.Max(1, layout.ClientSize.Width - layout.Padding.Horizontal - label.Margin.Horizontal);
+                    var maximum = new Size(width, 0);
+                    if (label.MaximumSize != maximum) label.MaximumSize = maximum;
+                }
+            }
+            finally { updating = false; }
+        }
+        layout.SizeChanged += (s, e) => UpdateWidths();
+        UpdateWidths();
+    }
+
     private static string TextFor(string key, string fallback) =>
         LanguageManager.GetLangBySpecificKey("RSBot.Social", key, fallback);
 
@@ -602,8 +670,19 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
             list.BackColor = SDUI.ColorScheme.BackColor;
             list.ForeColor = SDUI.ColorScheme.ForeColor;
         }
+        ApplyLabelTheme(this);
         _txtWhisper.BackColor = SDUI.ColorScheme.BackColor;
         _txtWhisper.ForeColor = SDUI.ColorScheme.ForeColor;
+    }
+
+    private static void ApplyLabelTheme(Control parent)
+    {
+        foreach (Control control in parent.Controls)
+        {
+            if (control is System.Windows.Forms.Label)
+                control.ForeColor = SDUI.ColorScheme.ForeColor;
+            ApplyLabelTheme(control);
+        }
     }
 
     private void SetFeedback(string key, string fallback, string argument = null)
@@ -640,7 +719,7 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
         };
 
         foreach (var column in columns)
-            {
+        {
             var header = list.Columns.Add(column.Text, column.Width);
             var key = "Column" + new string(column.Text.Where(char.IsLetterOrDigit).ToArray());
             _translations.Add(() => header.Text = TextFor(key, column.Text));
