@@ -162,12 +162,42 @@ public class ExtensionManager
                 PluginHooks[plugin.Name] = hooks;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            /* ignore, it's an invalid extension */
+            // Not every DLL in the folder is an extension (dependencies are copied there too); report only ours
+            if (Path.GetFileName(file).StartsWith("RSBot.", StringComparison.OrdinalIgnoreCase))
+                ReportLoadError(Path.GetFileName(file), ex);
         }
 
         return result;
+    }
+
+    /// <summary>
+    ///     Reports an extension that could not be loaded. It is written to the log and to plugin-errors.log in the
+    ///     bot folder, because extensions are loaded before the log window exists.
+    /// </summary>
+    /// <param name="source">The DLL or extension name.</param>
+    /// <param name="exception">The exception.</param>
+    public static void ReportLoadError(string source, Exception exception)
+    {
+        var reason =
+            exception is ReflectionTypeLoadException typeLoad && typeLoad.LoaderExceptions.Length > 0
+                ? typeLoad.LoaderExceptions[0]?.Message ?? exception.Message
+                : exception.Message;
+
+        Log.Warn($"[Plugins] Could not load {source}: {reason}");
+
+        try
+        {
+            File.AppendAllText(
+                Path.Combine(Kernel.BasePath, "plugin-errors.log"),
+                $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {source}: {exception}{Environment.NewLine}"
+            );
+        }
+        catch
+        {
+            // the log line above is enough
+        }
     }
 
     /// <summary>

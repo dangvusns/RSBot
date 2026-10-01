@@ -66,6 +66,10 @@ internal static class ExchangeAutomation
 
         switch ((ExchangeMode)PlayerConfig.Get(ModeKey, (int)ExchangeMode.Manual))
         {
+            case ExchangeMode.Manual:
+                Log.Notify($"[Social] Exchange invitation from {name} - answer it in the game (Social > Exchange to automate)");
+                break;
+
             case ExchangeMode.Refuse:
                 request.Refuse();
                 Log.Notify($"[Social] Exchange invitation from {name} refused");
@@ -79,7 +83,10 @@ internal static class ExchangeAutomation
             case ExchangeMode.AcceptFromList:
                 var list = PlayerConfig.GetArray<string>(CommanderListKey);
                 if (name == null || list == null || !list.Any(n => string.Equals(n, name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    Log.Notify($"[Social] Exchange invitation from {name} is not from the commander list - answer it in the game");
                     return;
+                }
 
                 request.Accept();
                 Log.Notify($"[Social] Exchange invitation from {name} accepted (commander list)");

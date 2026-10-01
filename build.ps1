@@ -28,7 +28,8 @@ if ($Clean) {
 Write-Output "Building with '$Configuration' configuration..."
 $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
 $msBuildPath = Join-Path $vsPath "MSBuild\Current\Bin\MSBuild.exe"
-& $msBuildPath /p:Configuration=$Configuration /p:Platform=x86 RSBot.sln > build.log
+# /restore: new projects get their NuGet assets (otherwise MSBuild fails with NETSDK1004)
+& $msBuildPath /restore /p:Configuration=$Configuration /p:Platform=x86 RSBot.sln > build.log
 Write-Output "NOTE: This is a truncated view of the build logs. For the full log, refer to .\build.log"
 Get-Content -Path "build.log" -Tail 100
 

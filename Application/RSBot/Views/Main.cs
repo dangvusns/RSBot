@@ -241,20 +241,28 @@ public partial class Main : UIWindow
 
         foreach (var extension in extensions.Where(extension => extension.DisplayAsTab))
         {
-            extension.Translate();
+            // A plugin whose view fails must not take the following tabs down with it
+            try
+            {
+                extension.Translate();
 
-            var control = extension.View;
-            control.Name = extension.Name;
-            control.Text = LanguageManager.GetLangBySpecificKey(
-                extension.Name,
-                "DisplayName",
-                extension.Title
-            );
-            control.Visible = extension.Enabled;
-            control.Enabled = extension.Enabled && !extension.RequireIngame;
-            control.Dock = DockStyle.Fill;
+                var control = extension.View;
+                control.Name = extension.Name;
+                control.Text = LanguageManager.GetLangBySpecificKey(
+                    extension.Name,
+                    "DisplayName",
+                    extension.Title
+                );
+                control.Visible = extension.Enabled;
+                control.Enabled = extension.Enabled && !extension.RequireIngame;
+                control.Dock = DockStyle.Fill;
 
-            windowPageControl.Controls.Add(control);
+                windowPageControl.Controls.Add(control);
+            }
+            catch (Exception ex)
+            {
+                ExtensionManager.ReportLoadError(extension.Name, ex);
+            }
         }
 
         foreach (var extension in extensions.Where(extension => !extension.DisplayAsTab))
