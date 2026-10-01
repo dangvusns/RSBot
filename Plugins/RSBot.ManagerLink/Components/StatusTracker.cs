@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using RSBot.Core;
 using RSBot.Core.Components;
+using RSBot.Core.Event;
 
 namespace RSBot.ManagerLink.Components;
 
@@ -17,6 +18,21 @@ internal static class StatusTracker
     private static readonly DateTime _processStartedAt = Process.GetCurrentProcess().StartTime;
 
     private static IList _calculators;
+
+    private static readonly object _lock = new();
+
+    /// <summary>
+    ///     The green (full experience) time left from the last fatigue update of the server, and when it came.
+    /// </summary>
+    private static long? _greenSecondsAtUpdate;
+
+    private static DateTime _greenUpdatedAt;
+
+    public static void Initialize()
+    {
+        EventManager.SubscribeEvent("OnFatigueTimeUpdate", OnFatigueTimeUpdate);
+        EventManager.SubscribeEvent("OnAgentServerDisconnected", OnAgentServerDisconnected);
+    }
 
     public static object CreateSnapshot()
     {
@@ -40,6 +56,7 @@ internal static class StatusTracker
             equipmentPicked = GetStatistic("EquipmentPicked"),
             // Since RSBot was opened, which is when "Mở Bot" was clicked in the manager
             uptimeSeconds = (long)(DateTime.Now - _processStartedAt).TotalSeconds,
+            greenSecondsLeft = GetGreenSecondsLeft(),
             posX = ready ? player.Position.X : 0,
             posY = ready ? player.Position.Y : 0,
             region = ready ? (ushort)player.Position.Region : (ushort)0,
@@ -57,6 +74,58 @@ internal static class StatusTracker
             return "Running";
 
         return "InGame";
+    }
+
+    /// <summary>
+    ///     Counts down from the last fatigue update. Null when the server sent none (no fatigue system).
+    /// </summary>
+    private static long? GetGreenSecondsLeft()
+    {
+        lock (_lock)
+        {
+            if (_greenSecondsAtUpdate == null)
+                return null;
+
+            var elapsed = (long)(DateTime.Now - _greenUpdatedAt).TotalSeconds;
+
+            return Math.Max(_greenSecondsAtUpdate.Value - elapsed, 0);
+        }
+    }
+
+    /// <summary>
+    ///     RSBot.Protection decodes the fatigue packet into FatigueHandler.ShardFatigueFullExpSeconds before it fires
+    ///     the event. It has no reference to this plugin, so the value is read by reflection.
+    /// </summary>
+    private static void OnFatigueTimeUpdate()
+    {
+        try
+        {
+            var value = AppDomain
+                .CurrentDomain.GetAssemblies()
+                .FirstOrDefault(a => a.GetName().Name == "RSBot.Protection")
+                ?.GetType("RSBot.Protection.Components.Town.FatigueHandler")
+                ?.GetProperty("ShardFatigueFullExpSeconds", BindingFlags.Public | BindingFlags.Static)
+                ?.GetValue(null);
+
+            if (value == null)
+                return;
+
+            lock (_lock)
+            {
+                _greenSecondsAtUpdate = Convert.ToInt64(value);
+                _greenUpdatedAt = DateTime.Now;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Debug($"[Manager link] Could not read the fatigue time: {ex.Message}");
+        }
+    }
+
+    private static void OnAgentServerDisconnected()
+    {
+        lock (_lock)
+            _greenSecondsAtUpdate = null;
     }
 
     /// <summary>

@@ -12,11 +12,6 @@ namespace RSBot.Manager.Models;
 public class ManagerData
 {
     public List<ManagerAccount> Accounts { get; set; } = new();
-
-    /// <summary>
-    ///     Daily server event windows shown in the "Giờ Xanh" column, as "HH:mm-HH:mm".
-    /// </summary>
-    public List<string> BlueHourWindows { get; set; } = new();
 }
 
 public class ManagerAccount
@@ -107,6 +102,12 @@ public class BotStatus
     ///     Seconds since RSBot was opened.
     /// </summary>
     public long UptimeSeconds { get; set; }
+
+    /// <summary>
+    ///     Green (full experience) time left from the server's fatigue system, 0 in orange time,
+    ///     null when the server sends no fatigue time.
+    /// </summary>
+    public long? GreenSecondsLeft { get; set; }
 
     public float PosX { get; set; }
 

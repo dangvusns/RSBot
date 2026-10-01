@@ -78,9 +78,6 @@ internal sealed class MainForm : Form
         var folderButton = Theme.CreateButton("Chọn thư mục bot");
         folderButton.Click += (_, _) => ChooseBotFolder();
 
-        var settingsButton = Theme.CreateButton("Cài đặt");
-        settingsButton.Click += (_, _) => EditSettings();
-
         var right = new FlowLayoutPanel
         {
             AutoSize = true,
@@ -88,7 +85,7 @@ internal sealed class MainForm : Form
             WrapContents = false,
             Padding = new Padding(0, 4, 0, 0),
         };
-        right.Controls.AddRange(new Control[] { folderButton, settingsButton });
+        right.Controls.Add(folderButton);
 
         var header = new Panel { Dock = DockStyle.Top, Height = Theme.Scale(this, 112) };
         header.Controls.Add(left);
@@ -184,7 +181,7 @@ internal sealed class MainForm : Form
         AddTextColumn("state", "Trạng thái", 150, 140);
         AddTextColumn("hpmp", "HP / MP", 170, 160);
         AddTextColumn("online", "Online", 80, 70);
-        AddTextColumn("bluehour", "Giờ Xanh", 150, 140);
+        AddTextColumn("greenhour", "Giờ Xanh", 150, 140);
         AddTextColumn("gold", "Gold hiện có", 120, 110);
         AddTextColumn("goldPicked", "Gold nhặt", 110, 100);
         AddTextColumn("elixirs", "LKD", 80, 60);
@@ -260,9 +257,6 @@ internal sealed class MainForm : Form
 
     private void RefreshGrid()
     {
-        var now = DateTime.Now;
-        var blueHour = BlueHours.Describe(ManagerStore.Data.BlueHourWindows, now);
-
         foreach (DataGridViewRow row in _grid.Rows)
         {
             if (row.Tag is not BotInstance instance)
@@ -283,7 +277,14 @@ internal sealed class MainForm : Form
 
             Set(row, "hpmp", inGame ? $"{status.Hp:N0}/{status.MaxHp:N0} · {status.Mp:N0}/{status.MaxMp:N0}" : Empty);
             Set(row, "online", status != null ? FormatDuration(status.UptimeSeconds) : Empty);
-            Set(row, "bluehour", blueHour);
+            var greenHour = row.Cells["greenhour"];
+            greenHour.Value = DescribeGreenHour(status);
+            greenHour.Style.ForeColor = status?.GreenSecondsLeft switch
+            {
+                null => Theme.Muted,
+                0 => Theme.Orange,
+                _ => Theme.Good,
+            };
             Set(row, "gold", inGame ? status.Gold.ToString("N0") : Empty);
             Set(row, "goldPicked", status != null ? status.GoldPicked.ToString("N0") : Empty);
             Set(row, "elixirs", status != null ? status.ElixirsPicked.ToString("N0") : Empty);
@@ -337,6 +338,17 @@ internal sealed class MainForm : Form
         };
 
         return status.Clientless ? text + " · Clientless" : text;
+    }
+
+    /// <summary>
+    ///     Green time: full experience. Orange time ("Cam"): half experience after the green hours are used up.
+    /// </summary>
+    private static string DescribeGreenHour(BotStatus status)
+    {
+        if (status?.GreenSecondsLeft == null)
+            return Empty;
+
+        return status.GreenSecondsLeft > 0 ? $"Xanh · còn {FormatDuration(status.GreenSecondsLeft.Value)}" : "Cam";
     }
 
     private static string FormatDuration(long seconds)
@@ -506,16 +518,6 @@ internal sealed class MainForm : Form
 
         ManagerStore.SetBotFolder(dialog.SelectedPath);
         ReloadAccounts();
-    }
-
-    private void EditSettings()
-    {
-        using var dialog = new SettingsDialog(ManagerStore.Data);
-        if (dialog.ShowDialog(this) != DialogResult.OK)
-            return;
-
-        ManagerStore.SaveData();
-        RefreshGrid();
     }
 
     private bool RequireBotFolder()

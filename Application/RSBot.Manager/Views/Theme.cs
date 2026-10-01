@@ -19,6 +19,7 @@ internal static class Theme
     public static readonly Color Muted = Color.FromArgb(140, 130, 105);
     public static readonly Color Good = Color.FromArgb(132, 196, 108);
     public static readonly Color Bad = Color.FromArgb(214, 112, 92);
+    public static readonly Color Orange = Color.FromArgb(232, 150, 60);
 
     public static readonly Font Font = new("Segoe UI", 10f);
     public static readonly Font Bold = new("Segoe UI", 10f, FontStyle.Bold);
