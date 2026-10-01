@@ -153,15 +153,15 @@ public partial class Main : DoubleBufferedControl
 
         if (InvokeRequired)
         {
-            BeginInvoke(new Action(OnSetTrainingArea));
+            BeginInvoke(new System.Action(OnSetTrainingArea));
             return;
         }
 
         // Event handlers run in subscription order (or in parallel off the packet thread), so the botbase may not
         // have reloaded yet. Reload here, otherwise the UI shows the previous area and txtRadius_TextChanged writes
         // the previous radius back into the config.
-        Container.Bot.Reload();
-        var area = Container.Bot.Area;
+        RSBot.Training.Container.Bot.Reload();
+        var area = RSBot.Training.Container.Bot.Area;
 
         txtXCoord.Text = area.Position.X.ToString("0.0");
         txtYCoord.Text = area.Position.Y.ToString("0.0");
