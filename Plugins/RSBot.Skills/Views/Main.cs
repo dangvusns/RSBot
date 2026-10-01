@@ -665,11 +665,8 @@ public partial class Main : DoubleBufferedControl
                     continue;
 
                 var itemBuffInfo = listItem.Tag as SkillInfo;
-                if (
-                    itemBuffInfo != null
-                    && itemBuffInfo.Id == removingBuff.Id
-                    && itemBuffInfo.Token == removingBuff.Token
-                )
+                // The token identifies the active buff, its id can differ from the removed skill's id
+                if (itemBuffInfo != null && itemBuffInfo.Token == removingBuff.Token)
                 {
                     listItem?.Remove();
                     return;
