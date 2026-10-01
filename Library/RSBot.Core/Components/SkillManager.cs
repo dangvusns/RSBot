@@ -475,42 +475,71 @@ public static class SkillManager
             packet.WriteByte(ActionTarget.None);
         }
 
-        var asyncCallback = new AwaitCallback(
+        if (!awaitBuffResponse)
+        {
+            PacketManager.SendPacket(packet, PacketDestination.Server);
+            return;
+        }
+
+        // Wait for the skill cast response of this buff instead of a buff info packet,
+        // so a casted or refused buff does not block until the timeout runs out.
+        var castCallback = new AwaitCallback(
             response =>
             {
-                var targetId = response.ReadUInt();
+                if (response.ReadByte() != 0x01)
+                    return AwaitCallbackResult.Fail;
+
+                response.ReadByte(); // action code
+
+                if (Game.ClientType > GameClientType.Thailand)
+                    response.ReadByte(); // always 0x30
+
                 var castedSkillId = response.ReadUInt();
+                var executorId = response.ReadUInt();
 
-                if (targetId == (target == 0 ? Game.Player.UniqueId : target) && castedSkillId == skill.Id)
-                    return AwaitCallbackResult.Success;
-
-                return AwaitCallbackResult.ConditionFailed;
-            },
-            0xB0BD
-        );
-
-        var callback = new AwaitCallback(
-            response =>
-            {
-                return response.ReadByte() == 0x02 && response.ReadByte() == 0x00
+                return executorId == Game.Player.UniqueId && castedSkillId == skill.Id
                     ? AwaitCallbackResult.Success
                     : AwaitCallbackResult.ConditionFailed;
+            },
+            0xB070
+        );
+
+        var actionStateCallback = new AwaitCallback(
+            response =>
+            {
+                var state = response.ReadByte();
+                var recurring = response.ReadByte();
+
+                if (state == 0x02 && recurring == 0x00)
+                    return AwaitCallbackResult.Success;
+
+                if (state == 0x03)
+                    return AwaitCallbackResult.Fail;
+
+                return AwaitCallbackResult.ConditionFailed;
             },
             0xB074
         );
 
-        PacketManager.SendPacket(packet, PacketDestination.Server, asyncCallback, callback);
+        var awaitActionState = skill.Record.Basic_Activity != 1;
+        if (awaitActionState)
+            PacketManager.SendPacket(packet, PacketDestination.Server, castCallback, actionStateCallback);
+        else
+            PacketManager.SendPacket(packet, PacketDestination.Server, castCallback);
 
-        if (awaitBuffResponse)
-            asyncCallback.AwaitResponse(
-                skill.Record.Action_CastingTime
-                    + skill.Record.Action_ActionDuration
-                    + skill.Record.Action_PreparingTime
-                    + 1500
-            );
+        var timeout =
+            skill.Record.Action_CastingTime
+            + skill.Record.Action_ActionDuration
+            + skill.Record.Action_PreparingTime
+            + 1500;
 
-        if (skill.Record.Basic_Activity != 1 && awaitBuffResponse)
-            callback.AwaitResponse();
+        castCallback.AwaitResponse(timeout);
+
+        if (!awaitActionState)
+            return;
+
+        // Close the action state callback right away when the cast failed, so it does not linger in the callback list
+        actionStateCallback.AwaitResponse(castCallback.IsCompleted ? timeout : 1);
     }
 
     /// <summary>
