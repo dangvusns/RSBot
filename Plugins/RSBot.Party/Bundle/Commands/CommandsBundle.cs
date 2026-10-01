@@ -1,13 +1,16 @@
-﻿using RSBot.Core;
+using RSBot.Core;
+using RSBot.Core.Client.ReferenceObjects;
+using RSBot.Core.Components;
 using RSBot.Core.Components.Tracing;
 using RSBot.Core.Event;
+using RSBot.Core.Extensions;
 using RSBot.Core.Network;
 using RSBot.Core.Objects;
-using RSBot.Core.Objects.Cos;
 using RSBot.Core.Objects.Spawn;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace RSBot.Party.Bundle.Commands;
 
@@ -22,10 +25,9 @@ internal class CommandsBundle
     public CommandsConfig Config { get; set; }
 
     /// <summary>
-    /// Stores the mapping of command names to their associated actions.
+    /// Stores the mapping of command names to their associated actions. The second parameter of an action is the
+    /// argument text after the command name (empty if there is none).
     /// </summary>
-    /// <remarks>Each entry in the dictionary associates a string command identifier with an executable
-    /// action. This collection is intended for internal use to manage available commands within the bundle.</remarks>
     private readonly Dictionary<string, Action<SpawnedPlayer, string>> _commands;
 
     /// <summary>
@@ -36,9 +38,9 @@ internal class CommandsBundle
     /// <summary>
     /// Initializes a new instance of the CommandsBundle class with a predefined set of command actions.
     /// </summary>
-    /// <remarks>This constructor sets up the internal command dictionary using case-insensitive string
-    /// comparison. The available commands include "trace" (game follow), "traceme" (walks to the spots the commander
-    /// clicks), "notrace" and "sitdown", each mapped to their respective action handlers.</remarks>
+    /// <remarks>Commands are case-insensitive: "trace [name]" (game follow), "traceme [name]" (walks to the spots the
+    /// commander clicks), "notrace", "sitdown", "start", "stop", "town"/"return", "teleport from,to", "radius r" and
+    /// "area x,y,r". Failures are answered with a private message to the commander.</remarks>
     internal CommandsBundle()
     {
         _commands = new(StringComparer.InvariantCultureIgnoreCase);
@@ -49,55 +51,68 @@ internal class CommandsBundle
         _commands["start"] = (p, m) => { Kernel.Bot.Start(); };
         _commands["stop"] = (p, m) => { Kernel.Bot.Stop(); };
         _commands["town"] = ReturnTown;
+        _commands["return"] = ReturnTown;
+        _commands["teleport"] = Teleport;
         _commands["radius"] = SetBotRadius;
         _commands["area"] = SetBotArea;
     }
 
     /// <summary>
-    /// Returns the specified player to their home town using a return scroll.
+    /// Returns to town using a return scroll. Runs on a worker, because using an item waits for the answer of the
+    /// server, which the packet thread could never deliver while it waits.
     /// </summary>
-    /// <param name="player">The player to be returned to their home town.</param>
-    /// <param name="arg2">An additional argument for the return operation. The specific usage depends on the command context.</param>
-    private void ReturnTown(SpawnedPlayer player, string arg2)
+    /// <param name="player">The commander.</param>
+    /// <param name="args">Not used.</param>
+    private void ReturnTown(SpawnedPlayer player, string args)
     {
-        try
+        Task.Run(() =>
         {
-            Game.Player.UseReturnScroll();
-        }
-        catch (Exception e)
-        {
-            Log.Fatal(e);
-        }
+            try
+            {
+                if (!Game.Player.UseReturnScroll())
+                    Reply(player, "Return scroll not found or not usable right now");
+            }
+            catch (Exception e)
+            {
+                Log.Fatal(e);
+            }
+        });
     }
 
     /// <summary>
-    /// Sets the bot's operating radius for the specified player if the provided radius value is valid.
+    /// Sets the radius of the training area.
     /// </summary>
     /// <remarks>If the radius value cannot be parsed to a positive floating-point number, the bot radius is
     /// not updated.</remarks>
-    /// <param name="player">The player for whom the bot radius is being set.</param>
-    /// <param name="radius">A string representation of the desired radius. Must be a positive floating-point value.</param>
+    /// <param name="player">The commander.</param>
+    /// <param name="radius">The radius. Must be a positive floating-point value.</param>
     private void SetBotRadius(SpawnedPlayer player, string radius)
     {
         if (!float.TryParse(radius, out var r) || r <= 0)
+        {
+            Reply(player, "Usage: radius <number>");
             return;
+        }
 
         PlayerConfig.Set("RSBot.Area.Radius", r);
+        EventManager.FireEvent("OnSetTrainingArea");
     }
 
     /// <summary>
-    /// Sets the operational area for the specified bot player using the provided coordinates.
+    /// Sets the training area to the specified coordinates.
     /// </summary>
-    /// <param name="player">The bot player whose area is to be set.</param>
-    /// <param name="coods">A string representing the coordinates that define the bot's area. The format and validity requirements for this string depend on the implementation.</param>
-    /// Usage: area x,y,r
+    /// <param name="player">The commander.</param>
+    /// <param name="coods">The coordinates and radius. Usage: area x,y,r</param>
     private void SetBotArea(SpawnedPlayer player, string coods)
     {
         try
         {
             var parts = coods.Split(',');
             if (parts.Length != 3)
+            {
+                Reply(player, "Usage: area x,y,radius");
                 return;
+            }
 
             if (float.TryParse(parts[0], out var x) && float.TryParse(parts[1], out var y) && float.TryParse(parts[2], out var radius))
             {
@@ -124,18 +139,26 @@ internal class CommandsBundle
     {
         try
         {
-            if (player == null || Config == null || Config.PlayerList == null)
+            if (player == null || Config == null || Config.PlayerList == null || string.IsNullOrWhiteSpace(message))
                 return;
 
+            // "Listen party master" only obeys the master of the own party
+            var isMaster = Game.Party.IsInParty && Game.Party.Leader?.Name == player.Name;
+
             var shouldExecute = (Config.ListenFromList && Config.PlayerList.Contains(player.Name)) ||
-                                (Config.ListenOnlyMaster && Game.Party.IsInParty);
+                                (Config.ListenOnlyMaster && isMaster);
 
             if (!shouldExecute)
                 return;
 
-            foreach (var command in _commands)
-                if (StringComparer.InvariantCultureIgnoreCase.Equals(message, command.Key))
-                    command.Value?.Invoke(player, message);
+            // The first word is the command, the rest are its arguments
+            var text = message.Trim();
+            var separator = text.IndexOf(' ');
+            var name = separator < 0 ? text : text.Substring(0, separator);
+            var args = separator < 0 ? string.Empty : text.Substring(separator + 1).Trim();
+
+            if (_commands.TryGetValue(name, out var command))
+                command?.Invoke(player, args);
         }
         catch (Exception e)
         {
@@ -144,28 +167,34 @@ internal class CommandsBundle
     }
 
     /// <summary>
-    /// Traces the commander who sent the message with the native trace of the game until "notrace" is received.
+    /// Traces the commander (or the named player) with the native trace of the game until "notrace" is received.
     /// </summary>
     /// <param name="player">The commander.</param>
-    /// <param name="message">The received message.</param>
-    private void StartGameTrace(SpawnedPlayer player, string message)
+    /// <param name="args">An optional player name.</param>
+    private void StartGameTrace(SpawnedPlayer player, string args)
     {
+        if (!TryResolveTarget(player, args, out var targetName, out var seed))
+            return;
+
         TraceManager.Start(
-            player.Name,
+            targetName,
             TraceMode.GameTrace,
             TraceOptions.Close().ApplyConfig(TraceConfigPrefix),
-            player
+            seed
         );
     }
 
     /// <summary>
-    /// Traces the commander who sent the message by the bot until "notrace" is received. The bot is stopped meanwhile,
-    /// so it does not walk the character away.
+    /// Traces the commander (or the named player) by the bot until "notrace" is received. The bot is stopped
+    /// meanwhile, so it does not walk the character away.
     /// </summary>
     /// <param name="player">The commander.</param>
-    /// <param name="message">The received message.</param>
-    private void StartSmartTrace(SpawnedPlayer player, string message)
+    /// <param name="args">An optional player name.</param>
+    private void StartSmartTrace(SpawnedPlayer player, string args)
     {
+        if (!TryResolveTarget(player, args, out var targetName, out var seed))
+            return;
+
         if (Kernel.Bot.Running)
         {
             Kernel.Bot.Stop();
@@ -173,10 +202,10 @@ internal class CommandsBundle
         }
 
         TraceManager.Start(
-            player.Name,
+            targetName,
             TraceMode.Smart,
             TraceOptions.Overlap().ApplyConfig(TraceConfigPrefix),
-            player
+            seed
         );
     }
 
@@ -184,20 +213,184 @@ internal class CommandsBundle
     /// Stops tracing the commander.
     /// </summary>
     /// <param name="player">The commander.</param>
-    /// <param name="message">The received message.</param>
-    private void StopTrace(SpawnedPlayer player, string message)
+    /// <param name="args">Not used.</param>
+    private void StopTrace(SpawnedPlayer player, string args)
     {
         TraceManager.Stop();
     }
 
     /// <summary>
-    ///     Send trace request by speficied uniqueId
+    /// Finds the player to trace: the commander without a name, otherwise a visible player or a party member with
+    /// that name (case-insensitive).
     /// </summary>
-    private void SendSitdownRequest(SpawnedPlayer player, string message)
+    private static bool TryResolveTarget(
+        SpawnedPlayer commander,
+        string name,
+        out string targetName,
+        out SpawnedPlayer seed
+    )
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            targetName = commander.Name;
+            seed = commander;
+
+            return true;
+        }
+
+        if (SpawnManager.TryGetEntity<SpawnedPlayer>(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase), out seed))
+        {
+            targetName = seed.Name;
+
+            return true;
+        }
+
+        seed = null;
+        targetName = Game.Party?.Members?.FirstOrDefault(m => string.Equals(m.Name, name, StringComparison.OrdinalIgnoreCase))?.Name;
+        if (targetName != null)
+            return true;
+
+        Reply(commander, $"Player '{name}' not found");
+
+        return false;
+    }
+
+    /// <summary>
+    /// Uses a nearby teleporter. Usage: "teleport from,to" (or "teleport from to" for single word names), where the
+    /// names are part of the teleporter name and of the destination zone, for example "teleport ferry,donwhang".
+    /// </summary>
+    /// <param name="player">The commander.</param>
+    /// <param name="args">The source and the destination.</param>
+    private void Teleport(SpawnedPlayer player, string args)
+    {
+        var parts = args.Contains(',')
+            ? args.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            : args.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length != 2)
+        {
+            Reply(player, "Usage: teleport <from>,<to>");
+            return;
+        }
+
+        var from = parts[0];
+        var to = parts[1];
+
+        // Selecting the teleporter waits for the server, so do not block the packet thread
+        Task.Run(() =>
+        {
+            try
+            {
+                if (!TryFindTeleporter(from, out var npc, out var source))
+                {
+                    Reply(player, $"Teleporter '{from}' is not near");
+                    return;
+                }
+
+                var link = source.GetLinks().FirstOrDefault(l => l.Target != null && MatchesTeleport(l.Target, to));
+                if (link == null)
+                {
+                    Reply(player, $"No teleport from '{from}' to '{to}'");
+                    return;
+                }
+
+                if (!npc.TrySelect())
+                {
+                    Reply(player, $"Could not select the teleporter '{from}'");
+                    return;
+                }
+
+                var packet = new Packet(0x705A);
+                packet.WriteUInt(npc.UniqueId);
+                packet.WriteByte(2);
+                packet.WriteUInt(link.Target.ID);
+
+                PacketManager.SendPacket(packet, PacketDestination.Server);
+
+                Log.Notify($"Teleporting to {link.Target.ZoneName}");
+            }
+            catch (Exception e)
+            {
+                Log.Fatal(e);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Finds a visible teleporter whose name (or code name) contains the specified text.
+    /// </summary>
+    private static bool TryFindTeleporter(string name, out SpawnedBionic npc, out RefTeleport source)
+    {
+        RefTeleport found = null;
+
+        var visible = SpawnManager.TryGetEntity<SpawnedBionic>(
+            e =>
+            {
+                var record = e.Record;
+                if (record == null || !(Contains(record.GetRealName(), name) || Contains(record.CodeName, name)))
+                    return false;
+
+                found = Game.ReferenceManager.TeleportData.FirstOrDefault(t => t.AssocRefObjId == record.ID);
+
+                return found != null;
+            },
+            out npc
+        );
+
+        source = found;
+
+        return visible && found != null;
+    }
+
+    private static bool MatchesTeleport(RefTeleport teleport, string name)
+    {
+        return Contains(teleport.ZoneName, name)
+            || Contains(teleport.CodeName, name)
+            || Contains(teleport.Character?.GetRealName(), name);
+    }
+
+    private static bool Contains(string text, string part)
+    {
+        return text != null && text.IndexOf(part, StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    /// <summary>
+    /// Sends a private message to the commander.
+    /// </summary>
+    /// <param name="player">The commander.</param>
+    /// <param name="text">The message.</param>
+    private static void Reply(SpawnedPlayer player, string text)
+    {
+        try
+        {
+            var packet = new Packet(0x7025);
+            packet.WriteByte(ChatType.Private);
+            packet.WriteByte(1); //chatIndex
+
+            if (Game.ClientType > GameClientType.Vietnam)
+                packet.WriteByte(0); // has linking
+
+            if (Game.ClientType >= GameClientType.Chinese_Old)
+                packet.WriteByte(0);
+
+            packet.WriteString(player.Name);
+            packet.WriteConditonalString(text);
+
+            PacketManager.SendPacket(packet, PacketDestination.Server);
+        }
+        catch (Exception e)
+        {
+            Log.Fatal(e);
+        }
+    }
+
+    /// <summary>
+    ///     Sends the sit down / stand up request.
+    /// </summary>
+    private void SendSitdownRequest(SpawnedPlayer player, string args)
     {
         var packet = new Packet(0x704F);
         packet.WriteByte(4);
-        //packet.WriteUInt();
 
         PacketManager.SendPacket(packet, PacketDestination.Server);
     }

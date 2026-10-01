@@ -119,6 +119,46 @@ public static class SkillManager
     }
 
     /// <summary>
+    ///     Gets the monster type whose skill list is used: the own one, otherwise the closest weaker type that has
+    ///     skills (a party giant uses the giant skills, a giant the champion skills, ... down to general).
+    /// </summary>
+    /// <param name="rarity">The monster type.</param>
+    private static MonsterRarity GetSkillRarity(MonsterRarity rarity)
+    {
+        var current = rarity;
+
+        // The chain is short, the limit only protects against a wrong mapping
+        for (var i = 0; i < 10; i++)
+        {
+            if (Skills.TryGetValue(current, out var skills) && skills.Count > 0)
+                return current;
+
+            if (current == MonsterRarity.General)
+                break;
+
+            current = current switch
+            {
+                MonsterRarity.GeneralParty => MonsterRarity.General,
+                MonsterRarity.ChampionParty => MonsterRarity.Champion,
+                MonsterRarity.GiantParty => MonsterRarity.Giant,
+                MonsterRarity.TitanParty => MonsterRarity.Titan,
+                MonsterRarity.EliteParty => MonsterRarity.Elite,
+                MonsterRarity.UniqueParty => MonsterRarity.Unique,
+                MonsterRarity.Unique2Party => MonsterRarity.Unique2,
+                MonsterRarity.Unique2 => MonsterRarity.Unique,
+                MonsterRarity.Unique => MonsterRarity.Titan,
+                MonsterRarity.EliteStrong => MonsterRarity.Elite,
+                MonsterRarity.Elite => MonsterRarity.Giant,
+                MonsterRarity.Titan => MonsterRarity.Giant,
+                MonsterRarity.Giant => MonsterRarity.Champion,
+                _ => MonsterRarity.General,
+            };
+        }
+
+        return MonsterRarity.General;
+    }
+
+    /// <summary>
     ///     Gets the next skill.
     /// </summary>
     /// <returns></returns>
@@ -128,11 +168,7 @@ public static class SkillManager
         if (entity == null)
             return null;
 
-        var rarity = MonsterRarity.General;
-
-        if (entity is SpawnedMonster monster)
-            if (Skills[monster.Rarity].Count > 0)
-                rarity = monster.Rarity;
+        var rarity = entity is SpawnedMonster monster ? GetSkillRarity(monster.Rarity) : MonsterRarity.General;
 
         var distance = Game.Player.Movement.Source.DistanceTo(entity.Movement.Source);
 

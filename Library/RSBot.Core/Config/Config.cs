@@ -29,16 +29,54 @@ public class Config
         CheckPath();
 
         _config = new ConcurrentDictionary<string, string>();
+        var malformed = 0;
         foreach (var line in File.ReadAllLines(_path))
         {
             if (string.IsNullOrWhiteSpace(line))
                 continue;
 
-            var key = line.Split('{')[0];
-            var value = line.Split('{')[1].Split('}')[0];
+            // A line without "{" used to throw and made the whole file fail to load; skip it instead
+            var open = line.IndexOf('{');
+            if (open < 0)
+            {
+                malformed++;
+                continue;
+            }
+
+            var key = line.Substring(0, open);
+
+            // Same result as before: the text up to the next "{", cut at the first "}"
+            var value = line.Substring(open + 1);
+            var nextOpen = value.IndexOf('{');
+            if (nextOpen >= 0)
+                value = value.Substring(0, nextOpen);
+
+            var close = value.IndexOf('}');
+            if (close >= 0)
+                value = value.Substring(0, close);
 
             if (!_config.ContainsKey(key))
                 _config.TryAdd(key, value);
+        }
+
+        if (malformed > 0)
+            BackupMalformedFile(malformed);
+    }
+
+    /// <summary>
+    ///     Keeps a copy of a file with broken lines, because the next save writes only the lines that could be read.
+    /// </summary>
+    /// <param name="malformed">The number of broken lines.</param>
+    private void BackupMalformedFile(int malformed)
+    {
+        try
+        {
+            File.Copy(_path, _path + ".bkp", true);
+            Log.Warn($"[Config] {malformed} broken line(s) ignored in {Path.GetFileName(_path)}, a copy was saved as .bkp");
+        }
+        catch (Exception e)
+        {
+            Log.Warn($"[Config] {malformed} broken line(s) ignored in {Path.GetFileName(_path)}: {e.Message}");
         }
     }
 
