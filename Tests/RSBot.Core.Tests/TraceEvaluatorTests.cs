@@ -383,6 +383,23 @@ public class TraceEvaluatorTests
     }
 
     [Fact]
+    public void OverlapProfile_WalksToExactlyTheClickedSpot_AndThenStays()
+    {
+        var h = new TraceHarness(TraceMode.Smart, TraceOptions.Overlap());
+
+        var decision = h.Evaluate(Motion.Click(20, 0, 60, 0));
+        Assert.Equal(TraceAction.Move, decision.Action);
+        AssertNear(60, decision.Destination.X);
+        AssertNear(0, decision.Destination.Y);
+
+        // Arrived on the target (positions are not exact): no more clicks
+        h.Self = new Vector2(60.2f, 0.1f);
+        var stay = h.After(500, Motion.Stationary(60, 0));
+        Assert.Equal(TraceAction.None, stay.Action);
+        Assert.Equal(TraceState.InRange, h.Runtime.State);
+    }
+
+    [Fact]
     public void ClickMove_HeadsForTheClickedSpot()
     {
         var h = new TraceHarness(TraceMode.Smart, TraceOptions.Close());

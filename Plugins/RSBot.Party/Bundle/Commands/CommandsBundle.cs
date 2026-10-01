@@ -175,7 +175,7 @@ internal class CommandsBundle
         TraceManager.Start(
             player.Name,
             TraceMode.Smart,
-            TraceOptions.Close().ApplyConfig(TraceConfigPrefix),
+            TraceOptions.Overlap().ApplyConfig(TraceConfigPrefix),
             player
         );
     }

@@ -124,7 +124,22 @@ public sealed class TraceOptions
     }
 
     /// <summary>
-    ///     Follows very close to the target, as used for the commander trace.
+    ///     Walks to exactly the spot the target clicked, so the character stands on the target. Used for the bot side
+    ///     commander trace (traceme).
+    /// </summary>
+    public static TraceOptions Overlap()
+    {
+        return new TraceOptions
+        {
+            FollowDistance = 0,
+            StartMoveDistance = 1,
+            StopMoveDistance = 0,
+            ArrivalTolerance = 0.5,
+        };
+    }
+
+    /// <summary>
+    ///     Follows very close to the target, as used for the native commander trace.
     /// </summary>
     public static TraceOptions Close()
     {
