@@ -6,11 +6,12 @@ namespace RSBot.Core.Components.Tracing;
 
 /// <summary>
 ///     Owns the self driven trace of the character and feeds the game events to all trace sessions. The events are
-///     subscribed only once, because the event manager cannot unsubscribe.
+///     subscribed only once for the lifetime of the manager.
 /// </summary>
 public static class TraceManager
 {
     private static readonly object _sync = new();
+    internal static readonly object CommandLock = new();
     private static volatile TraceSession[] _sessions = Array.Empty<TraceSession>();
     private static bool _initialized;
 
@@ -33,13 +34,16 @@ public static class TraceManager
         SpawnedPlayer seed = null
     )
     {
-        Current?.Stop(false);
+        lock (CommandLock)
+        {
+            Current?.Stop(false);
 
-        var session = new TraceSession(targetName, mode, options, true);
-        Current = session;
-        session.Start(seed);
+            var session = new TraceSession(targetName, mode, options, true);
+            Current = session;
+            session.Start(seed);
 
-        return session;
+            return session;
+        }
     }
 
     /// <summary>
@@ -47,10 +51,7 @@ public static class TraceManager
     /// </summary>
     public static void Stop()
     {
-        var session = Current;
-        Current = null;
-
-        session?.Stop(true);
+        StopCurrent(true);
     }
 
     /// <summary>
@@ -140,21 +141,25 @@ public static class TraceManager
             session.OnWorldReset();
     }
 
+    private static void StopCurrent(bool cancelAction)
+    {
+        lock (CommandLock)
+        {
+            var session = Current;
+            Current = null;
+            session?.Stop(cancelAction);
+        }
+    }
+
     private static void OnDisconnected()
     {
         OnWorldReset();
 
-        var session = Current;
-        Current = null;
-
-        session?.Stop(false);
+        StopCurrent(false);
     }
 
     private static void OnPartyDismiss()
     {
-        var session = Current;
-        Current = null;
-
-        session?.Stop(false);
+        StopCurrent(false);
     }
 }

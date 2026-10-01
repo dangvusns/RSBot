@@ -52,6 +52,7 @@ public partial class Main : DoubleBufferedControl
         CheckForIllegalCrossThreadCalls = false;
         cbPartySearchPurpose.SelectedIndex = 0;
         InitializeMatchingLayout();
+        InitializeCommandGuide();
 
         SubscribeEvents();
     }

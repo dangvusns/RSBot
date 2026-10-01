@@ -27,6 +27,10 @@ internal sealed class TraceHarness
 
     public TraceBusy Busy { get; set; }
 
+    public bool SelfHasDestination { get; set; }
+
+    public Vector2 SelfDestination { get; set; }
+
     /// <summary>
     ///     Evaluates at the current time. A <c>null</c> target means the player is not visible.
     /// </summary>
@@ -44,7 +48,9 @@ internal sealed class TraceHarness
             resolved ? 1u : 0u,
             jumped,
             fallback.HasValue,
-            fallback ?? default
+            fallback ?? default,
+            SelfHasDestination,
+            SelfDestination
         );
 
         return TraceEvaluator.Evaluate(input, Runtime, Options);

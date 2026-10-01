@@ -37,13 +37,13 @@ internal class CommandsBundle
     /// <summary>
     /// Initializes a new instance of the CommandsBundle class with a predefined set of command actions.
     /// </summary>
-    /// <remarks>Commands are case-insensitive: "trace [name]" (game follow), "traceme [name]" (walks to the spots the
+    /// <remarks>Commands are case-insensitive: "trace [name]" / "traceme [name]" (walks to the spots the
     /// commander clicks), "notrace", "sitdown", "start", "stop", "town"/"return", "teleport from,to", "radius r" and
-    /// "area x,y,r". Failures are answered with a private message to the commander.</remarks>
+    /// "area"/"setarea x,y,r". Failures are answered with a private message to the commander.</remarks>
     internal CommandsBundle()
     {
         _commands = new(StringComparer.InvariantCultureIgnoreCase);
-        _commands["trace"] = StartGameTrace;
+        _commands["trace"] = StartSmartTrace;
         _commands["traceme"] = StartSmartTrace;
         _commands["notrace"] = StopTrace;
         _commands["sitdown"] = SendSitdownRequest;
@@ -54,6 +54,7 @@ internal class CommandsBundle
         _commands["teleport"] = Teleport;
         _commands["radius"] = SetBotRadius;
         _commands["area"] = SetBotArea;
+        _commands["setarea"] = SetBotArea;
     }
 
     /// <summary>
@@ -166,24 +167,6 @@ internal class CommandsBundle
     }
 
     /// <summary>
-    /// Traces the commander (or the named player) with the native trace of the game until "notrace" is received.
-    /// </summary>
-    /// <param name="player">The commander.</param>
-    /// <param name="args">An optional player name.</param>
-    private void StartGameTrace(SpawnedPlayer player, string args)
-    {
-        if (!TryResolveTarget(player, args, out var targetName, out var seed))
-            return;
-
-        TraceManager.Start(
-            targetName,
-            TraceMode.GameTrace,
-            TraceOptions.Close().ApplyConfig(TraceConfigPrefix),
-            seed
-        );
-    }
-
-    /// <summary>
     /// Traces the commander (or the named player) by the bot until "notrace" is received. The bot is stopped
     /// meanwhile, so it does not walk the character away.
     /// </summary>
@@ -203,7 +186,7 @@ internal class CommandsBundle
         TraceManager.Start(
             targetName,
             TraceMode.Smart,
-            TraceOptions.Overlap().ApplyConfig(TraceConfigPrefix),
+            TraceOptions.Commander(TraceConfigPrefix),
             seed
         );
     }

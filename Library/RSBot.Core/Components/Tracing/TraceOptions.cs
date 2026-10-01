@@ -12,6 +12,27 @@ public sealed class TraceOptions
     /// </summary>
     public double FollowDistance { get; set; } = 10;
 
+    /// <summary>Copies movement destinations without native trace. Used only by Party and Social.</summary>
+    public bool DestinationFollow { get; set; }
+
+    /// <summary>Creates the commander follow settings, preserving logging and timing configuration.</summary>
+    public static TraceOptions Commander(string keyPrefix)
+    {
+        var options = Overlap().ApplyConfig(keyPrefix);
+        options.DestinationFollow = true;
+        options.FollowDistance = 0;
+        options.StartMoveDistance = 0.5;
+        options.StopMoveDistance = 0;
+        options.ArrivalTolerance = 0.5;
+        options.AimAtDestination = true;
+        options.PredictionEnabled = false;
+        options.DestinationChangeThreshold = 0.5;
+        options.TargetMovementThreshold = 0.5;
+        options.MinMoveInterval = Math.Max(100, options.MinMoveInterval);
+        options.IdleRetryInterval = Math.Max(500, options.IdleRetryInterval);
+        return options;
+    }
+
     /// <summary>
     ///     Above this distance the character starts to follow.
     /// </summary>

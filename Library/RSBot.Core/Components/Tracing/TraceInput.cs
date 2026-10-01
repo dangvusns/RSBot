@@ -20,6 +20,8 @@ public readonly struct TraceInput
     /// <param name="targetJumped">A value indicating whether the target made an impossible jump (teleport).</param>
     /// <param name="hasFallback">A value indicating whether <paramref name="fallback" /> is valid.</param>
     /// <param name="fallback">The last known position from the party, used while the target is not visible.</param>
+    /// <param name="selfHasDestination">Whether the follower has a clicked destination.</param>
+    /// <param name="selfDestination">The follower's current clicked destination.</param>
     public TraceInput(
         int now,
         TraceBusy busy,
@@ -30,7 +32,9 @@ public readonly struct TraceInput
         uint targetPlayerId,
         bool targetJumped,
         bool hasFallback,
-        Vector2 fallback
+        Vector2 fallback,
+        bool selfHasDestination = false,
+        Vector2 selfDestination = default
     )
     {
         Now = now;
@@ -43,6 +47,8 @@ public readonly struct TraceInput
         TargetJumped = targetJumped;
         HasFallback = hasFallback;
         Fallback = fallback;
+        SelfHasDestination = selfHasDestination;
+        SelfDestination = selfDestination;
     }
 
     /// <summary>
@@ -64,6 +70,12 @@ public readonly struct TraceInput
     ///     Gets a value indicating whether the character is walking.
     /// </summary>
     public bool SelfMoving { get; }
+
+    /// <summary>Whether the follower has a clicked destination, used to detect manual movement.</summary>
+    public bool SelfHasDestination { get; }
+
+    /// <summary>The follower's current clicked destination.</summary>
+    public Vector2 SelfDestination { get; }
 
     /// <summary>
     ///     Gets a value indicating whether the target is visible.
@@ -111,7 +123,9 @@ public readonly struct TraceInput
             TargetPlayerId,
             jumped,
             HasFallback,
-            Fallback
+            Fallback,
+            SelfHasDestination,
+            SelfDestination
         );
     }
 }

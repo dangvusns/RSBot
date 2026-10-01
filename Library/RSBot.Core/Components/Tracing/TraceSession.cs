@@ -25,6 +25,9 @@ public sealed class TraceSession
 
     private TraceInput _snapshot;
     private bool _hasSnapshot;
+    private int _worldVersion;
+    private int _snapshotVersion;
+    private int _lastEvaluatedVersion;
     private volatile bool _stopped;
 
     private int _busy;
@@ -45,6 +48,7 @@ public sealed class TraceSession
     private bool _movementChanged;
 
     private string _lastLogged;
+    private int _lastMoveWarningTick;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="TraceSession" /> class.
@@ -132,15 +136,17 @@ public sealed class TraceSession
     /// <param name="cancelAction">If <c>true</c> a running native trace is cancelled.</param>
     public void Stop(bool cancelAction)
     {
-        if (_stopped)
-            return;
+        bool nativeActive;
+        lock (TraceManager.CommandLock)
+        {
+            if (_stopped)
+                return;
 
-        var nativeActive = _runtime.ActiveBackend == TraceBackend.NativeGameTrace;
-
-        _stopped = true;
-        _runtime.State = TraceState.Stopped;
-
-        TraceManager.Unregister(this);
+            nativeActive = _runtime.ActiveBackend == TraceBackend.NativeGameTrace;
+            _stopped = true;
+            _runtime.State = TraceState.Stopped;
+            TraceManager.Unregister(this);
+        }
 
         if (cancelAction && nativeActive)
             Task.Run(() =>
@@ -168,12 +174,22 @@ public sealed class TraceSession
             return;
 
         TraceInput input;
+        int snapshotVersion;
         lock (_snapshotLock)
         {
             if (!_hasSnapshot)
                 return;
 
             input = _snapshot;
+            snapshotVersion = _snapshotVersion;
+        }
+
+        if (Options.DestinationFollow && snapshotVersion != _lastEvaluatedVersion)
+        {
+            _lastEvaluatedVersion = snapshotVersion;
+            _runtime.ResetMovement();
+            _runtime.EverResolved = false;
+            _runtime.State = TraceState.ResolvingTarget;
         }
 
         // A jump is only consumed while the trace is able to react to it
@@ -192,7 +208,26 @@ public sealed class TraceSession
                 break;
 
             case TraceAction.Move:
-                SmartTraceBackend.MoveTo(decision.Destination);
+                if (Options.DestinationFollow)
+                {
+                    lock (TraceManager.CommandLock)
+                    {
+                        // Stop/replacement and sends share this lock. An old worker cannot send after replacement.
+                        if (_stopped || snapshotVersion != Volatile.Read(ref _worldVersion)
+                            || Game.Player == null || GetBusy(Game.Player) != TraceBusy.None)
+                            return;
+                        if (!SmartTraceBackend.SendMove(decision.Destination))
+                            Debug($"[Trace] {TargetName}: movement request could not be sent; retrying at the configured interval");
+                    }
+                    if (decision.Reason == "idle while out of range"
+                        && TraceTime.Elapsed(input.Now, _lastMoveWarningTick) >= 5000)
+                    {
+                        _lastMoveWarningTick = input.Now;
+                        Log.Warn($"[Trace] {TargetName}: follower stopped before reaching the destination; retrying movement");
+                    }
+                }
+                else
+                    SmartTraceBackend.MoveTo(decision.Destination);
                 break;
         }
 
@@ -213,6 +248,7 @@ public sealed class TraceSession
             return;
 
         var now = Kernel.TickCount;
+        var worldVersion = Volatile.Read(ref _worldVersion);
 
         if (_historyResetPending)
         {
@@ -247,22 +283,33 @@ public sealed class TraceSession
         var fallback = Vector2.Zero;
         var hasFallback = !resolved && TryGetFallback(out fallback);
 
+        SpawnedEntity self = player;
+        if (Options.DestinationFollow && player.HasActiveVehicle
+            && SpawnManager.TryGetEntity<SpawnedEntity>(player.Vehicle.UniqueId, out var vehicle))
+            self = vehicle;
+        var selfMovement = self.Movement;
+
         var input = new TraceInput(
             now,
             GetBusy(player),
-            ToVector(player.Position),
-            player.Movement.Moving,
+            ToVector(self.Position),
+            selfMovement.Moving,
             resolved,
             motion,
             entity != null ? entity.UniqueId : 0u,
             false,
             hasFallback,
-            fallback
+            fallback,
+            selfMovement.HasDestination,
+            selfMovement.HasDestination ? ToVector(selfMovement.Destination) : Vector2.Zero
         );
 
         lock (_snapshotLock)
         {
+            if (Options.DestinationFollow && worldVersion != Volatile.Read(ref _worldVersion))
+                return;
             _snapshot = input;
+            _snapshotVersion = worldVersion;
             _hasSnapshot = true;
         }
 
@@ -291,8 +338,15 @@ public sealed class TraceSession
     /// </summary>
     internal void OnWorldReset()
     {
-        _target.Reset();
-        _historyResetPending = true;
+        lock (TraceManager.CommandLock)
+        {
+            Interlocked.Increment(ref _worldVersion);
+            _target.Reset();
+            _historyResetPending = true;
+            if (Options.DestinationFollow)
+                lock (_snapshotLock)
+                    _hasSnapshot = false;
+        }
     }
 
     /// <summary>

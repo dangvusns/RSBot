@@ -34,7 +34,8 @@ public static class TraceEvaluator
         if (!input.TargetResolved)
             return EvaluateTargetLost(input, runtime, options);
 
-        if (!runtime.EverResolved || runtime.Lost)
+        var acquired = !runtime.EverResolved || runtime.Lost;
+        if (acquired)
         {
             // The target is seen for the first time or came back
             runtime.EverResolved = true;
@@ -45,6 +46,21 @@ public static class TraceEvaluator
         {
             // Teleported: nothing that was planned is valid anymore
             runtime.ResetMovement();
+        }
+
+        if (options.DestinationFollow)
+        {
+            runtime.Quality = TrajectoryClassifier.Classify(input.Target);
+            if (runtime.Quality == TrajectoryQuality.Spinning)
+                return TraceDecision.Idle("waiting for a confirmed position after spinning");
+            // Like xBot: start at the player's current position, then copy their clicked destinations.
+            // Heading-only movement follows the current position; it never falls back to native trace.
+            var aim = !acquired && input.Target.Kind == TargetMovementKind.ClickMove
+                && runtime.Quality == TrajectoryQuality.Reliable
+                ? input.Target.Destination : input.Target.Position;
+            runtime.State = FollowPointSolver.NextRangeState(runtime.State,
+                Vector2.Distance(input.Self, aim), options, input.SelfMoving);
+            return EvaluateBotFollow(input, runtime, options, aim);
         }
 
         var distance = Vector2.Distance(input.Self, input.Target.Position);
@@ -194,6 +210,10 @@ public static class TraceEvaluator
         string reason;
         if (!runtime.HasLastMove)
             reason = "first move";
+        else if (options.DestinationFollow && input.SelfMoving
+            && (!input.SelfHasDestination
+                || Vector2.Distance(input.SelfDestination, runtime.LastMoveDestination) > options.ArrivalTolerance))
+            reason = "restore follow after manual movement";
         else if (!input.SelfMoving && sinceLastMove >= options.IdleRetryInterval)
             reason = "idle while out of range";
         else if (Vector2.Distance(destination, runtime.LastMoveDestination) > options.DestinationChangeThreshold)

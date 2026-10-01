@@ -50,6 +50,7 @@ public class Bootstrap : IPlugin
         LanguageManager.Translate(View, Kernel.Language);
         LanguageManager.Translate(Views.View.PartyWindow, Kernel.Language);
         Views.View.Instance.UpdateMatchingLayout();
+        Views.View.Instance.TranslateCommandGuide();
     }
 
     /// <inheritdoc />

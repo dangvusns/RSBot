@@ -180,15 +180,14 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
     {
         var menu = new SDUI.Controls.ContextMenuStrip();
 
-        menu.Items.Add(new ToolStripMenuItem("Trace (game)", null, (s, e) => WithSelected(p => StartTrace(p, TraceMode.GameTrace))));
-        menu.Items.Add(new ToolStripMenuItem("Trace (stand on the player)", null, (s, e) => WithSelected(p => StartTrace(p, TraceMode.Smart))));
+        menu.Items.Add(new ToolStripMenuItem("Trace (stand on the player)", null, (s, e) => WithSelected(p => StartTrace(p))));
         menu.Items.Add(new ToolStripMenuItem("Stop trace", null, (s, e) => TraceManager.Stop()));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem("Invite to party", null, (s, e) => WithSelected(p => Game.Party.Invite(p.UniqueId))));
         menu.Items.Add(new ToolStripMenuItem("Invite to guild", null, (s, e) => WithSelected(p => GuildManager.Invite(p.UniqueId))));
         menu.Items.Add(new ToolStripMenuItem("Invite to exchange", null, (s, e) => WithSelected(p => ExchangeInstance.Invite(p.UniqueId))));
 
-        var keys = new[] { "TraceGame", "TraceSmart", "StopTrace", "InviteParty", "InviteGuild", "InviteExchange" };
+        var keys = new[] { "TraceSmart", "StopTrace", "InviteParty", "InviteGuild", "InviteExchange" };
         var index = 0;
         foreach (var item in menu.Items.OfType<ToolStripMenuItem>())
         {
@@ -309,15 +308,13 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
         }
     }
 
-    private static void StartTrace(SpawnedPlayer player, TraceMode mode)
+    private static void StartTrace(SpawnedPlayer player)
     {
         // Like the traceme command: the bot would walk the character away
-        if (mode == TraceMode.Smart && Kernel.Bot?.Running == true)
+        if (Kernel.Bot?.Running == true)
             Kernel.Bot.Stop();
 
-        var options = mode == TraceMode.Smart ? TraceOptions.Overlap() : TraceOptions.Close();
-
-        TraceManager.Start(player.Name, mode, options.ApplyConfig(TraceConfigPrefix), player);
+        TraceManager.Start(player.Name, TraceMode.Smart, TraceOptions.Commander(TraceConfigPrefix), player);
     }
 
     private void WithSelected(Action<SpawnedPlayer> action)
