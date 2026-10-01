@@ -187,9 +187,9 @@ internal sealed class MainForm : Form
         AddTextColumn("bluehour", "Giờ Xanh", 150, 140);
         AddTextColumn("gold", "Gold hiện có", 120, 110);
         AddTextColumn("goldPicked", "Gold nhặt", 110, 100);
-
-        foreach (var counter in ManagerStore.Data.Counters.Keys)
-            AddTextColumn("counter:" + counter, counter, 90, 70);
+        AddTextColumn("elixirs", "LKD", 80, 60);
+        AddTextColumn("tablets", "Tấm lót", 90, 70);
+        AddTextColumn("equipment", "Trang bị", 90, 70);
     }
 
     /// <summary>
@@ -248,8 +248,7 @@ internal sealed class MainForm : Form
         _polling = true;
         try
         {
-            var counters = ManagerStore.Data.Counters;
-            await Task.WhenAll(_instances.ToArray().Select(i => i.PollAsync(counters)));
+            await Task.WhenAll(_instances.ToArray().Select(i => i.PollAsync()));
 
             RefreshGrid();
         }
@@ -283,19 +282,13 @@ internal sealed class MainForm : Form
             state.ToolTipText = instance.LastError ?? string.Empty;
 
             Set(row, "hpmp", inGame ? $"{status.Hp:N0}/{status.MaxHp:N0} · {status.Mp:N0}/{status.MaxMp:N0}" : Empty);
-            Set(row, "online", inGame ? FormatDuration(status.OnlineSeconds) : Empty);
+            Set(row, "online", status != null ? FormatDuration(status.UptimeSeconds) : Empty);
             Set(row, "bluehour", blueHour);
             Set(row, "gold", inGame ? status.Gold.ToString("N0") : Empty);
             Set(row, "goldPicked", status != null ? status.GoldPicked.ToString("N0") : Empty);
-
-            foreach (var counter in ManagerStore.Data.Counters.Keys)
-            {
-                var value = status?.ItemCounts != null && status.ItemCounts.TryGetValue(counter, out var count)
-                    ? count.ToString("N0")
-                    : Empty;
-
-                Set(row, "counter:" + counter, value);
-            }
+            Set(row, "elixirs", status != null ? status.ElixirsPicked.ToString("N0") : Empty);
+            Set(row, "tablets", status != null ? status.TabletsPicked.ToString("N0") : Empty);
+            Set(row, "equipment", status != null ? status.EquipmentPicked.ToString("N0") : Empty);
         }
 
         RefreshTotals();
@@ -306,18 +299,15 @@ internal sealed class MainForm : Form
         var statuses = _instances.Select(i => i.Status).Where(s => s != null).ToList();
         var online = statuses.Count(s => s.State is "InGame" or "Running");
 
-        var parts = new List<string>
+        var parts = new[]
         {
             $"Online: {online}",
             $"Gold hiện có: {statuses.Aggregate(0UL, (sum, s) => sum + s.Gold):N0}",
-            $"Gold nhặt: {statuses.Aggregate(0UL, (sum, s) => sum + s.GoldPicked):N0}",
+            $"Gold nhặt: {statuses.Sum(s => s.GoldPicked):N0}",
+            $"LKD: {statuses.Sum(s => s.ElixirsPicked):N0}",
+            $"Tấm lót: {statuses.Sum(s => s.TabletsPicked):N0}",
+            $"Trang bị: {statuses.Sum(s => s.EquipmentPicked):N0}",
         };
-
-        foreach (var counter in ManagerStore.Data.Counters.Keys)
-        {
-            var total = statuses.Sum(s => s.ItemCounts != null && s.ItemCounts.TryGetValue(counter, out var c) ? c : 0);
-            parts.Add($"{counter}: {total:N0}");
-        }
 
         _totalsLabel.Text = string.Join("    ", parts);
     }
@@ -525,18 +515,6 @@ internal sealed class MainForm : Form
             return;
 
         ManagerStore.SaveData();
-
-        foreach (var instance in _instances)
-            instance.ResendCounters();
-
-        // Counter columns may have changed; the rows keep their bot instances
-        var instances = _instances.ToList();
-        _instances.Clear();
-        _grid.Rows.Clear();
-        BuildColumns();
-        foreach (var instance in instances)
-            AddRow(instance);
-
         RefreshGrid();
     }
 

@@ -40,8 +40,6 @@ public class ManagerLinkPlugin : IPlugin
     /// <inheritdoc />
     public void Initialize()
     {
-        StatusTracker.Initialize();
-
         if (Enabled)
             PipeServer.Start();
 

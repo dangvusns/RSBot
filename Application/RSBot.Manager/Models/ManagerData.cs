@@ -14,16 +14,6 @@ public class ManagerData
     public List<ManagerAccount> Accounts { get; set; } = new();
 
     /// <summary>
-    ///     Column name to the item code name wildcards it counts, for example "LKD": ["ITEM_ETC_ARCHEMY_*"].
-    /// </summary>
-    public Dictionary<string, string[]> Counters { get; set; } = new()
-    {
-        ["LKD"] = Array.Empty<string>(),
-        ["Tấm lót"] = Array.Empty<string>(),
-        ["Trang bị"] = Array.Empty<string>(),
-    };
-
-    /// <summary>
     ///     Daily server event windows shown in the "Giờ Xanh" column, as "HH:mm-HH:mm".
     /// </summary>
     public List<string> BlueHourWindows { get; set; } = new();
@@ -102,11 +92,21 @@ public class BotStatus
 
     public ulong Gold { get; set; }
 
-    public ulong GoldPicked { get; set; }
+    /// <summary>
+    ///     The loot numbers of the bot's Statistics tab.
+    /// </summary>
+    public long GoldPicked { get; set; }
 
-    public Dictionary<string, long> ItemCounts { get; set; } = new();
+    public long ElixirsPicked { get; set; }
 
-    public long OnlineSeconds { get; set; }
+    public long TabletsPicked { get; set; }
+
+    public long EquipmentPicked { get; set; }
+
+    /// <summary>
+    ///     Seconds since RSBot was opened.
+    /// </summary>
+    public long UptimeSeconds { get; set; }
 
     public float PosX { get; set; }
 

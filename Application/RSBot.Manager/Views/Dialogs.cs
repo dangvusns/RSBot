@@ -327,12 +327,11 @@ internal sealed class AreaDialog : DialogBase
 }
 
 /// <summary>
-///     Item counter patterns and the "Giờ Xanh" windows.
+///     The "Giờ Xanh" windows. The loot columns come from the bot's Statistics tab and need no settings.
 /// </summary>
 internal sealed class SettingsDialog : DialogBase
 {
     private readonly ManagerData _data;
-    private readonly TextBox _counters;
     private readonly TextBox _windows;
 
     public SettingsDialog(ManagerData data)
@@ -340,15 +339,11 @@ internal sealed class SettingsDialog : DialogBase
     {
         _data = data;
 
-        _counters = AddField("Bộ đếm vật phẩm", CreateMultiline(
-            string.Join(Environment.NewLine, data.Counters.Select(c => $"{c.Key}={string.Join(";", c.Value)}"))
-        ));
         _windows = AddField("Giờ Xanh", CreateMultiline(string.Join(Environment.NewLine, data.BlueHourWindows)));
 
         var help = new Label
         {
-            Text = "Bộ đếm: mỗi dòng \"Tên=MÃ_1;MÃ_2\", dùng * làm ký tự đại diện, ví dụ LKD=ITEM_ETC_ARCHEMY_*\r\n"
-                + "Giờ Xanh: mỗi dòng một khung giờ \"HH:mm-HH:mm\", ví dụ 20:00-22:00",
+            Text = "Mỗi dòng một khung giờ \"HH:mm-HH:mm\", ví dụ 20:00-22:00",
             AutoSize = true,
             MaximumSize = new Size(FieldWidth, 0),
             ForeColor = Theme.Muted,
@@ -372,10 +367,6 @@ internal sealed class SettingsDialog : DialogBase
 
     protected override string ValidateInput()
     {
-        foreach (var line in Lines(_counters))
-            if (line.IndexOf('=') <= 0)
-                return $"Dòng bộ đếm không đúng: {line}";
-
         foreach (var line in Lines(_windows))
             if (!BlueHours.TryParseWindow(line, out _, out _))
                 return $"Khung giờ không đúng: {line}";
@@ -385,15 +376,6 @@ internal sealed class SettingsDialog : DialogBase
 
     protected override void Apply()
     {
-        var counters = new Dictionary<string, string[]>();
-        foreach (var line in Lines(_counters))
-        {
-            var separator = line.IndexOf('=');
-            counters[line[..separator].Trim()] = line[(separator + 1)..]
-                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        }
-
-        _data.Counters = counters;
         _data.BlueHourWindows = Lines(_windows).ToList();
     }
 }

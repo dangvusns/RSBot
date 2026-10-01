@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
@@ -31,7 +30,6 @@ public sealed class BotInstance : IDisposable
     private StreamReader _reader;
     private StreamWriter _writer;
     private long _nextId;
-    private bool _countersSent;
     private DateTime _startedAt;
     private volatile bool _disposed;
 
@@ -99,7 +97,7 @@ public sealed class BotInstance : IDisposable
     /// <summary>
     ///     Connects when the bot is running and reads its status. Called by the manager every second.
     /// </summary>
-    public async Task PollAsync(Dictionary<string, string[]> counters)
+    public async Task PollAsync()
     {
         if (_disposed)
             return;
@@ -119,12 +117,6 @@ public sealed class BotInstance : IDisposable
 
         try
         {
-            if (!_countersSent)
-            {
-                await SendAsync("setCounters", counters);
-                _countersSent = true;
-            }
-
             var data = await SendAsync("status");
             Status = data.Deserialize<BotStatus>(_jsonOptions);
             IsStarting = false;
@@ -134,14 +126,6 @@ public sealed class BotInstance : IDisposable
             LastError = ex.Message;
             Disconnect();
         }
-    }
-
-    /// <summary>
-    ///     Sends the counter patterns again, after they were changed in the settings.
-    /// </summary>
-    public void ResendCounters()
-    {
-        _countersSent = false;
     }
 
     /// <summary>
@@ -249,7 +233,6 @@ public sealed class BotInstance : IDisposable
         _pipe = pipe;
         _reader = new StreamReader(pipe, new UTF8Encoding(false), false, 4096, true);
         _writer = new StreamWriter(pipe, new UTF8Encoding(false), 4096, true) { AutoFlush = true };
-        _countersSent = false;
 
         return true;
     }

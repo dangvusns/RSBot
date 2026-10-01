@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -84,10 +83,6 @@ internal static class CommandHandler
                     ?? throw new ArgumentException("Missing x, y and radius");
 
                 SetTrainingArea(new Position(area.X, area.Y), area.Radius);
-                return null;
-
-            case "setCounters":
-                StatusTracker.SetCounters(args.Deserialize<Dictionary<string, string[]>>(_jsonOptions));
                 return null;
 
             case "exit":
