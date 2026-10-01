@@ -24,6 +24,18 @@ if (!$SkipBuild) {
         Write-Output "The build failed, see .\build.log. Nothing was packed."
         exit 1
     }
+
+    # The languages and town scripts are kept in git under Build\Data. The clean build deletes the
+    # whole Build folder and nothing copies them back, so restore them from git
+    git checkout -- Build/Data
+}
+
+# RSBot does not start without them ("Language list file missing")
+foreach ($required in @(".\Build\Data\Languages\langs.rsl", ".\Build\Data\Scripts")) {
+    if (!(Test-Path $required)) {
+        Write-Output "$required is missing. Restore it with: git checkout -- Build/Data"
+        exit 1
+    }
 }
 
 # Set after the build: build.ps1 runs taskkill, which reports an error when nothing is running
