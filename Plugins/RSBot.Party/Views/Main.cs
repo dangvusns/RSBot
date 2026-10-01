@@ -51,6 +51,7 @@ public partial class Main : DoubleBufferedControl
         _buffings = new List<BuffingPartyMember>();
         CheckForIllegalCrossThreadCalls = false;
         cbPartySearchPurpose.SelectedIndex = 0;
+        InitializeMatchingLayout();
 
         SubscribeEvents();
     }
@@ -1172,7 +1173,8 @@ public partial class Main : DoubleBufferedControl
         checkBoxJoinByTitle.Checked = PlayerConfig.Get("RSBot.Party.AutoJoin.ByTitle", false);
         textBoxJoinByName.Text = PlayerConfig.Get("RSBot.Party.AutoJoin.Name", string.Empty);
         textBoxJoinByTitle.Text = PlayerConfig.Get("RSBot.Party.AutoJoin.Title", string.Empty);
-        topPartyPanel.Height = 120;
+        _autoJoinSettingsOpen = true;
+        UpdateMatchingLayout();
 
         buttonAutoJoinConfig.Color = ColorScheme.BackColor;
     }
@@ -1191,7 +1193,8 @@ public partial class Main : DoubleBufferedControl
         Bundle.Container.Refresh();
 
         buttonAutoJoinConfig.Color = Color.Transparent;
-        topPartyPanel.Height = 47;
+        _autoJoinSettingsOpen = false;
+        UpdateMatchingLayout();
     }
 
     private void checkBoxFollowMaster_CheckedChanged(object sender, EventArgs e)
