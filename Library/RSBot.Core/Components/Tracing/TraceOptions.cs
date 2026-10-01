@@ -83,9 +83,20 @@ public sealed class TraceOptions
     public double MaxMoveDistance { get; set; } = 140;
 
     /// <summary>
-    ///     The time a target has to walk with the keys before the native trace takes over.
+    ///     Gets or sets a value indicating whether the character heads for the clicked destination of the target
+    ///     (the end of its trajectory) instead of its current position.
     /// </summary>
-    public int KeyWalkSwitchDelay { get; set; } = 300;
+    public bool AimAtDestination { get; set; } = true;
+
+    /// <summary>
+    ///     The minimum time between two native trace requests when the backend switches quickly.
+    /// </summary>
+    public int MinGameTraceInterval { get; set; } = 500;
+
+    /// <summary>
+    ///     A character that stopped farther than this from its destination got stuck (for example blocked terrain).
+    /// </summary>
+    public double StuckDistance { get; set; } = 3;
 
     /// <summary>
     ///     The minimum time between two native trace requests.
@@ -139,7 +150,9 @@ public sealed class TraceOptions
         MovementStaleTimeout = Read(keyPrefix + "MovementStaleTimeout", MovementStaleTimeout);
         TeleportDetectionDistance = Read(keyPrefix + "TeleportDetectionDistance", TeleportDetectionDistance);
         MaxMoveDistance = Read(keyPrefix + "MaxMoveDistance", MaxMoveDistance);
-        KeyWalkSwitchDelay = Read(keyPrefix + "KeyWalkSwitchDelay", KeyWalkSwitchDelay);
+        AimAtDestination = Read(keyPrefix + "AimAtDestination", AimAtDestination);
+        MinGameTraceInterval = Read(keyPrefix + "MinGameTraceInterval", MinGameTraceInterval);
+        StuckDistance = Read(keyPrefix + "StuckDistance", StuckDistance);
         GameTraceResendInterval = Read(keyPrefix + "GameTraceResendInterval", GameTraceResendInterval);
         Debug = Read(keyPrefix + "Debug", Debug);
 

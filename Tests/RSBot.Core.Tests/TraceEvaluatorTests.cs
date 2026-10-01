@@ -83,7 +83,8 @@ public class TraceEvaluatorTests
 
         for (var i = 0; i < 20; i++)
         {
-            var decision = h.After(100, Motion.Click(30 + i * 10, 0, 500, 0));
+            // The target keeps clicking ahead of itself
+            var decision = h.After(100, Motion.Click(30 + i * 10, 0, 60 + i * 10, 0));
             if (decision.Action == TraceAction.Move)
                 moves++;
         }
@@ -135,13 +136,14 @@ public class TraceEvaluatorTests
 
         for (var i = 0; i < 20; i++)
         {
-            var decision = h.After(50, Motion.Click(30 + i * 3, 0, 200, 0));
+            // A new destination every 50 ms (repeated ground clicks)
+            var decision = h.After(50, Motion.Click(30, 0, 60 + i * 3, 0));
             if (decision.Action == TraceAction.Move)
                 moves++;
         }
 
         // 1 second with a minimum of 250 ms between two commands
-        Assert.InRange(moves, 1, 5);
+        Assert.InRange(moves, 2, 5);
     }
 
     [Fact]
@@ -256,28 +258,123 @@ public class TraceEvaluatorTests
     }
 
     [Fact]
-    public void KeyWalking_SwitchesToTheNativeTraceAfterTheDelay_AndBackWhenTheTargetClicks()
+    public void HeadingOnlyMovement_SwitchesToTheNativeTraceAtOnce_AndBackOnAGroundClick()
+    {
+        var h = new TraceHarness(TraceMode.Smart);
+        h.Evaluate(Motion.Click(50, 0, 80, 0));
+        Assert.Equal(TraceBackend.Trajectory, h.Runtime.ActiveBackend);
+
+        // Keyboard movement or a sky click: the packet has no destination, no timer is involved
+        var keys = h.After(100, Motion.Keys(55, 0, 0f, h.Now, h.Now));
+        Assert.Equal(TrajectoryQuality.HeadingOnly, h.Runtime.Quality);
+        Assert.Equal(TraceBackend.NativeGameTrace, h.Runtime.ActiveBackend);
+        Assert.Equal(TraceAction.SendGameTrace, keys.Action);
+
+        // Still walking with the keys: the native trace keeps running, nothing is sent again
+        var still = h.After(100, Motion.Keys(60, 0, 0f, h.Now - 100, h.Now));
+        Assert.Equal(TraceAction.None, still.Action);
+
+        // Ground click: back to the trajectory, the target stays the same
+        var click = h.After(100, Motion.Click(60, 0, 90, 0, h.Now));
+        Assert.Equal(TraceBackend.Trajectory, h.Runtime.ActiveBackend);
+        Assert.Equal(TraceAction.Move, click.Action);
+        Assert.True(h.Runtime.EverResolved);
+    }
+
+    [Fact]
+    public void Spinning_IsNotReliable_AndUsesTheNativeTrace()
     {
         var h = new TraceHarness(TraceMode.Smart);
 
-        // Just started to walk with the keys: not switched yet
-        var first = h.Evaluate(Motion.Keys(50, 0, 0f, h.Now, h.Now));
-        Assert.Equal(TracePhase.BotFollow, h.Runtime.Phase);
+        var decision = h.Evaluate(Motion.Keys(50, 0, 1f, h.Now, h.Now, spinning: true));
+
+        Assert.Equal(TrajectoryQuality.Spinning, h.Runtime.Quality);
+        Assert.Equal(TraceBackend.NativeGameTrace, h.Runtime.ActiveBackend);
+        Assert.Equal(TraceAction.SendGameTrace, decision.Action);
+    }
+
+    [Fact]
+    public void StopAfterKeyboardMovement_ReturnsToTheTrajectory()
+    {
+        var h = new TraceHarness(TraceMode.Smart);
+        h.Evaluate(Motion.Keys(50, 0, 0f, h.Now, h.Now));
+        Assert.Equal(TraceBackend.NativeGameTrace, h.Runtime.ActiveBackend);
+
+        // The server stops the target with its real position
+        var stopped = h.After(100, Motion.Stationary(60, 0));
+
+        Assert.Equal(TraceBackend.Trajectory, h.Runtime.ActiveBackend);
+        Assert.Equal(TraceAction.Move, stopped.Action);
+    }
+
+    [Fact]
+    public void AlternatingKeysAndClicks_DoesNotFloodNativeTraces()
+    {
+        var h = new TraceHarness(TraceMode.Smart);
+        var traces = 0;
+
+        for (var i = 0; i < 10; i++)
+        {
+            var target =
+                i % 2 == 0 ? Motion.Keys(50 + i, 0, 0f, h.Now, h.Now) : Motion.Click(50 + i, 0, 90, 0, h.Now);
+
+            if (h.After(100, target).Action == TraceAction.SendGameTrace)
+                traces++;
+        }
+
+        // 1 second with at most one native trace every 500 ms
+        Assert.InRange(traces, 1, 3);
+    }
+
+    [Fact]
+    public void StuckFollower_UsesTheNativeTrace_UntilTheTargetHeadsSomewhereElse()
+    {
+        var h = new TraceHarness(TraceMode.Smart);
+        var first = h.Evaluate(Motion.Stationary(50, 0));
         Assert.Equal(TraceAction.Move, first.Action);
 
-        var second = h.After(100, Motion.Keys(55, 0, 0f, h.Now - 100, h.Now));
-        Assert.Equal(TracePhase.BotFollow, h.Runtime.Phase);
-        Assert.Equal(TraceAction.None, second.Action);
+        // The server stopped us at 20 instead of 40 (blocked terrain)
+        h.Self = new Vector2(20, 0);
+        h.SelfMoving = false;
+        var stuck = h.After(500, Motion.Stationary(50, 0));
+        Assert.True(h.Runtime.Stuck);
+        Assert.Equal(TraceBackend.NativeGameTrace, h.Runtime.ActiveBackend);
+        Assert.Equal(TraceAction.SendGameTrace, stuck.Action);
 
-        // Still walking with the keys after the switch delay: the native trace takes over
-        var third = h.After(300, Motion.Keys(70, 0, 0f, h.Now - 400, h.Now));
-        Assert.Equal(TracePhase.GameFollow, h.Runtime.Phase);
-        Assert.Equal(TraceAction.SendGameTrace, third.Action);
+        // Same aim point: stay with the native trace
+        h.After(100, Motion.Stationary(50, 0));
+        Assert.Equal(TraceBackend.NativeGameTrace, h.Runtime.ActiveBackend);
 
-        // The target clicks the ground again: the bot walks by itself
-        var fourth = h.After(100, Motion.Click(70, 0, 90, 0, h.Now));
-        Assert.Equal(TracePhase.BotFollow, h.Runtime.Phase);
-        Assert.Equal(TraceAction.Move, fourth.Action);
+        // The target clicks somewhere else: walk by ourselves again
+        var moved = h.After(100, Motion.Click(50, 0, 90, 30, h.Now));
+        Assert.False(h.Runtime.Stuck);
+        Assert.Equal(TraceBackend.Trajectory, h.Runtime.ActiveBackend);
+        Assert.Equal(TraceAction.Move, moved.Action);
+    }
+
+    [Fact]
+    public void ArrivingAtTheFollowPoint_IsNotStuck()
+    {
+        var h = new TraceHarness(TraceMode.Smart);
+        h.Evaluate(Motion.Stationary(50, 0));
+
+        h.Self = new Vector2(40, 0);
+        h.After(500, Motion.Stationary(50, 0));
+
+        Assert.False(h.Runtime.Stuck);
+        Assert.Equal(TraceBackend.Trajectory, h.Runtime.ActiveBackend);
+    }
+
+    [Fact]
+    public void ClickMove_HeadsForTheClickedSpot()
+    {
+        var h = new TraceHarness(TraceMode.Smart, TraceOptions.Close());
+
+        var decision = h.Evaluate(Motion.Click(20, 0, 60, 0));
+
+        // The end of the trajectory, minus the follow distance
+        Assert.Equal(TraceAction.Move, decision.Action);
+        AssertNear(57.5f, decision.Destination.X);
     }
 
     [Fact]
@@ -315,7 +412,7 @@ public class TraceEvaluatorTests
         h.Evaluate(Motion.Stationary(50, 0));
         h.After(100, null);
 
-        var decision = h.After(100, Motion.Stationary(50, 0));
+        var decision = h.After(600, Motion.Stationary(50, 0));
 
         Assert.Equal(TraceAction.SendGameTrace, decision.Action);
     }

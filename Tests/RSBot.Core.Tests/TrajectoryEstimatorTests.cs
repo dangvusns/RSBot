@@ -22,6 +22,31 @@ public class TrajectoryEstimatorTests
     }
 
     [Fact]
+    public void AimPoint_ClickMove_IsTheClickedDestination()
+    {
+        var state = Motion.Click(0, 0, 30, 40, Now);
+
+        Assert.Equal(new Vector2(30, 40), TrajectoryEstimator.AimPoint(state, Now, new TraceOptions()));
+    }
+
+    [Fact]
+    public void AimPoint_WithoutAimingAtTheDestination_IsTheCurrentPosition()
+    {
+        var state = Motion.Click(0, 0, 30, 40, Now);
+        var options = new TraceOptions { AimAtDestination = false };
+
+        Assert.Equal(state.Position, TrajectoryEstimator.AimPoint(state, Now, options));
+    }
+
+    [Fact]
+    public void AimPoint_StandingTarget_IsItsPosition()
+    {
+        var state = Motion.Stationary(7, 8, Now);
+
+        Assert.Equal(state.Position, TrajectoryEstimator.AimPoint(state, Now, new TraceOptions()));
+    }
+
+    [Fact]
     public void Predict_IsDisabledByDefault()
     {
         var state = Motion.Click(0, 0, 10, 0);

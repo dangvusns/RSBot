@@ -110,11 +110,23 @@ internal static class Motion
         float angle,
         int lastChangeTick,
         int tick,
-        double speed = 5.0
+        double speed = 5.0,
+        bool spinning = false
     )
     {
         var position = new Vector2(x, y);
 
-        return new TargetMotionState(1, position, position, false, true, angle, speed, tick, lastChangeTick);
+        return new TargetMotionState(
+            1,
+            position,
+            position,
+            false,
+            true,
+            angle,
+            speed,
+            tick,
+            lastChangeTick,
+            spinning
+        );
     }
 }

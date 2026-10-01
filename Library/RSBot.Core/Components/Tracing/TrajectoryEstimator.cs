@@ -23,6 +23,22 @@ public static class TrajectoryEstimator
     }
 
     /// <summary>
+    ///     Gets the point the character should aim at. While the target walks to a clicked destination the end of its
+    ///     trajectory is known exactly, so the character heads for the same spot instead of chasing the moving target.
+    ///     Otherwise the (optionally predicted) current position is used.
+    /// </summary>
+    /// <param name="state">The motion snapshot.</param>
+    /// <param name="now">The current tick count.</param>
+    /// <param name="options">The options.</param>
+    public static Vector2 AimPoint(TargetMotionState state, int now, TraceOptions options)
+    {
+        if (options.AimAtDestination && state.Kind == TargetMovementKind.ClickMove)
+            return state.Destination;
+
+        return Predict(state, now, options);
+    }
+
+    /// <summary>
     ///     Gets a value indicating whether the movement of the target is not trusted anymore. Only a target walking
     ///     with the keys can become stale, because the entity model walks that heading until the server stops it.
     /// </summary>

@@ -77,14 +77,84 @@ public static class TraceEvaluator
         if (Vector2.Distance(input.Self, input.Fallback) > options.MaxMoveDistance)
             return TraceDecision.Idle("target too far away");
 
+        // The native trace needs a visible target, so walk to the party position by ourselves
+        runtime.SwitchBackend(TraceBackend.Trajectory, input.Now, "target not visible, walking to the party position");
+
         return EvaluateBotFollow(input, runtime, options, input.Fallback);
+    }
+
+    private static TraceDecision EvaluateSmart(TraceInput input, TraceRuntime runtime, TraceOptions options)
+    {
+        // The movement flags of the server decide which backend is able to follow: only a trajectory with a known
+        // destination (or a confirmed standing position) can be followed by coordinates
+        var quality = TrajectoryClassifier.Classify(input.Target);
+        runtime.Quality = quality;
+
+        var aim = TrajectoryEstimator.AimPoint(input.Target, input.Now, options);
+
+        if (quality != TrajectoryQuality.Reliable)
+            runtime.SwitchBackend(TraceBackend.NativeGameTrace, input.Now, DescribeUnreliable(quality));
+        else if (!runtime.Stuck || Vector2.Distance(aim, runtime.StuckAim) > options.DestinationChangeThreshold)
+        {
+            // Reliable, and not stuck on this aim point (or the target heads somewhere else now)
+            runtime.Stuck = false;
+            runtime.SwitchBackend(TraceBackend.Trajectory, input.Now, "trajectory reliable again");
+        }
+
+        if (runtime.ActiveBackend == TraceBackend.Trajectory && IsStuck(input, runtime, options, aim))
+        {
+            // Our own click did not get us there: let the game find the way
+            runtime.Stuck = true;
+            runtime.StuckAim = aim;
+            runtime.SwitchBackend(TraceBackend.NativeGameTrace, input.Now, "stuck before the follow point");
+        }
+
+        if (runtime.ActiveBackend == TraceBackend.NativeGameTrace)
+            return EvaluateGameFollow(input, runtime, options);
+
+        return EvaluateBotFollow(input, runtime, options, aim);
+    }
+
+    /// <summary>
+    ///     The character stopped well before the destination of its last command although the target still aims at
+    ///     the same spot: the server stopped it (blocked terrain, obstacle).
+    /// </summary>
+    private static bool IsStuck(TraceInput input, TraceRuntime runtime, TraceOptions options, Vector2 aim)
+    {
+        if (!runtime.HasLastMove || input.SelfMoving || runtime.State == TraceState.InRange)
+            return false;
+
+        if (TraceTime.Elapsed(input.Now, runtime.LastMoveTick) < options.IdleRetryInterval)
+            return false;
+
+        return Vector2.Distance(input.Self, runtime.LastMoveDestination) > options.StuckDistance
+            && Vector2.Distance(aim, runtime.LastMoveTarget) <= options.TargetMovementThreshold;
+    }
+
+    private static string DescribeUnreliable(TrajectoryQuality quality)
+    {
+        return quality switch
+        {
+            TrajectoryQuality.HeadingOnly => "no destination (keyboard movement or sky click)",
+            TrajectoryQuality.Spinning => "target turns on the spot",
+            TrajectoryQuality.InvalidDestination => "invalid destination",
+            _ => "trajectory not reliable",
+        };
     }
 
     private static TraceDecision EvaluateGameFollow(TraceInput input, TraceRuntime runtime, TraceOptions options)
     {
         if (!runtime.GameTraceSent)
         {
+            // Do not flood the server when the backend switches back and forth
+            if (
+                runtime.HasSentGameTrace
+                && TraceTime.Elapsed(input.Now, runtime.LastGameTraceTick) < options.MinGameTraceInterval
+            )
+                return TraceDecision.Idle("native trace rate limited");
+
             runtime.GameTraceSent = true;
+            runtime.HasSentGameTrace = true;
             runtime.LastGameTraceTick = input.Now;
 
             return TraceDecision.GameTrace("send native trace");
@@ -102,49 +172,6 @@ public static class TraceEvaluator
         }
 
         return TraceDecision.Idle(runtime.State == TraceState.InRange ? "in range" : "native trace running");
-    }
-
-    private static TraceDecision EvaluateSmart(TraceInput input, TraceRuntime runtime, TraceOptions options)
-    {
-        var kind = input.Target.Kind;
-
-        if (kind == TargetMovementKind.KeyWalk)
-        {
-            // Walking with the keys or clicking into the sky has no destination to mirror, the game trace follows it
-            if (!runtime.KeyWalking)
-            {
-                runtime.KeyWalking = true;
-                runtime.KeyWalkSince = input.Now;
-            }
-
-            if (
-                runtime.Phase != TracePhase.GameFollow
-                && TraceTime.Elapsed(input.Now, runtime.KeyWalkSince) >= options.KeyWalkSwitchDelay
-            )
-            {
-                runtime.Phase = TracePhase.GameFollow;
-                runtime.GameTraceSent = false;
-                runtime.HasLastMove = false;
-            }
-        }
-        else
-        {
-            runtime.KeyWalking = false;
-
-            // The target clicked the ground again, walk by ourselves
-            if (kind == TargetMovementKind.ClickMove && runtime.Phase == TracePhase.GameFollow)
-            {
-                runtime.Phase = TracePhase.BotFollow;
-                runtime.HasLastMove = false;
-            }
-        }
-
-        if (runtime.Phase == TracePhase.GameFollow)
-            return EvaluateGameFollow(input, runtime, options);
-
-        var target = TrajectoryEstimator.Predict(input.Target, input.Now, options);
-
-        return EvaluateBotFollow(input, runtime, options, target);
     }
 
     private static TraceDecision EvaluateBotFollow(

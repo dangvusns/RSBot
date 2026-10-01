@@ -42,6 +42,7 @@ public sealed class TraceSession
     private Vector2 _lastDestination;
     private float _lastAngle;
     private int _lastMovementChangeTick;
+    private bool _movementChanged;
 
     private string _lastLogged;
 
@@ -88,9 +89,20 @@ public sealed class TraceSession
     public TraceState State => _runtime.State;
 
     /// <summary>
-    ///     Gets the active sub mode of the trace.
+    ///     Gets the backend that currently follows the target.
     /// </summary>
-    public TracePhase Phase => _runtime.Phase;
+    public TraceBackend ActiveBackend => _runtime.ActiveBackend;
+
+    /// <summary>
+    ///     Gets the trajectory quality of the last evaluation.
+    /// </summary>
+    public TrajectoryQuality Quality => _runtime.Quality;
+
+    /// <summary>
+    ///     Gets a value indicating whether debug messages are written: always in a debug environment, otherwise when
+    ///     the option is set.
+    /// </summary>
+    private bool DebugEnabled => Options.Debug || Kernel.Debug;
 
     /// <summary>
     ///     Starts the session.
@@ -123,7 +135,7 @@ public sealed class TraceSession
         if (_stopped)
             return;
 
-        var nativeActive = Mode == TraceMode.GameTrace || _runtime.Phase == TracePhase.GameFollow;
+        var nativeActive = _runtime.ActiveBackend == TraceBackend.NativeGameTrace;
 
         _stopped = true;
         _runtime.State = TraceState.Stopped;
@@ -169,7 +181,7 @@ public sealed class TraceSession
             input = input.WithJump(true);
 
         var previousState = _runtime.State;
-        var previousPhase = _runtime.Phase;
+        var previousBackend = _runtime.ActiveBackend;
 
         var decision = TraceEvaluator.Evaluate(input, _runtime, Options);
 
@@ -184,8 +196,8 @@ public sealed class TraceSession
                 break;
         }
 
-        if (Options.Debug)
-            LogDecision(input, decision, previousState, previousPhase);
+        if (DebugEnabled)
+            LogDecision(input, decision, previousState, previousBackend);
     }
 
     /// <summary>
@@ -254,8 +266,8 @@ public sealed class TraceSession
             _hasSnapshot = true;
         }
 
-        if (SelfDriven)
-            ScheduleStep(now);
+        if (SelfDriven && ScheduleStep(now, _movementChanged))
+            _movementChanged = false;
     }
 
     /// <summary>
@@ -283,14 +295,20 @@ public sealed class TraceSession
         _historyResetPending = true;
     }
 
-    private void ScheduleStep(int now)
+    /// <summary>
+    ///     Starts an evaluation on a worker task.
+    /// </summary>
+    /// <param name="now">The current tick count.</param>
+    /// <param name="force">If <c>true</c> the update interval is ignored (the target movement just changed).</param>
+    /// <returns><c>true</c> if an evaluation was started; otherwise <c>false</c>.</returns>
+    private bool ScheduleStep(int now, bool force)
     {
-        if (TraceTime.Elapsed(now, _lastStepTick) < Options.TraceUpdateInterval)
-            return;
+        if (!force && TraceTime.Elapsed(now, _lastStepTick) < Options.TraceUpdateInterval)
+            return false;
 
         // One evaluation at a time: a move blocks until the game answered
         if (Interlocked.CompareExchange(ref _busy, 1, 0) != 0)
-            return;
+            return false;
 
         _lastStepTick = now;
 
@@ -309,6 +327,8 @@ public sealed class TraceSession
                 Interlocked.Exchange(ref _busy, 0);
             }
         });
+
+        return true;
     }
 
     /// <summary>
@@ -351,7 +371,13 @@ public sealed class TraceSession
             || (kind == TargetMovementKind.ClickMove && Vector2.Distance(destination, _lastDestination) > 0.1f)
             || (kind == TargetMovementKind.KeyWalk && MathF.Abs(movement.Angle - _lastAngle) > 0.01f)
         )
+        {
             _lastMovementChangeTick = now;
+
+            // React to a new movement at once instead of waiting for the next regular evaluation
+            if (_hasMotionHistory)
+                _movementChanged = true;
+        }
 
         _hasMotionHistory = true;
         _lastKind = kind;
@@ -367,7 +393,8 @@ public sealed class TraceSession
             movement.Angle,
             source.ActualSpeed * 0.1,
             now,
-            _lastMovementChangeTick
+            _lastMovementChangeTick,
+            movement.Spinning
         );
     }
 
@@ -419,7 +446,7 @@ public sealed class TraceSession
 
     private void Debug(string message)
     {
-        if (Options.Debug)
+        if (DebugEnabled)
             Log.Debug(message);
     }
 
@@ -427,24 +454,32 @@ public sealed class TraceSession
         TraceInput input,
         TraceDecision decision,
         TraceState previousState,
-        TracePhase previousPhase
+        TraceBackend previousBackend
     )
     {
+        var switched = previousBackend != _runtime.ActiveBackend;
+
         // Do not repeat the same "nothing to do" line
         if (
             decision.Action == TraceAction.None
             && decision.Reason == _lastLogged
             && previousState == _runtime.State
-            && previousPhase == _runtime.Phase
+            && !switched
         )
             return;
 
         _lastLogged = decision.Reason;
 
+        if (switched)
+            Log.Debug(
+                $"[Trace] {TargetName} backend {previousBackend} -> {_runtime.ActiveBackend}: {_runtime.LastSwitchReason}"
+            );
+
         var target = input.Target;
 
         Log.Debug(
-            $"[Trace] {TargetName} mode={Mode} state={_runtime.State} phase={_runtime.Phase} busy={input.Busy} "
+            $"[Trace] {TargetName} mode={Mode} backend={_runtime.ActiveBackend} quality={_runtime.Quality} "
+                + $"state={_runtime.State} busy={input.Busy} "
                 + $"uid={input.TargetPlayerId} kind={target.Kind} self=({input.Self.X:0.0},{input.Self.Y:0.0}) "
                 + $"target=({target.Position.X:0.0},{target.Position.Y:0.0}) "
                 + $"targetDest=({target.Destination.X:0.0},{target.Destination.Y:0.0}) "

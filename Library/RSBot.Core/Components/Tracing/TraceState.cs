@@ -49,19 +49,20 @@ public enum TraceState
 }
 
 /// <summary>
-///     The active sub mode of a trace.
+///     The backend that currently follows the target. The <see cref="TraceMode" /> says what the user asked for,
+///     the backend what is actually running: a smart trace switches between both depending on the trajectory quality.
 /// </summary>
-public enum TracePhase
+public enum TraceBackend
 {
     /// <summary>
-    ///     The bot walks to the follow point itself.
+    ///     The bot walks to the follow point calculated from the trajectory of the target.
     /// </summary>
-    BotFollow,
+    Trajectory,
 
     /// <summary>
-    ///     The native trace of the game is used.
+    ///     The native trace of the game (0x7074) follows the target.
     /// </summary>
-    GameFollow,
+    NativeGameTrace,
 }
 
 /// <summary>

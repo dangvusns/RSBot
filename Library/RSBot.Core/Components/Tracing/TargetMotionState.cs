@@ -19,6 +19,7 @@ public readonly struct TargetMotionState
     /// <param name="speed">The speed in world units per second.</param>
     /// <param name="snapshotTick">The tick count of the snapshot.</param>
     /// <param name="lastMovementTick">The tick count of the last observed change of the movement.</param>
+    /// <param name="spinning">A value indicating whether the target turns on the spot.</param>
     public TargetMotionState(
         uint uniqueId,
         Vector2 position,
@@ -28,9 +29,11 @@ public readonly struct TargetMotionState
         float angle,
         double speed,
         int snapshotTick,
-        int lastMovementTick
+        int lastMovementTick,
+        bool spinning = false
     )
     {
+        Spinning = spinning;
         UniqueId = uniqueId;
         Position = position;
         Destination = destination;
@@ -86,6 +89,11 @@ public readonly struct TargetMotionState
     ///     Gets the tick count of the last observed change of the movement.
     /// </summary>
     public int LastMovementTick { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether the target turns on the spot (only for a movement without destination).
+    /// </summary>
+    public bool Spinning { get; }
 
     /// <summary>
     ///     Gets how the target is moving.
