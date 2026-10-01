@@ -23,6 +23,13 @@ public sealed class TraceOptions
     public double StopMoveDistance { get; set; } = 8;
 
     /// <summary>
+    ///     How far beyond the follow distance a standing character still counts as arrived. Positions of the game are
+    ///     not exact, so without it the character would never arrive and keep clicking its own position. It is also the
+    ///     shortest move the trace issues.
+    /// </summary>
+    public double ArrivalTolerance { get; set; } = 1;
+
+    /// <summary>
     ///     The time between two evaluations of a self driven trace.
     /// </summary>
     public int TraceUpdateInterval { get; set; } = 200;
@@ -138,6 +145,7 @@ public sealed class TraceOptions
         FollowDistance = Read(keyPrefix + "FollowDistance", FollowDistance);
         StartMoveDistance = Read(keyPrefix + "StartMoveDistance", StartMoveDistance);
         StopMoveDistance = Read(keyPrefix + "StopMoveDistance", StopMoveDistance);
+        ArrivalTolerance = Read(keyPrefix + "ArrivalTolerance", ArrivalTolerance);
         TraceUpdateInterval = Read(keyPrefix + "TraceUpdateInterval", TraceUpdateInterval);
         MinMoveInterval = Read(keyPrefix + "MinMoveInterval", MinMoveInterval);
         IdleRetryInterval = Read(keyPrefix + "IdleRetryInterval", IdleRetryInterval);

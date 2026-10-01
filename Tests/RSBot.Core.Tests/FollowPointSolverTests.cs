@@ -50,14 +50,15 @@ public class FollowPointSolverTests
     [Theory]
     [InlineData(TraceState.Following, 13.0, true, TraceState.Following)]
     [InlineData(TraceState.Following, 11.0, true, TraceState.Following)]
-    [InlineData(TraceState.Following, 11.0, false, TraceState.Following)]
+    [InlineData(TraceState.Following, 11.5, false, TraceState.Following)]
+    [InlineData(TraceState.Following, 10.5, false, TraceState.InRange)]
     [InlineData(TraceState.Following, 9.5, true, TraceState.Following)]
     [InlineData(TraceState.Following, 9.5, false, TraceState.InRange)]
     [InlineData(TraceState.Following, 7.0, true, TraceState.InRange)]
     [InlineData(TraceState.InRange, 9.0, true, TraceState.InRange)]
     [InlineData(TraceState.InRange, 11.5, false, TraceState.InRange)]
     [InlineData(TraceState.InRange, 12.5, false, TraceState.Following)]
-    [InlineData(TraceState.ResolvingTarget, 11.0, false, TraceState.Following)]
+    [InlineData(TraceState.ResolvingTarget, 11.5, false, TraceState.Following)]
     [InlineData(TraceState.ResolvingTarget, 9.0, false, TraceState.InRange)]
     public void NextRangeState_HasHysteresis(
         TraceState current,

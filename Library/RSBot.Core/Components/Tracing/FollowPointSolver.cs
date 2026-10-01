@@ -30,13 +30,15 @@ public static class FollowPointSolver
         if (distance <= options.StopMoveDistance)
             return TraceState.InRange;
 
+        var arrived = distance <= options.FollowDistance + options.ArrivalTolerance;
+
         if (current == TraceState.Following)
-            return !selfMoving && distance <= options.FollowDistance ? TraceState.InRange : TraceState.Following;
+            return !selfMoving && arrived ? TraceState.InRange : TraceState.Following;
 
         if (current == TraceState.InRange)
             return TraceState.InRange;
 
-        return distance > options.FollowDistance ? TraceState.Following : TraceState.InRange;
+        return arrived ? TraceState.InRange : TraceState.Following;
     }
 
     /// <summary>
@@ -46,13 +48,14 @@ public static class FollowPointSolver
     /// <param name="target">The position of the target.</param>
     /// <param name="options">The options.</param>
     /// <param name="destination">The destination.</param>
-    /// <returns><c>false</c> if the character is already within the follow distance.</returns>
+    /// <returns><c>false</c> if the character is already within the follow distance (plus the arrival tolerance).</returns>
     public static bool TrySolve(Vector2 self, Vector2 target, TraceOptions options, out Vector2 destination)
     {
         var offset = target - self;
         var distance = offset.Length();
 
-        if (distance <= options.FollowDistance || distance < 0.001f)
+        // Moves shorter than the tolerance only make the character click its own position
+        if (distance <= options.FollowDistance + options.ArrivalTolerance || distance < 0.001f)
         {
             destination = self;
             return false;

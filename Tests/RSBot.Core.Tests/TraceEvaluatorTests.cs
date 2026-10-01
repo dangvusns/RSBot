@@ -353,6 +353,23 @@ public class TraceEvaluatorTests
     }
 
     [Fact]
+    public void StandingJustBeyondTheFollowDistance_CountsAsArrived_AndDoesNotClickItsOwnPosition()
+    {
+        // Taken from a game log: 2.52 units away with a follow distance of 2.5
+        var h = new TraceHarness(TraceMode.Smart, TraceOptions.Close()) { Self = new Vector2(30, 47.1f) };
+        h.Evaluate(Motion.Stationary(44.1f, 46.8f));
+
+        h.Self = new Vector2(41.6f, 47.1f);
+        var moves = 0;
+        for (var i = 0; i < 10; i++)
+            if (h.After(500, Motion.Stationary(44.1f, 46.8f)).Action == TraceAction.Move)
+                moves++;
+
+        Assert.Equal(0, moves);
+        Assert.Equal(TraceState.InRange, h.Runtime.State);
+    }
+
+    [Fact]
     public void ArrivingAtTheFollowPoint_IsNotStuck()
     {
         var h = new TraceHarness(TraceMode.Smart);
