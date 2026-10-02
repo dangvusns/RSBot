@@ -63,6 +63,9 @@ public class Bootstrap : IPlugin
         LevelUpHandler.Initialize();
         DurabilityLowHandler.Initialize();
         FatigueHandler.Initialize();
+        UniqueNearbyHandler.Initialize();
+        CosDiedHandler.Initialize();
+        QuestCompletedHandler.Initialize();
     }
 
     /// <inheritdoc />

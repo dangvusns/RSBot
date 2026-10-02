@@ -322,6 +322,20 @@ public class Cos : SpawnedEntity
     }
 
     /// <summary>
+    ///     Orders the cos to attack the specified target.
+    /// </summary>
+    /// <param name="targetUniqueId">The target unique identifier.</param>
+    public void Attack(uint targetUniqueId)
+    {
+        var packet = new Packet(0x70C5);
+        packet.WriteUInt(UniqueId);
+        packet.WriteByte(CosCommand.Attack);
+        packet.WriteUInt(targetUniqueId);
+
+        PacketManager.SendPacket(packet, PacketDestination.Server);
+    }
+
+    /// <summary>
     ///     Purchases the item.
     /// </summary>
     /// <param name="tab">The tab.</param>

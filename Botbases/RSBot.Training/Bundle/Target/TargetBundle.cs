@@ -13,6 +13,11 @@ internal class TargetBundle : IBundle
 {
     private const int BLACKLIST_TIMEOUT = 5_000;
 
+    /// <summary>
+    ///     How long an entity counts as fighting its target after its last skill cast on it.
+    /// </summary>
+    private const int FIGHT_TIMEOUT = 10_000;
+
     #region Fields
 
     private Dictionary<uint, int> _blacklist;
@@ -105,6 +110,43 @@ internal class TargetBundle : IBundle
 
         if (Game.SelectedEntity != null && Game.SelectedEntity is not SpawnedMonster)
             Game.SelectedEntity = null;
+
+        // Defend the pet: attack the monster that is hitting it, unless the selected monster is already hitting
+        // the player or the pet
+        var petAttacker = GetPetAttacker();
+        if (
+            petAttacker != null
+            && !IsSelectedHitting(
+                Game.Player.UniqueId,
+                Game.Player.Growth?.UniqueId ?? 0,
+                Game.Player.Fellow?.UniqueId ?? 0
+            )
+        )
+        {
+            Log.Debug($"[TargetBundle] Defending the pet against: {petAttacker.Record?.GetRealName()}");
+
+            if (petAttacker.TrySelect())
+                Bundles.Movement.LastEntityWasBehindObstacle = false;
+
+            return;
+        }
+
+        // Leave the target to the other player who is fighting it
+        if (
+            PlayerConfig.Get("RSBot.Training.checkBoxSwitchTargetIfStolen", false)
+            && Game.SelectedEntity != null
+            && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity.UniqueId, out var currentMonster)
+            && currentMonster.State.LifeState == LifeState.Alive
+            && GetMonstersFoughtByOthers().Contains(currentMonster.UniqueId)
+        )
+        {
+            Log.Debug($"[TargetBundle] Another player attacks the target, switching: {currentMonster.Record?.GetRealName()}");
+
+            Game.SelectedEntity?.TryDeselect();
+            Game.SelectedEntity = null;
+
+            _blacklist?.TryAdd(currentMonster.UniqueId, Kernel.TickCount);
+        }
 
         // Assist: attack what the party leader attacks. Checked after the counterattack, so a member under attack
         // still defends itself first.
@@ -223,12 +265,17 @@ internal class TargetBundle : IBundle
     {
         var warlockModeEnabled = PlayerConfig.Get<bool>("RSBot.Skills.checkWarlockMode");
         var ignorePillar = PlayerConfig.Get<bool>("RSBot.Training.checkBoxDimensionPillar");
+        var foughtByOthers = PlayerConfig.Get("RSBot.Training.checkBoxAvoidKillSteal", false)
+            ? GetMonstersFoughtByOthers()
+            : null;
 
         if (
             !SpawnManager.TryGetEntities<SpawnedMonster>(
                 m =>
                     m.State.LifeState == LifeState.Alive
                     && //Only alive
+                    (foughtByOthers == null || !foughtByOthers.Contains(m.UniqueId))
+                    && //Isn't fought by another player
                     !(warlockModeEnabled && m.State.HasTwoDots())
                     && //Has two Dots?
                     m.IsBehindObstacle == false
@@ -254,6 +301,111 @@ internal class TargetBundle : IBundle
             .OrderBy(m => Bundles.Avoidance.PreferMonster(m.Rarity))
             .OrderByDescending(m => m.AttackingPlayer)
             .FirstOrDefault();
+    }
+
+    /// <summary>
+    ///     Gets the unique ids of the monsters another player (or another player's pet) is fighting. A monster that
+    ///     attacked the player is never in the list, the player defends itself.
+    /// </summary>
+    private static HashSet<uint> GetMonstersFoughtByOthers()
+    {
+        var result = new HashSet<uint>();
+
+        if (!SpawnManager.TryGetEntities<SpawnedBionic>(e => e is SpawnedPlayer || e is SpawnedCos, out var bionics))
+            return result;
+
+        var strangers = new HashSet<uint>();
+        foreach (var bionic in bionics.Where(IsStranger))
+        {
+            strangers.Add(bionic.UniqueId);
+
+            // The stranger hit the monster
+            if (bionic.TargetId != 0 && IsRecent(bionic.TargetTick))
+                result.Add(bionic.TargetId);
+        }
+
+        if (strangers.Count == 0)
+            return result;
+
+        // The monster hits the stranger
+        if (
+            SpawnManager.TryGetEntities<SpawnedMonster>(
+                m => !m.AttackingPlayer && IsRecent(m.TargetTick) && strangers.Contains(m.TargetId),
+                out var monsters
+            )
+        )
+            foreach (var monster in monsters)
+                result.Add(monster.UniqueId);
+
+        result.RemoveWhere(id =>
+            SpawnManager.TryGetEntity<SpawnedMonster>(id, out var monster) && monster.AttackingPlayer
+        );
+
+        return result;
+    }
+
+    /// <summary>
+    ///     Gets a value indicating whether the entity is neither the player, a party member nor a pet of them.
+    /// </summary>
+    private static bool IsStranger(SpawnedBionic entity)
+    {
+        return entity switch
+        {
+            SpawnedPlayer player => Game.Party.GetMemberByName(player.Name) == null,
+            SpawnedCos cos => cos.OwnerUniqueId != Game.Player.UniqueId
+                && (string.IsNullOrEmpty(cos.OwnerName) || Game.Party.GetMemberByName(cos.OwnerName) == null),
+            _ => false,
+        };
+    }
+
+    private static bool IsRecent(int tick)
+    {
+        return Kernel.TickCount - tick < FIGHT_TIMEOUT;
+    }
+
+    /// <summary>
+    ///     Gets the nearest monster that is hitting the player's attack or fellow pet, if the player defends its pet.
+    /// </summary>
+    private SpawnedMonster GetPetAttacker()
+    {
+        if (!PlayerConfig.Get("RSBot.Training.checkBoxDefendPet", false))
+            return null;
+
+        var growthId = Game.Player.Growth?.UniqueId ?? 0;
+        var fellowId = Game.Player.Fellow?.UniqueId ?? 0;
+        if (growthId == 0 && fellowId == 0)
+            return null;
+
+        if (
+            !SpawnManager.TryGetEntities<SpawnedMonster>(
+                m =>
+                    m.State.LifeState == LifeState.Alive
+                    && m.TargetId != 0
+                    && (m.TargetId == growthId || m.TargetId == fellowId)
+                    && IsRecent(m.TargetTick)
+                    && !m.IsBehindObstacle
+                    && (_blacklist == null || !_blacklist.ContainsKey(m.UniqueId))
+                    && Container.Bot.Area.IsInSight(m),
+                out var attackers
+            )
+        )
+            return null;
+
+        return attackers.OrderBy(m => m.DistanceToPlayer).FirstOrDefault();
+    }
+
+    /// <summary>
+    ///     Gets a value indicating whether the selected monster is currently hitting one of the specified entities.
+    /// </summary>
+    /// <param name="uniqueIds">The unique ids of the entities.</param>
+    private static bool IsSelectedHitting(params uint[] uniqueIds)
+    {
+        return Game.SelectedEntity != null
+            && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity.UniqueId, out var monster)
+            && monster.State.LifeState == LifeState.Alive
+            && monster.TargetId != 0
+            && uniqueIds.Contains(monster.TargetId)
+            && IsRecent(monster.TargetTick);
     }
 
     /// <summary>

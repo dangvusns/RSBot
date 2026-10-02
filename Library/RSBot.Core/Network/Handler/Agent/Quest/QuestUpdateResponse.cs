@@ -67,11 +67,21 @@ internal class QuestUpdateResponse : IPacketHandler
         {
             var activeQuest = QuestLog.ParseActiveQuest(packet, questId);
 
+            Game.Player.QuestLog.ActiveQuests.TryGetValue(questId, out var previousQuest);
             Game.Player.QuestLog.ActiveQuests[questId] = activeQuest;
 
             Log.Debug($"Updated quest [{activeQuest.Quest.GetTranslatedName()}");
+
+            // All objectives are done, the quest only has to be turned in at the NPC
+            if (IsReadyToTurnIn(activeQuest.Status) && (previousQuest == null || !IsReadyToTurnIn(previousQuest.Status)))
+                EventManager.FireEvent("OnQuestObjectivesCompleted", questId);
         }
 
         EventManager.FireEvent("OnUpdateQuests");
+    }
+
+    private static bool IsReadyToTurnIn(QuestStatus status)
+    {
+        return status == QuestStatus.CompletedButNotSupplied || status == QuestStatus.CompletedByUserButNotSupplied;
     }
 }

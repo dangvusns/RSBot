@@ -88,6 +88,10 @@ internal class Botbase
         //Check for berzerk
         Bundles.Berzerk.Invoke();
 
+        //Send the pets after the target
+        if (!noAttack)
+            Bundles.Pet.Invoke();
+
         //Cast skill against enemy
         if (!noAttack)
             Bundles.Attack.Invoke();

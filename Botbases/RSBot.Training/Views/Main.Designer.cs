@@ -90,6 +90,10 @@
             linkAttackWeakerMobsHelp = new System.Windows.Forms.LinkLabel();
             checkAttackWeakerFirst = new SDUI.Controls.CheckBox();
             checkBoxDimensionPillar = new SDUI.Controls.CheckBox();
+            checkBoxAvoidKillSteal = new SDUI.Controls.CheckBox();
+            checkBoxSwitchTargetIfStolen = new SDUI.Controls.CheckBox();
+            checkBoxPetAttackTarget = new SDUI.Controls.CheckBox();
+            checkBoxDefendPet = new SDUI.Controls.CheckBox();
             timerGrabByAbilityPet = new System.Windows.Forms.Timer(components);
             toolTip1 = new System.Windows.Forms.ToolTip(components);
             groupBox2.SuspendLayout();
@@ -730,6 +734,10 @@
             // groupBoxAdvanced
             // 
             groupBoxAdvanced.BackColor = System.Drawing.Color.Transparent;
+            groupBoxAdvanced.Controls.Add(checkBoxAvoidKillSteal);
+            groupBoxAdvanced.Controls.Add(checkBoxSwitchTargetIfStolen);
+            groupBoxAdvanced.Controls.Add(checkBoxPetAttackTarget);
+            groupBoxAdvanced.Controls.Add(checkBoxDefendPet);
             groupBoxAdvanced.Controls.Add(checkBoxDontFollowMobs);
             groupBoxAdvanced.Controls.Add(linkAttackWeakerMobsHelp);
             groupBoxAdvanced.Controls.Add(checkAttackWeakerFirst);
@@ -739,7 +747,7 @@
             groupBoxAdvanced.Padding = new System.Windows.Forms.Padding(3, 8, 3, 3);
             groupBoxAdvanced.Radius = 10;
             groupBoxAdvanced.ShadowDepth = 4;
-            groupBoxAdvanced.Size = new System.Drawing.Size(478, 106);
+            groupBoxAdvanced.Size = new System.Drawing.Size(478, 158);
             groupBoxAdvanced.TabIndex = 6;
             groupBoxAdvanced.TabStop = false;
             groupBoxAdvanced.Text = "Advanced";
@@ -802,6 +810,66 @@
             checkBoxDimensionPillar.Text = "Ignore Dimension Pillar";
             checkBoxDimensionPillar.UseVisualStyleBackColor = false;
             checkBoxDimensionPillar.CheckedChanged += settings_CheckedChanged;
+            // 
+            // checkBoxAvoidKillSteal
+            // 
+            checkBoxAvoidKillSteal.AutoSize = true;
+            checkBoxAvoidKillSteal.BackColor = System.Drawing.Color.Transparent;
+            checkBoxAvoidKillSteal.Depth = 0;
+            checkBoxAvoidKillSteal.Location = new System.Drawing.Point(21, 99);
+            checkBoxAvoidKillSteal.Margin = new System.Windows.Forms.Padding(0);
+            checkBoxAvoidKillSteal.MouseLocation = new System.Drawing.Point(-1, -1);
+            checkBoxAvoidKillSteal.Name = "checkBoxAvoidKillSteal";
+            checkBoxAvoidKillSteal.Ripple = true;
+            checkBoxAvoidKillSteal.TabIndex = 9;
+            checkBoxAvoidKillSteal.Text = "Don't attack mobs others are fighting";
+            checkBoxAvoidKillSteal.UseVisualStyleBackColor = false;
+            checkBoxAvoidKillSteal.CheckedChanged += settings_CheckedChanged;
+            // 
+            // checkBoxSwitchTargetIfStolen
+            // 
+            checkBoxSwitchTargetIfStolen.AutoSize = true;
+            checkBoxSwitchTargetIfStolen.BackColor = System.Drawing.Color.Transparent;
+            checkBoxSwitchTargetIfStolen.Depth = 0;
+            checkBoxSwitchTargetIfStolen.Location = new System.Drawing.Point(21, 123);
+            checkBoxSwitchTargetIfStolen.Margin = new System.Windows.Forms.Padding(0);
+            checkBoxSwitchTargetIfStolen.MouseLocation = new System.Drawing.Point(-1, -1);
+            checkBoxSwitchTargetIfStolen.Name = "checkBoxSwitchTargetIfStolen";
+            checkBoxSwitchTargetIfStolen.Ripple = true;
+            checkBoxSwitchTargetIfStolen.TabIndex = 10;
+            checkBoxSwitchTargetIfStolen.Text = "Switch target if others attack it";
+            checkBoxSwitchTargetIfStolen.UseVisualStyleBackColor = false;
+            checkBoxSwitchTargetIfStolen.CheckedChanged += settings_CheckedChanged;
+            // 
+            // checkBoxPetAttackTarget
+            // 
+            checkBoxPetAttackTarget.AutoSize = true;
+            checkBoxPetAttackTarget.BackColor = System.Drawing.Color.Transparent;
+            checkBoxPetAttackTarget.Depth = 0;
+            checkBoxPetAttackTarget.Location = new System.Drawing.Point(270, 99);
+            checkBoxPetAttackTarget.Margin = new System.Windows.Forms.Padding(0);
+            checkBoxPetAttackTarget.MouseLocation = new System.Drawing.Point(-1, -1);
+            checkBoxPetAttackTarget.Name = "checkBoxPetAttackTarget";
+            checkBoxPetAttackTarget.Ripple = true;
+            checkBoxPetAttackTarget.TabIndex = 11;
+            checkBoxPetAttackTarget.Text = "Pet attacks my target";
+            checkBoxPetAttackTarget.UseVisualStyleBackColor = false;
+            checkBoxPetAttackTarget.CheckedChanged += settings_CheckedChanged;
+            // 
+            // checkBoxDefendPet
+            // 
+            checkBoxDefendPet.AutoSize = true;
+            checkBoxDefendPet.BackColor = System.Drawing.Color.Transparent;
+            checkBoxDefendPet.Depth = 0;
+            checkBoxDefendPet.Location = new System.Drawing.Point(270, 123);
+            checkBoxDefendPet.Margin = new System.Windows.Forms.Padding(0);
+            checkBoxDefendPet.MouseLocation = new System.Drawing.Point(-1, -1);
+            checkBoxDefendPet.Name = "checkBoxDefendPet";
+            checkBoxDefendPet.Ripple = true;
+            checkBoxDefendPet.TabIndex = 12;
+            checkBoxDefendPet.Text = "Defend my attack pet";
+            checkBoxDefendPet.UseVisualStyleBackColor = false;
+            checkBoxDefendPet.CheckedChanged += settings_CheckedChanged;
             // 
             // timerGrabByAbilityPet
             // 
@@ -885,6 +953,10 @@
         private SDUI.Controls.Button btnApplyArea;
         private System.Windows.Forms.ToolTip toolTip1;
         private SDUI.Controls.CheckBox checkBoxDontFollowMobs;
+        private SDUI.Controls.CheckBox checkBoxAvoidKillSteal;
+        private SDUI.Controls.CheckBox checkBoxSwitchTargetIfStolen;
+        private SDUI.Controls.CheckBox checkBoxPetAttackTarget;
+        private SDUI.Controls.CheckBox checkBoxDefendPet;
         private SDUI.Controls.Button btnRemove;
     }
 }

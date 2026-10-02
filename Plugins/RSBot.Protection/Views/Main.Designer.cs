@@ -45,6 +45,10 @@
             checkNoHPPotions = new SDUI.Controls.CheckBox();
             checkDurability = new SDUI.Controls.CheckBox();
             checkDead = new SDUI.Controls.CheckBox();
+            checkUniqueNearby = new SDUI.Controls.CheckBox();
+            checkPetDied = new SDUI.Controls.CheckBox();
+            checkTransportDied = new SDUI.Controls.CheckBox();
+            checkQuestCompleted = new SDUI.Controls.CheckBox();
             checkInventory = new SDUI.Controls.CheckBox();
             checkNoArrows = new SDUI.Controls.CheckBox();
             groupBadStatus = new SDUI.Controls.GroupBox();
@@ -141,6 +145,10 @@
             groupBackTown.Controls.Add(checkNoMPPotions);
             groupBackTown.Controls.Add(checkNoHPPotions);
             groupBackTown.Controls.Add(checkDurability);
+            groupBackTown.Controls.Add(checkUniqueNearby);
+            groupBackTown.Controls.Add(checkPetDied);
+            groupBackTown.Controls.Add(checkTransportDied);
+            groupBackTown.Controls.Add(checkQuestCompleted);
             groupBackTown.Controls.Add(checkDead);
             groupBackTown.Controls.Add(checkInventory);
             groupBackTown.Controls.Add(checkNoArrows);
@@ -150,7 +158,7 @@
             groupBackTown.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             groupBackTown.Radius = 10;
             groupBackTown.ShadowDepth = 4;
-            groupBackTown.Size = new System.Drawing.Size(330, 356);
+            groupBackTown.Size = new System.Drawing.Size(330, 386);
             groupBackTown.TabIndex = 17;
             groupBackTown.TabStop = false;
             groupBackTown.Text = "Back to town";
@@ -367,6 +375,66 @@
             checkDurability.Text = "Equipment durability low";
             checkDurability.UseVisualStyleBackColor = false;
             checkDurability.CheckedChanged += settings_CheckedChanged;
+            // 
+            // checkUniqueNearby
+            // 
+            checkUniqueNearby.AutoSize = true;
+            checkUniqueNearby.BackColor = System.Drawing.Color.Transparent;
+            checkUniqueNearby.Depth = 0;
+            checkUniqueNearby.Location = new System.Drawing.Point(175, 139);
+            checkUniqueNearby.Margin = new System.Windows.Forms.Padding(0);
+            checkUniqueNearby.MouseLocation = new System.Drawing.Point(-1, -1);
+            checkUniqueNearby.Name = "checkUniqueNearby";
+            checkUniqueNearby.Ripple = true;
+            checkUniqueNearby.TabIndex = 30;
+            checkUniqueNearby.Text = "Unique nearby";
+            checkUniqueNearby.UseVisualStyleBackColor = false;
+            checkUniqueNearby.CheckedChanged += settings_CheckedChanged;
+            // 
+            // checkPetDied
+            // 
+            checkPetDied.AutoSize = true;
+            checkPetDied.BackColor = System.Drawing.Color.Transparent;
+            checkPetDied.Depth = 0;
+            checkPetDied.Location = new System.Drawing.Point(175, 169);
+            checkPetDied.Margin = new System.Windows.Forms.Padding(0);
+            checkPetDied.MouseLocation = new System.Drawing.Point(-1, -1);
+            checkPetDied.Name = "checkPetDied";
+            checkPetDied.Ripple = true;
+            checkPetDied.TabIndex = 31;
+            checkPetDied.Text = "Pet died";
+            checkPetDied.UseVisualStyleBackColor = false;
+            checkPetDied.CheckedChanged += settings_CheckedChanged;
+            // 
+            // checkTransportDied
+            // 
+            checkTransportDied.AutoSize = true;
+            checkTransportDied.BackColor = System.Drawing.Color.Transparent;
+            checkTransportDied.Depth = 0;
+            checkTransportDied.Location = new System.Drawing.Point(175, 289);
+            checkTransportDied.Margin = new System.Windows.Forms.Padding(0);
+            checkTransportDied.MouseLocation = new System.Drawing.Point(-1, -1);
+            checkTransportDied.Name = "checkTransportDied";
+            checkTransportDied.Ripple = true;
+            checkTransportDied.TabIndex = 32;
+            checkTransportDied.Text = "Transport died";
+            checkTransportDied.UseVisualStyleBackColor = false;
+            checkTransportDied.CheckedChanged += settings_CheckedChanged;
+            // 
+            // checkQuestCompleted
+            // 
+            checkQuestCompleted.AutoSize = true;
+            checkQuestCompleted.BackColor = System.Drawing.Color.Transparent;
+            checkQuestCompleted.Depth = 0;
+            checkQuestCompleted.Location = new System.Drawing.Point(15, 349);
+            checkQuestCompleted.Margin = new System.Windows.Forms.Padding(0);
+            checkQuestCompleted.MouseLocation = new System.Drawing.Point(-1, -1);
+            checkQuestCompleted.Name = "checkQuestCompleted";
+            checkQuestCompleted.Ripple = true;
+            checkQuestCompleted.TabIndex = 33;
+            checkQuestCompleted.Text = "Quest completed";
+            checkQuestCompleted.UseVisualStyleBackColor = false;
+            checkQuestCompleted.CheckedChanged += settings_CheckedChanged;
             // 
             // checkDead
             // 
@@ -1232,7 +1300,7 @@
             groupStatPoints.Controls.Add(numIncInt);
             groupStatPoints.Controls.Add(checkIncStr);
             groupStatPoints.Controls.Add(checkIncInt);
-            groupStatPoints.Location = new System.Drawing.Point(599, 377);
+            groupStatPoints.Location = new System.Drawing.Point(599, 407);
             groupStatPoints.Margin = new System.Windows.Forms.Padding(7, 5, 0, 0);
             groupStatPoints.Name = "groupStatPoints";
             groupStatPoints.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
@@ -1426,6 +1494,10 @@
         private SDUI.Controls.CheckBox checkNoHPPotions;
         private SDUI.Controls.CheckBox checkDurability;
         private SDUI.Controls.CheckBox checkDead;
+        private SDUI.Controls.CheckBox checkUniqueNearby;
+        private SDUI.Controls.CheckBox checkPetDied;
+        private SDUI.Controls.CheckBox checkTransportDied;
+        private SDUI.Controls.CheckBox checkQuestCompleted;
         private SDUI.Controls.CheckBox checkInventory;
         private SDUI.Controls.CheckBox checkNoArrows;
         private SDUI.Controls.GroupBox groupStatPoints;

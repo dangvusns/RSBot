@@ -6,6 +6,7 @@ using RSBot.Training.Bundle.Loop;
 using RSBot.Training.Bundle.Loot;
 using RSBot.Training.Bundle.Movement;
 using RSBot.Training.Bundle.PartyBuffing;
+using RSBot.Training.Bundle.Pet;
 using RSBot.Training.Bundle.Protection;
 using RSBot.Training.Bundle.Resurrect;
 using RSBot.Training.Bundle.Target;
@@ -71,6 +72,14 @@ internal static class Bundles
     public static AttackBundle Attack { get; } = new();
 
     /// <summary>
+    ///     Gets the pet.
+    /// </summary>
+    /// <value>
+    ///     The pet.
+    /// </value>
+    public static PetBundle Pet { get; } = new();
+
+    /// <summary>
     ///     Gets the loot.
     /// </summary>
     /// <value>
@@ -114,6 +123,7 @@ internal static class Bundles
         PartyBuff.Refresh();
         Target.Refresh();
         Attack.Refresh();
+        Pet.Refresh();
         Loot.Refresh();
         Loop.Refresh();
         Resurrect.Refresh();
@@ -129,6 +139,7 @@ internal static class Bundles
         PartyBuff?.Stop();
         Target?.Stop();
         Attack?.Stop();
+        Pet?.Stop();
         Loot?.Stop();
         Loop?.Stop();
         Resurrect?.Stop();
