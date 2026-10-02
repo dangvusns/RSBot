@@ -106,6 +106,22 @@ internal class TargetBundle : IBundle
         if (Game.SelectedEntity != null && Game.SelectedEntity is not SpawnedMonster)
             Game.SelectedEntity = null;
 
+        // Assist: attack what the party leader attacks. Checked after the counterattack, so a member under attack
+        // still defends itself first.
+        var leaderTarget = GetPartyLeaderTarget();
+        if (leaderTarget != null)
+        {
+            if (Game.SelectedEntity?.UniqueId != leaderTarget.UniqueId)
+            {
+                Log.Debug($"[TargetBundle] Attacking the party leader's target: {leaderTarget.Record?.GetRealName()}");
+
+                if (leaderTarget.TrySelect())
+                    Bundles.Movement.LastEntityWasBehindObstacle = false;
+            }
+
+            return;
+        }
+
         if (Game.SelectedEntity?.State.LifeState == LifeState.Alive)
             return;
 
@@ -118,6 +134,50 @@ internal class TargetBundle : IBundle
 
         if (monster.TrySelect())
             Bundles.Movement.LastEntityWasBehindObstacle = false;
+    }
+
+    /// <summary>
+    ///     Gets the monster the party leader is attacking, if the player assists the leader and the monster passes
+    ///     the same checks as a normal target.
+    /// </summary>
+    private SpawnedMonster GetPartyLeaderTarget()
+    {
+        // The leader's target is only known from its skill casts; after this long without one it is out of date.
+        const int staleTargetMs = 10_000;
+
+        // While following the leader away from the training area, only assist close to the player,
+        // otherwise the bot would run off and trigger the walk back to the training area.
+        const float assistRange = 40f;
+
+        if (!PlayerConfig.Get("RSBot.Party.AttackLeaderTarget", false) || !Game.Party.IsInParty || Game.Party.IsLeader)
+            return null;
+
+        var leader = Game.Party.Leader?.Player;
+        if (leader == null || leader.TargetId == 0 || Kernel.TickCount - leader.TargetTick > staleTargetMs)
+            return null;
+
+        if (!SpawnManager.TryGetEntity<SpawnedMonster>(leader.TargetId, out var target))
+            return null;
+
+        var warlockModeEnabled = PlayerConfig.Get<bool>("RSBot.Skills.checkWarlockMode");
+        var ignorePillar = PlayerConfig.Get<bool>("RSBot.Training.checkBoxDimensionPillar");
+
+        if (
+            target.State.LifeState != LifeState.Alive
+            || (warlockModeEnabled && target.State.HasTwoDots())
+            || target.IsBehindObstacle
+            || (_blacklist != null && _blacklist.ContainsKey(target.UniqueId))
+            || (!target.AttackingPlayer && Bundles.Avoidance.AvoidMonster(target.Rarity))
+            || target.Record.IsPandora
+            || (target.Record.IsDimensionPillar && ignorePillar)
+            || target.Record.IsSummonFlower
+        )
+            return null;
+
+        var inRange = Container.Bot.Area.IsInSight(target)
+            || (IsFollowingPartyMaster() && target.DistanceToPlayer <= assistRange);
+
+        return inRange ? target : null;
     }
 
     private static bool IsFollowingPartyMaster()

@@ -38,11 +38,17 @@ public partial class Main : DoubleBufferedControl
     private ListViewItem _selectedBuffingGroup;
 
     /// <summary>
+    ///     The "attack the party leader's target" option, see <see cref="InitializeAttackLeaderTarget" />.
+    /// </summary>
+    private SDUI.Controls.CheckBox checkBoxAttackLeaderTarget;
+
+    /// <summary>
     ///     Initializes a new instance of the <see cref="Main" /> class.
     /// </summary>
     public Main()
     {
         InitializeComponent();
+        InitializeAttackLeaderTarget();
 
         selectedMemberBuffs.SmallImageList = ListViewExtensions.StaticImageList;
         listPartyBuffSkills.SmallImageList = ListViewExtensions.StaticImageList;
@@ -305,6 +311,7 @@ public partial class Main : DoubleBufferedControl
         textBoxLeaveIfMasterNotName.Text = Bundle.Container.AutoParty.Config.LeaveIfMasterNotName;
         textBoxLeaveIfMasterNotName.Enabled = !checkBoxLeaveIfMasterNot.Checked;
         checkBoxFollowMaster.Checked = PlayerConfig.Get("RSBot.Party.AlwaysFollowPartyMaster", false);
+        checkBoxAttackLeaderTarget.Checked = PlayerConfig.Get("RSBot.Party.AttackLeaderTarget", false);
 
         checkAcceptIfBotStopped.Checked = Bundle.Container.AutoParty.Config.AcceptIfBotIsStopped;
         checkBoxListenMasterCommands.Checked = Bundle.Container.Commands.Config.ListenOnlyMaster;
@@ -1201,6 +1208,36 @@ public partial class Main : DoubleBufferedControl
         PlayerConfig.Set("RSBot.Party.AlwaysFollowPartyMaster", checkBoxFollowMaster.Checked);
 
         Bundle.Container.Refresh();
+    }
+
+    /// <summary>
+    ///     Adds the "attack the leader's target" option below "always follow party master". Created in code so the
+    ///     designer file stays untouched; the Training botbase reads <c>RSBot.Party.AttackLeaderTarget</c>.
+    /// </summary>
+    private void InitializeAttackLeaderTarget()
+    {
+        checkBoxAttackLeaderTarget = new SDUI.Controls.CheckBox
+        {
+            Name = "checkBoxAttackLeaderTarget",
+            Text = "Attack the party leader's target",
+            AutoSize = true,
+            BackColor = System.Drawing.Color.Transparent,
+            Depth = 0,
+            Margin = new System.Windows.Forms.Padding(0),
+            Ripple = true,
+            UseVisualStyleBackColor = false,
+        };
+        checkBoxAttackLeaderTarget.CheckedChanged += (_, _) =>
+            PlayerConfig.Set("RSBot.Party.AttackLeaderTarget", checkBoxAttackLeaderTarget.Checked);
+
+        groupBox2.Controls.Add(checkBoxAttackLeaderTarget);
+
+        // Placed relative to the designer checkbox so it follows DPI scaling.
+        groupBox2.Layout += (_, _) =>
+            checkBoxAttackLeaderTarget.Location = new System.Drawing.Point(
+                checkBoxFollowMaster.Left,
+                checkBoxFollowMaster.Bottom - LogicalToDeviceUnits(1)
+            );
     }
 
     /// <summary>

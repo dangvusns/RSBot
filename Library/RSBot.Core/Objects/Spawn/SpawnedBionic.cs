@@ -70,6 +70,11 @@ public class SpawnedBionic : SpawnedEntity
     public uint TargetId { get; set; }
 
     /// <summary>
+    ///     Gets or sets the tick count when <see cref="TargetId" /> was last set (the last skill cast on it).
+    /// </summary>
+    public int TargetTick { get; set; }
+
+    /// <summary>
     ///     Parse the bionic details
     /// </summary>
     /// <param name="packet">The packet</param>

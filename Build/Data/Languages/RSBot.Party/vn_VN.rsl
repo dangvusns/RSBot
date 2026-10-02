@@ -110,3 +110,4 @@ CommandGuideReturn="• town / return — Về thành bằng cuộn hồi thành
 CommandGuideTeleport="• teleport from,to — Dùng NPC dịch chuyển ở gần để đến địa điểm phù hợp.\n   Ví dụ: teleport ferry,donwhang"
 CommandGuideRadius="• radius value — Đặt bán kính luyện cấp.\n   Ví dụ: radius 50"
 CommandGuideArea="• area / setarea x,y,radius — Đặt vị trí và bán kính luyện cấp.\n   Ví dụ: area 100,200,50 · setarea 100,200,50"
+RSBot.Party.Main.TabControl.TabPage.GroupBox.checkBoxAttackLeaderTarget="Đánh mục tiêu của trưởng nhóm"

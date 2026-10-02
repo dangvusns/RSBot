@@ -111,3 +111,4 @@ CommandGuideReturn="• town / return — Return to town using a return scroll.\
 CommandGuideTeleport="• teleport from,to — Use a nearby teleporter to reach a matching destination.\n   Example: teleport ferry,donwhang"
 CommandGuideRadius="• radius value — Set the training radius.\n   Example: radius 50"
 CommandGuideArea="• area / setarea x,y,radius — Set the training position and radius.\n   Examples: area 100,200,50 · setarea 100,200,50"
+RSBot.Party.Main.TabControl.TabPage.GroupBox.checkBoxAttackLeaderTarget="Attack the party leader's target"

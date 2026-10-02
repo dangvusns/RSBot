@@ -131,6 +131,7 @@ internal class ActionSkillCastResponse : IPacketHandler
             return;
 
         executor.TargetId = action.TargetId;
+        executor.TargetTick = Kernel.TickCount;
         //executor.StopMoving();
 
         if (!action.PlayerIsTarget)
