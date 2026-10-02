@@ -821,6 +821,7 @@
             checkBoxAvoidKillSteal.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxAvoidKillSteal.Name = "checkBoxAvoidKillSteal";
             checkBoxAvoidKillSteal.Ripple = true;
+            checkBoxAvoidKillSteal.Size = new System.Drawing.Size(232, 30);
             checkBoxAvoidKillSteal.TabIndex = 9;
             checkBoxAvoidKillSteal.Text = "Don't attack mobs others are fighting";
             checkBoxAvoidKillSteal.UseVisualStyleBackColor = false;
@@ -836,6 +837,7 @@
             checkBoxSwitchTargetIfStolen.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxSwitchTargetIfStolen.Name = "checkBoxSwitchTargetIfStolen";
             checkBoxSwitchTargetIfStolen.Ripple = true;
+            checkBoxSwitchTargetIfStolen.Size = new System.Drawing.Size(212, 30);
             checkBoxSwitchTargetIfStolen.TabIndex = 10;
             checkBoxSwitchTargetIfStolen.Text = "Switch target if others attack it";
             checkBoxSwitchTargetIfStolen.UseVisualStyleBackColor = false;
@@ -851,6 +853,7 @@
             checkBoxPetAttackTarget.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxPetAttackTarget.Name = "checkBoxPetAttackTarget";
             checkBoxPetAttackTarget.Ripple = true;
+            checkBoxPetAttackTarget.Size = new System.Drawing.Size(150, 30);
             checkBoxPetAttackTarget.TabIndex = 11;
             checkBoxPetAttackTarget.Text = "Pet attacks my target";
             checkBoxPetAttackTarget.UseVisualStyleBackColor = false;
@@ -866,6 +869,7 @@
             checkBoxDefendPet.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxDefendPet.Name = "checkBoxDefendPet";
             checkBoxDefendPet.Ripple = true;
+            checkBoxDefendPet.Size = new System.Drawing.Size(146, 30);
             checkBoxDefendPet.TabIndex = 12;
             checkBoxDefendPet.Text = "Defend my attack pet";
             checkBoxDefendPet.UseVisualStyleBackColor = false;

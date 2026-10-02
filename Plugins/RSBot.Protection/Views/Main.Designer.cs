@@ -386,6 +386,7 @@
             checkUniqueNearby.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUniqueNearby.Name = "checkUniqueNearby";
             checkUniqueNearby.Ripple = true;
+            checkUniqueNearby.Size = new System.Drawing.Size(123, 30);
             checkUniqueNearby.TabIndex = 30;
             checkUniqueNearby.Text = "Unique nearby";
             checkUniqueNearby.UseVisualStyleBackColor = false;
@@ -401,6 +402,7 @@
             checkPetDied.MouseLocation = new System.Drawing.Point(-1, -1);
             checkPetDied.Name = "checkPetDied";
             checkPetDied.Ripple = true;
+            checkPetDied.Size = new System.Drawing.Size(90, 30);
             checkPetDied.TabIndex = 31;
             checkPetDied.Text = "Pet died";
             checkPetDied.UseVisualStyleBackColor = false;
@@ -416,6 +418,7 @@
             checkTransportDied.MouseLocation = new System.Drawing.Point(-1, -1);
             checkTransportDied.Name = "checkTransportDied";
             checkTransportDied.Ripple = true;
+            checkTransportDied.Size = new System.Drawing.Size(130, 30);
             checkTransportDied.TabIndex = 32;
             checkTransportDied.Text = "Transport died";
             checkTransportDied.UseVisualStyleBackColor = false;
@@ -431,6 +434,7 @@
             checkQuestCompleted.MouseLocation = new System.Drawing.Point(-1, -1);
             checkQuestCompleted.Name = "checkQuestCompleted";
             checkQuestCompleted.Ripple = true;
+            checkQuestCompleted.Size = new System.Drawing.Size(136, 30);
             checkQuestCompleted.TabIndex = 33;
             checkQuestCompleted.Text = "Quest completed";
             checkQuestCompleted.UseVisualStyleBackColor = false;
