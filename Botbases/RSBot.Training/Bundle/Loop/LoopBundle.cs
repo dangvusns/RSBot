@@ -3,6 +3,7 @@ using System.Threading;
 using RSBot.Core;
 using RSBot.Core.Components;
 using RSBot.Core.Objects;
+using RSBot.Training.Bot;
 
 namespace RSBot.Training.Bundle.Loop;
 
@@ -159,18 +160,26 @@ internal class LoopBundle : IBundle
     /// </summary>
     public void CheckForWalkbackScript(bool startFromTown = false)
     {
-        if (
-            Config.WalkScript == null
-            || ScriptManager.Running
-            || !File.Exists(Config.WalkScript)
-            || !Kernel.Bot.Running
-        )
+        if (ScriptManager.Running || !Kernel.Bot.Running)
             return;
 
-        Invoke();
-        Log.NotifyLang("LoadingWalkScript", Config.WalkScript);
+        var walkScript = Config.WalkScript;
 
-        ScriptManager.Load(Config.WalkScript);
+        // Without a recorded walkscript, fall back to a path from the navigation graph (this run only).
+        if (string.IsNullOrEmpty(walkScript) || !File.Exists(walkScript))
+        {
+            if (!PlayerConfig.Get("RSBot.Training.checkAutoPath", true))
+                return;
+
+            walkScript = NavigationManager.TryBuildWalkScript(Game.Player.Movement.Source, Container.Bot.Area.Position);
+            if (walkScript == null || !Kernel.Bot.Running)
+                return;
+        }
+
+        Invoke();
+        Log.NotifyLang("LoadingWalkScript", walkScript);
+
+        ScriptManager.Load(walkScript);
         ScriptManager.RunScript(!startFromTown);
     }
 }

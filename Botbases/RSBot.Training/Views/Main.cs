@@ -22,6 +22,8 @@ public partial class Main : DoubleBufferedControl
     #region Fields
 
     private bool _settingsLoaded;
+    private CheckBox checkAutoPath;
+    private LinkLabel linkUpdateNavLink;
 
     #endregion Fields
 
@@ -31,6 +33,7 @@ public partial class Main : DoubleBufferedControl
     public Main()
     {
         InitializeComponent();
+        InitializeAutoPathControls();
         SubscribeEvents();
 
         lvAvoidance.Items[0].Tag = MonsterRarity.General;
@@ -455,5 +458,70 @@ public partial class Main : DoubleBufferedControl
         txtWalkscript.Text = string.Empty;
         PlayerConfig.Set("RSBot.Walkback.File", txtWalkscript.Text);
         btnRemove.Visible = false;
+    }
+
+    /// <summary>
+    ///     Adds the auto path controls to the walkback group. Created in code so the designer file stays untouched;
+    ///     the checkbox is persisted by <see cref="LoadSettings" />/<see cref="ApplySettings" /> as
+    ///     <c>RSBot.Training.checkAutoPath</c>.
+    /// </summary>
+    private void InitializeAutoPathControls()
+    {
+        checkAutoPath = new CheckBox
+        {
+            Name = "checkAutoPath",
+            Text = "Auto path",
+            AutoSize = true,
+            BackColor = System.Drawing.Color.Transparent,
+            Checked = true,
+            Depth = 0,
+            Margin = new Padding(0),
+            Ripple = true,
+            UseVisualStyleBackColor = false,
+        };
+        checkAutoPath.CheckedChanged += settings_CheckedChanged;
+
+        linkUpdateNavLink = new LinkLabel
+        {
+            Name = "linkUpdateNavLink",
+            Text = "[Update NavLink]",
+            AutoSize = true,
+            TabStop = true,
+        };
+        linkUpdateNavLink.LinkClicked += linkUpdateNavLink_LinkClicked;
+
+        groupBoxWalkback.Controls.Add(checkAutoPath);
+        groupBoxWalkback.Controls.Add(linkUpdateNavLink);
+
+        // Positioned relative to the designer controls so it follows DPI scaling and translated text widths.
+        groupBoxWalkback.Layout += (_, _) => LayoutAutoPathControls();
+    }
+
+    private void LayoutAutoPathControls()
+    {
+        var centerY = label4.Top + label4.Height / 2;
+
+        checkAutoPath.Location = new System.Drawing.Point(
+            label4.Right + LogicalToDeviceUnits(12),
+            centerY - checkAutoPath.Height / 2
+        );
+        linkUpdateNavLink.Location = new System.Drawing.Point(
+            linkRecord.Left - linkUpdateNavLink.Width - LogicalToDeviceUnits(6),
+            linkRecord.Top
+        );
+    }
+
+    private async void linkUpdateNavLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+    {
+        linkUpdateNavLink.Enabled = false;
+        try
+        {
+            await Bot.NavigationManager.UpdateLinkageAsync();
+        }
+        finally
+        {
+            if (!IsDisposed)
+                linkUpdateNavLink.Enabled = true;
+        }
     }
 }
