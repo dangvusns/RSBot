@@ -965,12 +965,73 @@ public partial class Main : DoubleBufferedControl
     {
         comboMonsterType.SelectedIndex = 0;
 
+        UpdateSavedSkillLevels();
         LoadSkills();
 
         ApplyAttackSkills();
         ApplyBuffSkills();
 
         RunOnUiThread(listActiveBuffs.Items.Clear);
+    }
+
+    /// <summary>
+    ///     The config stores the id of one skill level. If a skill was upgraded or withdrawn while the bot was not
+    ///     watching (another bot, the plain client, a copied profile), that id is no longer learned and the skill
+    ///     would silently drop out. Map such ids to the level that is learned now and save them.
+    /// </summary>
+    private void UpdateSavedSkillLevels()
+    {
+        var changed = false;
+
+        uint Resolve(uint savedId)
+        {
+            if (savedId == 0 || Game.Player.Skills.HasSkill(savedId))
+                return savedId;
+
+            // Item ability skills (e.g. Devil's Spirit) are not learned skills; they stay as they are.
+            var learned = Game.Player.Skills.FindLearnedSkill(savedId);
+            if (learned == null || learned.Id == savedId)
+                return savedId;
+
+            Log.Notify($"[Skills] {learned.Record.GetRealName()} updated to lv. {learned.Record.Basic_Level}");
+            changed = true;
+
+            return learned.Id;
+        }
+
+        var arrayKeys = Enumerable
+            .Range(0, comboMonsterType.Items.Count)
+            .Select(i => "RSBot.Skills.Attacks_" + i)
+            .Append("RSBot.Skills.Buffs");
+
+        foreach (var key in arrayKeys)
+        {
+            var ids = PlayerConfig.GetArray<uint>(key).ToArray();
+            var resolved = ids.Select(Resolve).ToArray();
+            if (!resolved.SequenceEqual(ids))
+                PlayerConfig.SetArray(key, resolved);
+        }
+
+        string[] singleKeys =
+        {
+            "RSBot.Skills.Imbue",
+            "RSBot.Skills.ResurrectionSkill",
+            "RSBot.Skills.TeleportSkill",
+            "RSBot.Protection.HpSkill",
+            "RSBot.Protection.MpSkill",
+            "RSBot.Protection.BadStatusSkill",
+        };
+
+        foreach (var key in singleKeys)
+        {
+            var id = PlayerConfig.Get<uint>(key);
+            var resolved = Resolve(id);
+            if (resolved != id)
+                PlayerConfig.Set(key, resolved);
+        }
+
+        if (changed)
+            PlayerConfig.Save();
     }
 
     /// <summary>

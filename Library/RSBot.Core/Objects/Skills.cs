@@ -65,7 +65,43 @@ public class Skills
 
     public SkillInfo GetSkillByCodeName(string codeName)
     {
-        return KnownSkills.FirstOrDefault(s => s.Record?.Basic_Code == codeName);
+        var skill = KnownSkills.FirstOrDefault(s => s.Record?.Basic_Code == codeName);
+        if (skill != null || string.IsNullOrEmpty(codeName))
+            return skill;
+
+        // Scripts store the code of one skill level; fall back to the level that is learned now.
+        var record = Game.ReferenceManager?.SkillData.Values.FirstOrDefault(r => r.Basic_Code == codeName);
+
+        return record == null ? null : FindLearnedSkill(record.ID);
+    }
+
+    /// <summary>
+    ///     Finds the learned skill for a saved skill id, even if the skill has been upgraded or withdrawn
+    ///     since the id was saved (the id of each skill level differs).
+    /// </summary>
+    /// <param name="savedId">The saved skill identifier.</param>
+    /// <returns>The learned skill, or <c>null</c> if no level of that skill is learned.</returns>
+    public SkillInfo FindLearnedSkill(uint savedId)
+    {
+        var skill = GetSkillInfoById(savedId);
+        if (skill != null)
+            return skill;
+
+        if (Game.ReferenceManager?.SkillData.TryGetValue(savedId, out var saved) != true || saved == null)
+            return null;
+
+        // Every level of a skill shares its group.
+        return KnownSkills
+            .Where(s =>
+                s.Record != null
+                && (
+                    saved.GroupID != 0
+                        ? s.Record.GroupID == saved.GroupID
+                        : !string.IsNullOrEmpty(saved.Basic_Group) && s.Record.Basic_Group == saved.Basic_Group
+                )
+            )
+            .OrderByDescending(s => s.Record.Basic_Level)
+            .FirstOrDefault();
     }
 
     /// <summary>
