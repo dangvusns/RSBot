@@ -16,6 +16,7 @@ if (-not (Test-Path ".\SDUI")) {
 }
 
 taskkill /F /IM RSBot.exe
+taskkill /F /IM RSBot.Manager.exe
 taskkill /F /IM sro_client.exe
 
 if ($Clean) {
