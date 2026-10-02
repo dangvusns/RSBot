@@ -68,6 +68,27 @@ public static class SkillManager
     public static List<SkillInfo> Buffs { get; set; }
 
     /// <summary>
+    ///     Gets or sets the opener skill ids per mob priority. An opener is cast once on each new target before the
+    ///     normal rotation, and is never part of the rotation itself.
+    /// </summary>
+    public static Dictionary<MonsterRarity, HashSet<uint>> OpenerSkills { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the ids of the buffs that are only cast while the target is a strong monster.
+    /// </summary>
+    public static HashSet<uint> StrongTargetBuffs { get; set; }
+
+    /// <summary>
+    ///     The target the opener skills were used on.
+    /// </summary>
+    private static uint _openerTargetId;
+
+    /// <summary>
+    ///     The opener skills already used on <see cref="_openerTargetId" />.
+    /// </summary>
+    private static readonly HashSet<uint> _usedOpeners = new();
+
+    /// <summary>
     ///     Gets or sets the teleport skill.
     /// </summary>
     public static SkillInfo TeleportSkill { get; set; }
@@ -91,6 +112,8 @@ public static class SkillManager
             .Cast<MonsterRarity>()
             .ToDictionary(v => v, v => new List<SkillInfo>());
         Buffs = new List<SkillInfo>();
+        OpenerSkills = new Dictionary<MonsterRarity, HashSet<uint>>();
+        StrongTargetBuffs = new HashSet<uint>();
 
         EventManager.SubscribeEvent("OnLoadGameData", OnLoadGamedData);
         EventManager.SubscribeEvent("OnCastSkill", new Action<uint>(OnCastSkill));
@@ -204,6 +227,13 @@ public static class SkillManager
         //var weaponRange = 0;
         var closestSkill = default(SkillInfo);
 
+        if (entity.State.HitState != ActionHitStateFlag.KnockDown)
+        {
+            var opener = GetOpener(entity.UniqueId, rarity);
+            if (opener != null)
+                return opener;
+        }
+
         if (entity.State.HitState == ActionHitStateFlag.KnockDown)
         {
             // try to get attack skill for only knockdown states
@@ -225,7 +255,7 @@ public static class SkillManager
                     continue;
 
                 var selectedSkill = Skills[rarity][_lastIndex];
-                if (!selectedSkill.CanBeCasted)
+                if (!selectedSkill.CanBeCasted || IsOpener(rarity, selectedSkill))
                     continue;
 
                 closestSkill = selectedSkill;
@@ -244,7 +274,7 @@ public static class SkillManager
             for (var i = 0; i < Skills[rarity].Count; i++)
             {
                 var s = Skills[rarity][i];
-                if (!s.CanBeCasted)
+                if (!s.CanBeCasted || IsOpener(rarity, s))
                     continue;
 
                 var difference = Math.Abs(
@@ -260,6 +290,50 @@ public static class SkillManager
         }
 
         return closestSkill;
+    }
+
+    /// <summary>
+    ///     Gets the next opener skill that wasn't used on the target yet.
+    /// </summary>
+    /// <param name="targetId">The target unique identifier.</param>
+    /// <param name="rarity">The mob priority whose skills are used.</param>
+    private static SkillInfo GetOpener(uint targetId, MonsterRarity rarity)
+    {
+        if (OpenerSkills == null || !OpenerSkills.TryGetValue(rarity, out var openers) || openers.Count == 0)
+            return null;
+
+        if (_openerTargetId != targetId)
+        {
+            _openerTargetId = targetId;
+            _usedOpeners.Clear();
+        }
+
+        var opener = Skills[rarity].Find(s => openers.Contains(s.Id) && !_usedOpeners.Contains(s.Id) && s.CanBeCasted);
+        if (opener != null)
+            _usedOpeners.Add(opener.Id);
+
+        return opener;
+    }
+
+    private static bool IsOpener(MonsterRarity rarity, SkillInfo skill)
+    {
+        return OpenerSkills != null && OpenerSkills.TryGetValue(rarity, out var openers) && openers.Contains(skill.Id);
+    }
+
+    /// <summary>
+    ///     Gets a value indicating whether the buff may be cast now. A buff that is limited to strong monsters is only
+    ///     cast while the selected target is a strong (giant, party, titan, elite or unique) monster.
+    /// </summary>
+    /// <param name="buff">The buff.</param>
+    public static bool IsBuffAllowedNow(SkillInfo buff)
+    {
+        if (StrongTargetBuffs == null || !StrongTargetBuffs.Contains(buff.Id))
+            return true;
+
+        return Game.SelectedEntity != null
+            && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity.UniqueId, out var monster)
+            && monster.State.LifeState == LifeState.Alive
+            && monster.Rarity is not (MonsterRarity.General or MonsterRarity.Champion or MonsterRarity.Event);
     }
 
     /// <summary>

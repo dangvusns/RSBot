@@ -65,6 +65,7 @@ internal class BuffBundle : IBundle
                 !Game.Player.State.HasActiveBuff(p, out _)
                 && p.CanBeCasted
                 && !(itemSpeedBuff && SpeedDrugManager.IsSpeedBuff(p))
+                && SkillManager.IsBuffAllowedNow(p)
             );
             if (buffs == null || buffs.Count == 0)
                 return;

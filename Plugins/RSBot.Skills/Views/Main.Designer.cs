@@ -83,6 +83,10 @@
             colName = new System.Windows.Forms.ColumnHeader();
             colLevel = new System.Windows.Forms.ColumnHeader();
             skillContextMenu = new SDUI.Controls.ContextMenuStrip();
+            attackSkillContextMenu = new SDUI.Controls.ContextMenuStrip();
+            menuToggleOpener = new System.Windows.Forms.ToolStripMenuItem();
+            buffContextMenu = new SDUI.Controls.ContextMenuStrip();
+            menuToggleStrongTargetBuff = new System.Windows.Forms.ToolStripMenuItem();
             skillContextMenuAddAttackSkill = new System.Windows.Forms.ToolStripMenuItem();
             toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             skillContextMenuAddBuffSkill = new System.Windows.Forms.ToolStripMenuItem();
@@ -110,6 +114,8 @@
             tabControl2.SuspendLayout();
             tabPage3.SuspendLayout();
             skillContextMenu.SuspendLayout();
+            attackSkillContextMenu.SuspendLayout();
+            buffContextMenu.SuspendLayout();
             panelPlayerSkills.SuspendLayout();
             tabPage4.SuspendLayout();
             SuspendLayout();
@@ -180,6 +186,7 @@
             listAttackingSkills.TabIndex = 8;
             listAttackingSkills.UseCompatibleStateImageBehavior = false;
             listAttackingSkills.View = System.Windows.Forms.View.Details;
+            listAttackingSkills.ContextMenuStrip = attackSkillContextMenu;
             // 
             // columnName
             // 
@@ -305,6 +312,7 @@
             listBuffs.TabIndex = 8;
             listBuffs.UseCompatibleStateImageBehavior = false;
             listBuffs.View = System.Windows.Forms.View.Details;
+            listBuffs.ContextMenuStrip = buffContextMenu;
             // 
             // columnHeader1
             // 
@@ -947,6 +955,38 @@
             skillContextMenu.Size = new System.Drawing.Size(219, 112);
             skillContextMenu.Opening += skillContextMenu_Opening;
             // 
+            // attackSkillContextMenu
+            // 
+            attackSkillContextMenu.ImageScalingSize = new System.Drawing.Size(32, 32);
+            attackSkillContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { menuToggleOpener });
+            attackSkillContextMenu.Name = "attackSkillContextMenu";
+            attackSkillContextMenu.Size = new System.Drawing.Size(320, 28);
+            attackSkillContextMenu.Opening += attackSkillContextMenu_Opening;
+            // 
+            // menuToggleOpener
+            // 
+            menuToggleOpener.ForeColor = System.Drawing.Color.FromArgb(0, 0, 0);
+            menuToggleOpener.Name = "menuToggleOpener";
+            menuToggleOpener.Size = new System.Drawing.Size(319, 24);
+            menuToggleOpener.Text = "Opener: cast once at the start of each fight";
+            menuToggleOpener.Click += menuToggleOpener_Click;
+            // 
+            // buffContextMenu
+            // 
+            buffContextMenu.ImageScalingSize = new System.Drawing.Size(32, 32);
+            buffContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { menuToggleStrongTargetBuff });
+            buffContextMenu.Name = "buffContextMenu";
+            buffContextMenu.Size = new System.Drawing.Size(320, 28);
+            buffContextMenu.Opening += buffContextMenu_Opening;
+            // 
+            // menuToggleStrongTargetBuff
+            // 
+            menuToggleStrongTargetBuff.ForeColor = System.Drawing.Color.FromArgb(0, 0, 0);
+            menuToggleStrongTargetBuff.Name = "menuToggleStrongTargetBuff";
+            menuToggleStrongTargetBuff.Size = new System.Drawing.Size(319, 24);
+            menuToggleStrongTargetBuff.Text = "Only when fighting strong monsters";
+            menuToggleStrongTargetBuff.Click += menuToggleStrongTargetBuff_Click;
+            // 
             // skillContextMenuAddAttackSkill
             // 
             skillContextMenuAddAttackSkill.ForeColor = System.Drawing.Color.FromArgb(0, 0, 0);
@@ -1141,6 +1181,8 @@
             tabControl2.ResumeLayout(false);
             tabPage3.ResumeLayout(false);
             skillContextMenu.ResumeLayout(false);
+            attackSkillContextMenu.ResumeLayout(false);
+            buffContextMenu.ResumeLayout(false);
             panelPlayerSkills.ResumeLayout(false);
             panelPlayerSkills.PerformLayout();
             tabPage4.ResumeLayout(false);
@@ -1193,6 +1235,10 @@
         private System.Windows.Forms.ColumnHeader columnHeader1;
         private System.Windows.Forms.ColumnHeader columnHeader2;
         private SDUI.Controls.ContextMenuStrip skillContextMenu;
+        private SDUI.Controls.ContextMenuStrip attackSkillContextMenu;
+        private System.Windows.Forms.ToolStripMenuItem menuToggleOpener;
+        private SDUI.Controls.ContextMenuStrip buffContextMenu;
+        private System.Windows.Forms.ToolStripMenuItem menuToggleStrongTargetBuff;
         private SDUI.Controls.CheckBox checkBoxNoAttack;
         private System.Windows.Forms.ToolStripMenuItem skillContextMenuAddBuffSkill;
         private System.Windows.Forms.ToolStripMenuItem skillContextMenuAddAttackSkill;

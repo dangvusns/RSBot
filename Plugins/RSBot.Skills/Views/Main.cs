@@ -29,6 +29,16 @@ public partial class Main : DoubleBufferedControl
     private readonly List<(string Name, Delegate Handler)> _subscriptions = new();
 
     /// <summary>
+    ///     Shown behind the name of an opener skill in the attack skill list.
+    /// </summary>
+    private const string OpenerMarker = " [Opener]";
+
+    /// <summary>
+    ///     Shown behind the name of a buff that is only cast against strong monsters.
+    /// </summary>
+    private const string StrongTargetMarker = " [Strong mobs]";
+
+    /// <summary>
     ///     Initializes a new instance of the <see cref="Main" /> class.
     /// </summary>
     public Main()
@@ -299,8 +309,11 @@ public partial class Main : DoubleBufferedControl
         foreach (var collection in SkillManager.Skills.Values)
             collection.Clear();
 
+        SkillManager.OpenerSkills.Clear();
+
         for (var i = 0; i < comboMonsterType.Items.Count; i++)
         {
+            var rarity = GetRarityByIndex(i);
             var skillIds = PlayerConfig.GetArray<uint>("RSBot.Skills.Attacks_" + i);
 
             foreach (var skillId in skillIds)
@@ -309,41 +322,34 @@ public partial class Main : DoubleBufferedControl
                 if (skillInfo == null)
                     continue;
 
-                switch (i)
-                {
-                    case 1:
-                        SkillManager.Skills[MonsterRarity.Champion].Add(skillInfo);
-                        continue;
-                    case 2:
-                        SkillManager.Skills[MonsterRarity.Giant].Add(skillInfo);
-                        continue;
-                    case 3:
-                        SkillManager.Skills[MonsterRarity.GeneralParty].Add(skillInfo);
-                        continue;
-                    case 4:
-                        SkillManager.Skills[MonsterRarity.ChampionParty].Add(skillInfo);
-                        continue;
-                    case 5:
-                        SkillManager.Skills[MonsterRarity.GiantParty].Add(skillInfo);
-                        continue;
-                    case 6:
-                        SkillManager.Skills[MonsterRarity.Elite].Add(skillInfo);
-                        continue;
-                    case 7:
-                        SkillManager.Skills[MonsterRarity.EliteStrong].Add(skillInfo);
-                        continue;
-                    case 8:
-                        SkillManager.Skills[MonsterRarity.Unique].Add(skillInfo);
-                        continue;
-                    case 9:
-                        SkillManager.Skills[MonsterRarity.Event].Add(skillInfo);
-                        continue;
-                    default:
-                        SkillManager.Skills[MonsterRarity.General].Add(skillInfo);
-                        continue;
-                }
+                SkillManager.Skills[rarity].Add(skillInfo);
             }
+
+            var openers = PlayerConfig.GetArray<uint>("RSBot.Skills.Openers_" + i);
+            if (openers.Length > 0)
+                SkillManager.OpenerSkills[rarity] = new HashSet<uint>(openers);
         }
+    }
+
+    /// <summary>
+    ///     Gets the monster type of the entry at the specified index of the monster type combo box.
+    /// </summary>
+    /// <param name="index">The index.</param>
+    private static MonsterRarity GetRarityByIndex(int index)
+    {
+        return index switch
+        {
+            1 => MonsterRarity.Champion,
+            2 => MonsterRarity.Giant,
+            3 => MonsterRarity.GeneralParty,
+            4 => MonsterRarity.ChampionParty,
+            5 => MonsterRarity.GiantParty,
+            6 => MonsterRarity.Elite,
+            7 => MonsterRarity.EliteStrong,
+            8 => MonsterRarity.Unique,
+            9 => MonsterRarity.Event,
+            _ => MonsterRarity.General,
+        };
     }
 
     /// <summary>
@@ -352,6 +358,7 @@ public partial class Main : DoubleBufferedControl
     private void ApplyBuffSkills()
     {
         SkillManager.Buffs.Clear();
+        SkillManager.StrongTargetBuffs = new HashSet<uint>(PlayerConfig.GetArray<uint>("RSBot.Skills.StrongTargetBuffs"));
 
         Game.Player.TryGetAbilitySkills(out var abilitySkills);
 
@@ -431,13 +438,18 @@ public partial class Main : DoubleBufferedControl
             listAttackingSkills.Items.Clear();
 
             var skillArray = PlayerConfig.GetArray<uint>("RSBot.Skills.Attacks_" + index);
+            var openers = PlayerConfig.GetArray<uint>("RSBot.Skills.Openers_" + index);
             foreach (var skillId in skillArray)
             {
                 var skillInfo = Game.Player.Skills.GetSkillInfoById(skillId);
                 if (skillInfo == null)
                     continue;
 
-                var item = new ListViewItem(skillInfo.Record.GetRealName()) { Tag = skillInfo };
+                var name = skillInfo.Record.GetRealName();
+                if (openers.Contains(skillId))
+                    name += OpenerMarker;
+
+                var item = new ListViewItem(name) { Tag = skillInfo };
                 item.SubItems.Add("lv. " + skillInfo.Record.Basic_Level);
                 listAttackingSkills.Items.Add(item);
                 item.LoadSkillImageAsync();
@@ -460,6 +472,7 @@ public partial class Main : DoubleBufferedControl
             Game.Player.TryGetAbilitySkills(out var abilitySkills);
 
             var buffs = PlayerConfig.GetArray<uint>("RSBot.Skills.Buffs");
+            var strongTargetBuffs = PlayerConfig.GetArray<uint>("RSBot.Skills.StrongTargetBuffs");
             foreach (var buffId in buffs)
             {
                 var buffInfo = Game.Player.Skills.GetSkillInfoById(buffId);
@@ -470,7 +483,11 @@ public partial class Main : DoubleBufferedControl
                         continue;
                 }
 
-                var item = new ListViewItem(buffInfo.Record.GetRealName()) { Tag = buffInfo };
+                var name = buffInfo.Record.GetRealName();
+                if (strongTargetBuffs.Contains(buffId))
+                    name += StrongTargetMarker;
+
+                var item = new ListViewItem(name) { Tag = buffInfo };
 
                 item.SubItems.Add("lv. " + buffInfo.Record.Basic_Level);
                 listBuffs.Items.Add(item);
@@ -642,6 +659,10 @@ public partial class Main : DoubleBufferedControl
 
         PlayerConfig.SetArray("RSBot.Skills.Attacks_" + comboMonsterType.SelectedIndex, savedSkills);
 
+        // Removed skills are no openers anymore
+        var openersKey = "RSBot.Skills.Openers_" + comboMonsterType.SelectedIndex;
+        PlayerConfig.SetArray(openersKey, PlayerConfig.GetArray<uint>(openersKey).Intersect(savedSkills).ToArray());
+
         ApplyAttackSkills();
     }
 
@@ -653,6 +674,12 @@ public partial class Main : DoubleBufferedControl
         var savedBuffs = listBuffs.Items.Cast<ListViewItem>().Select(p => ((SkillInfo)p.Tag).Id).ToArray();
 
         PlayerConfig.SetArray("RSBot.Skills.Buffs", savedBuffs);
+
+        // Removed buffs are no strong target buffs anymore
+        PlayerConfig.SetArray(
+            "RSBot.Skills.StrongTargetBuffs",
+            PlayerConfig.GetArray<uint>("RSBot.Skills.StrongTargetBuffs").Intersect(savedBuffs).ToArray()
+        );
 
         ApplyBuffSkills();
     }
@@ -1123,6 +1150,75 @@ public partial class Main : DoubleBufferedControl
             item.Remove();
 
         SaveBuffs();
+    }
+
+    /// <summary>
+    ///     Handles the Opening event of the attack skill context menu.
+    /// </summary>
+    private void attackSkillContextMenu_Opening(object sender, CancelEventArgs e)
+    {
+        var selected = GetSelectedSkillIds(listAttackingSkills);
+        if (selected.Length == 0)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        var openers = PlayerConfig.GetArray<uint>("RSBot.Skills.Openers_" + comboMonsterType.SelectedIndex);
+        menuToggleOpener.Checked = selected.All(id => openers.Contains(id));
+    }
+
+    /// <summary>
+    ///     Marks the selected attack skills as openers, or removes the mark when all of them are openers already.
+    /// </summary>
+    private void menuToggleOpener_Click(object sender, EventArgs e)
+    {
+        var key = "RSBot.Skills.Openers_" + comboMonsterType.SelectedIndex;
+        PlayerConfig.SetArray(key, ToggleIds(PlayerConfig.GetArray<uint>(key), GetSelectedSkillIds(listAttackingSkills)));
+
+        LoadAttacks(comboMonsterType.SelectedIndex);
+        ApplyAttackSkills();
+    }
+
+    /// <summary>
+    ///     Handles the Opening event of the buff context menu.
+    /// </summary>
+    private void buffContextMenu_Opening(object sender, CancelEventArgs e)
+    {
+        var selected = GetSelectedSkillIds(listBuffs);
+        if (selected.Length == 0)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        var strongTargetBuffs = PlayerConfig.GetArray<uint>("RSBot.Skills.StrongTargetBuffs");
+        menuToggleStrongTargetBuff.Checked = selected.All(id => strongTargetBuffs.Contains(id));
+    }
+
+    /// <summary>
+    ///     Limits the selected buffs to strong monsters, or removes the limit when all of them are limited already.
+    /// </summary>
+    private void menuToggleStrongTargetBuff_Click(object sender, EventArgs e)
+    {
+        const string key = "RSBot.Skills.StrongTargetBuffs";
+        PlayerConfig.SetArray(key, ToggleIds(PlayerConfig.GetArray<uint>(key), GetSelectedSkillIds(listBuffs)));
+
+        LoadBuffs();
+        ApplyBuffSkills();
+    }
+
+    private static uint[] GetSelectedSkillIds(System.Windows.Forms.ListView listView)
+    {
+        return listView.SelectedItems.Cast<ListViewItem>().Select(p => ((SkillInfo)p.Tag).Id).ToArray();
+    }
+
+    /// <summary>
+    ///     Removes the selected ids if all of them are set, otherwise adds the missing ones.
+    /// </summary>
+    private static uint[] ToggleIds(uint[] current, uint[] selected)
+    {
+        return selected.All(id => current.Contains(id)) ? current.Except(selected).ToArray() : current.Union(selected).ToArray();
     }
 
     /// <summary>
