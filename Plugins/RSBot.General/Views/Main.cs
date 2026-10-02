@@ -72,22 +72,65 @@ internal partial class Main : DoubleBufferedControl
     /// <summary>
     ///     Called when gateway server disconnected.
     /// </summary>
-    private void OnGatewayServerDisconnected()
+    private async void OnGatewayServerDisconnected()
     {
         AutoLogin.Pending = false;
         View.PendingWindow?.Hide();
         View.PendingWindow?.StopClientlessQueueTask();
 
-        if (!Kernel.Proxy.IsConnectedToAgentserver)
-        {
-            Game.Clientless = false;
+        if (Kernel.Proxy.IsConnectedToAgentserver || Kernel.Proxy.IsSwitchingToAgentserver)
+            return;
 
-            btnStartClient.Enabled = true;
-            btnStartClientless.Enabled = true;
-            btnStartClientless.Text = LanguageManager.GetLang("Start") + " Clientless";
-            Log.StatusLang("Ready");
-            Kernel.Proxy.Shutdown();
+        var wasClientless = Game.Clientless;
+
+        // In client mode a closed client means the user exited it; only relogin if it is still open.
+        var shouldRelogin = GlobalConfig.Get<bool>("RSBot.General.EnableAutomatedLogin")
+            && (wasClientless || ClientManager.IsRunning);
+
+        Game.Clientless = false;
+        ResetLoginButtons();
+        Log.StatusLang("Ready");
+        Kernel.Proxy.Shutdown();
+
+        // The login server dropped us before we reached the game (server down, full, session limit...).
+        if (!shouldRelogin)
+            return;
+
+        btnStartClient.Enabled = false;
+        btnStartClientless.Enabled = false;
+
+        if (!await ReloginGuard.WaitForAttemptAsync())
+        {
+            ResetLoginButtons();
+            return;
         }
+
+        if (Kernel.Proxy.IsConnectedToAgentserver || Kernel.Proxy.IsConnectedToGatewayserver)
+            return;
+
+        if (!await HandleRegionalAuth())
+        {
+            Log.Warn("Regional auth failed! Automatic relogin stopped.");
+            ResetLoginButtons();
+            return;
+        }
+
+        if (wasClientless)
+        {
+            Game.Clientless = true;
+            Game.Start();
+            return;
+        }
+
+        ClientManager.Kill();
+        await StartClientProcess().ConfigureAwait(false);
+    }
+
+    private void ResetLoginButtons()
+    {
+        btnStartClient.Enabled = true;
+        btnStartClientless.Enabled = true;
+        btnStartClientless.Text = LanguageManager.GetLang("Start") + " Clientless";
     }
 
     /// <summary>
@@ -354,17 +397,21 @@ internal partial class Main : DoubleBufferedControl
             btnStartClient.Enabled = false;
             btnStartClientless.Enabled = false;
 
-            int delay = 10000;
-            if (GlobalConfig.Get("RSBot.General.EnableWaitAfterDC", false))
-                delay = GlobalConfig.Get<int>("RSBot.General.WaitAfterDC") * 60 * 1000;
-
-            Log.Warn($"Attempting relogin in {delay / 1000} seconds...");
-            Thread.Sleep(delay);
-
-            if (userAuthenticated)
+            // The guard drops duplicate disconnect events and backs off on repeated failures.
+            if (!await ReloginGuard.WaitForAttemptAsync())
             {
-                await StartClientProcess().ConfigureAwait(false);
+                ResetLoginButtons();
+                return;
             }
+
+            if (!await HandleRegionalAuth())
+            {
+                Log.Warn("Regional auth failed! Automatic relogin stopped.");
+                ResetLoginButtons();
+                return;
+            }
+
+            await StartClientProcess().ConfigureAwait(false);
             return;
         }
 

@@ -188,6 +188,7 @@ public class Game
         SkillManager.Initialize();
         ShoppingManager.Initialize();
         ClientlessManager.Initialize();
+        ReloginGuard.Initialize();
         ScriptManager.Initialize();
     }
 
