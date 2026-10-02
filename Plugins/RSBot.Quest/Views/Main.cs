@@ -109,16 +109,16 @@ public partial class Main : DoubleBufferedControl
                 rewardNode.Nodes.Add($"Gold: {quest.Quest.Reward.Gold}");
 
             if (quest.Quest.Reward.SP > 0)
-                rewardNode.Nodes.Add($"Skill points: {quest.Quest.Reward.Gold}");
+                rewardNode.Nodes.Add($"Skill points: {quest.Quest.Reward.SP}");
 
-            if (quest.Quest.Reward.SP > 0)
-                rewardNode.Nodes.Add($"Skill Exp: {quest.Quest.Reward.Gold}");
+            if (quest.Quest.Reward.SPExp > 0)
+                rewardNode.Nodes.Add($"Skill Exp: {quest.Quest.Reward.SPExp}");
 
             if (quest.Quest.Reward.InventorySlots > 0)
-                rewardNode.Nodes.Add($"Inv. slots: {quest.Quest.Reward.Gold}");
+                rewardNode.Nodes.Add($"Inv. slots: {quest.Quest.Reward.InventorySlots}");
 
             if (quest.Quest.Reward.Hwan > 0)
-                rewardNode.Nodes.Add($"Hwan: {quest.Quest.Reward.Gold}");
+                rewardNode.Nodes.Add($"Hwan: {quest.Quest.Reward.Hwan}");
         }
 
         if (quest.Quest.RewardItems != null && quest.Quest.RewardItems.Any())

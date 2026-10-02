@@ -748,7 +748,7 @@ public partial class Main : DoubleBufferedControl
         ShoppingManager.Enabled = checkEnable.Checked;
         PlayerConfig.Set("RSBot.Shopping.Enabled", checkEnable.Checked);
 
-        PlayerConfig.Set("RSBot.Shopping.StorePetItems", checkSellItemsFromPet.Checked);
+        PlayerConfig.Set("RSBot.Shopping.StorePetItems", checkStoreItemsFromPet.Checked);
         ShoppingManager.StorePetItems = checkStoreItemsFromPet.Checked;
 
         PlayerConfig.Set("RSBot.Shopping.SellPetItems", checkSellItemsFromPet.Checked);
