@@ -94,6 +94,7 @@
             checkBoxSwitchTargetIfStolen = new SDUI.Controls.CheckBox();
             checkBoxPetAttackTarget = new SDUI.Controls.CheckBox();
             checkBoxDefendPet = new SDUI.Controls.CheckBox();
+            checkBoxKillWeakestAttacker = new SDUI.Controls.CheckBox();
             timerGrabByAbilityPet = new System.Windows.Forms.Timer(components);
             toolTip1 = new System.Windows.Forms.ToolTip(components);
             groupBox2.SuspendLayout();
@@ -734,6 +735,7 @@
             // groupBoxAdvanced
             // 
             groupBoxAdvanced.BackColor = System.Drawing.Color.Transparent;
+            groupBoxAdvanced.Controls.Add(checkBoxKillWeakestAttacker);
             groupBoxAdvanced.Controls.Add(checkBoxPetAttackTarget);
             groupBoxAdvanced.Controls.Add(checkBoxDefendPet);
             groupBoxAdvanced.Controls.Add(checkBoxAvoidKillSteal);
@@ -875,6 +877,22 @@
             checkBoxDefendPet.UseVisualStyleBackColor = false;
             checkBoxDefendPet.CheckedChanged += settings_CheckedChanged;
             // 
+            // checkBoxKillWeakestAttacker
+            // 
+            checkBoxKillWeakestAttacker.AutoSize = false;
+            checkBoxKillWeakestAttacker.BackColor = System.Drawing.Color.Transparent;
+            checkBoxKillWeakestAttacker.Depth = 0;
+            checkBoxKillWeakestAttacker.Location = new System.Drawing.Point(270, 27);
+            checkBoxKillWeakestAttacker.Margin = new System.Windows.Forms.Padding(0);
+            checkBoxKillWeakestAttacker.MouseLocation = new System.Drawing.Point(-1, -1);
+            checkBoxKillWeakestAttacker.Name = "checkBoxKillWeakestAttacker";
+            checkBoxKillWeakestAttacker.Ripple = true;
+            checkBoxKillWeakestAttacker.Size = new System.Drawing.Size(200, 30);
+            checkBoxKillWeakestAttacker.TabIndex = 13;
+            checkBoxKillWeakestAttacker.Text = "Kill the weakest attacker first";
+            checkBoxKillWeakestAttacker.UseVisualStyleBackColor = false;
+            checkBoxKillWeakestAttacker.CheckedChanged += settings_CheckedChanged;
+            // 
             // timerGrabByAbilityPet
             // 
             timerGrabByAbilityPet.Enabled = true;
@@ -961,6 +979,7 @@
         private SDUI.Controls.CheckBox checkBoxSwitchTargetIfStolen;
         private SDUI.Controls.CheckBox checkBoxPetAttackTarget;
         private SDUI.Controls.CheckBox checkBoxDefendPet;
+        private SDUI.Controls.CheckBox checkBoxKillWeakestAttacker;
         private SDUI.Controls.Button btnRemove;
     }
 }

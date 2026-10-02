@@ -39,6 +39,10 @@ Goal: port the useful features iBot has that RSBot doesn't, step by step (tier 1
       tab pet box): supplies right away, everything when the pet is full; the "full pet inventory" town trip waits
       while the inventory has room. Config `RSBot.Protection.checkPetTransferSupplies` / `checkPetTransferWhenFull`.
 - [x] Fix: Inventory tab "Move to pet" had an inverted null check and never moved anything.
+- [x] Fix: Party tab buffing (thread, group lookup, old skill levels) and party buffing bundle (ally buffs sent without
+      a target, old skill ids after level up, spam pause after 3 failed casts).
+- [x] Training option "Kill the weakest attacker first" (`checkBoxKillWeakestAttacker`, TargetBundle
+      `GetWeakestAttacker`); also fixed the ordering of the existing "If avoided: counter attack weaker mobs first".
 
 ## Tier 1 (remaining)
 

@@ -111,6 +111,18 @@ internal class TargetBundle : IBundle
         if (Game.SelectedEntity != null && Game.SelectedEntity is not SpawnedMonster)
             Game.SelectedEntity = null;
 
+        // Several monsters hit the player: kill the one that dies fastest first, so fewer keep hitting
+        var weakestAttacker = GetWeakestAttacker();
+        if (weakestAttacker != null)
+        {
+            Log.Debug($"[TargetBundle] Attacked by several monsters, killing the weakest first: {weakestAttacker.Record?.GetRealName()}");
+
+            if (weakestAttacker.TrySelect())
+                Bundles.Movement.LastEntityWasBehindObstacle = false;
+
+            return;
+        }
+
         // Defend the pet: attack the monster that is hitting it, unless the selected monster is already hitting
         // the player or the pet
         var petAttacker = GetPetAttacker();
@@ -243,11 +255,7 @@ internal class TargetBundle : IBundle
         )
             return null;
 
-        return entities
-            .OrderBy(e => (byte)e.Rarity)
-            .OrderBy(e => e.Record.Level)
-            .OrderByDescending(e => e.Position.DistanceToPlayer())
-            .FirstOrDefault();
+        return entities.OrderBy(EstimateHealth).ThenBy(e => e.DistanceToPlayer).FirstOrDefault();
     }
 
     private bool IsEmergencySituation()
@@ -361,6 +369,59 @@ internal class TargetBundle : IBundle
     private static bool IsRecent(int tick)
     {
         return Kernel.TickCount - tick < FIGHT_TIMEOUT;
+    }
+
+    /// <summary>
+    ///     Gets the monster to switch to when several monsters are hitting the player and the option is on: the one
+    ///     with the least health left. <c>null</c> to keep the current target.
+    /// </summary>
+    private SpawnedMonster GetWeakestAttacker()
+    {
+        // The selected target only loses against an attacker with clearly less health, so it isn't swapped back and forth
+        const float switchRatio = 0.7f;
+
+        if (!PlayerConfig.Get("RSBot.Training.checkBoxKillWeakestAttacker", false))
+            return null;
+
+        if (
+            !SpawnManager.TryGetEntities<SpawnedMonster>(
+                m =>
+                    m.State.LifeState == LifeState.Alive
+                    && m.TargetId == Game.Player.UniqueId
+                    && IsRecent(m.TargetTick)
+                    && !m.IsBehindObstacle
+                    && (_blacklist == null || !_blacklist.ContainsKey(m.UniqueId)),
+                out var attackers
+            )
+        )
+            return null;
+
+        var list = attackers.ToList();
+        if (list.Count < 2)
+            return null;
+
+        var weakest = list.OrderBy(EstimateHealth).ThenBy(m => m.DistanceToPlayer).First();
+
+        var current = Game.SelectedEntity == null ? null : list.Find(m => m.UniqueId == Game.SelectedEntity.UniqueId);
+        if (current == null)
+            return weakest;
+
+        if (current.UniqueId == weakest.UniqueId)
+            return null;
+
+        return EstimateHealth(weakest) < EstimateHealth(current) * switchRatio ? weakest : null;
+    }
+
+    /// <summary>
+    ///     Gets the health a monster has left. Before its first health update the base health of the record is stored,
+    ///     which is too low for a champion or giant, so an untouched monster counts as full.
+    /// </summary>
+    private static int EstimateHealth(SpawnedMonster monster)
+    {
+        if (monster.Record == null)
+            return monster.Health;
+
+        return monster.Health == monster.Record.MaxHealth ? monster.MaxHealth : monster.Health;
     }
 
     /// <summary>
