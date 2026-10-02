@@ -58,6 +58,11 @@ public class Player : SpawnedBionic
     private int _lastVigorPotionTick;
 
     /// <summary>
+    ///     Item ability skills by id, see <see cref="GetAbilitySkill" />.
+    /// </summary>
+    private readonly Dictionary<uint, SkillInfo> _abilitySkills = new();
+
+    /// <summary>
     ///     <inheritdoc />
     /// </summary>
     /// <param name="objId"></param>
@@ -1089,7 +1094,7 @@ public class Player : SpawnedBionic
         foreach (var item in player.Inventory.GetEquippedPartItems().Union(player.Avatars))
         {
             if (item.HasAbility(out var abilityItem))
-                abilitySkills.AddRange(abilityItem.GetLinks().Select(skillId => new SkillInfo(skillId, true)));
+                abilitySkills.AddRange(abilityItem.GetLinks().Select(GetAbilitySkill));
 
             if (Game.ClientType >= GameClientType.Chinese_Old)
             {
@@ -1097,14 +1102,26 @@ public class Player : SpawnedBionic
                     continue;
 
                 abilitySkills.AddRange(
-                    extraAbilityItems
-                        .SelectMany(p => p.Skills)
-                        .Where(p => p != 0)
-                        .Select(skillId => new SkillInfo(skillId, true))
+                    extraAbilityItems.SelectMany(p => p.Skills).Where(p => p != 0).Select(GetAbilitySkill)
                 );
             }
         }
 
         return abilitySkills.Any();
+    }
+
+    /// <summary>
+    ///     Returns the one <see cref="SkillInfo" /> kept for an item ability skill (e.g. Devil's Spirit),
+    ///     so its cooldown survives the buff list being rebuilt.
+    /// </summary>
+    private SkillInfo GetAbilitySkill(uint skillId)
+    {
+        lock (_abilitySkills)
+        {
+            if (!_abilitySkills.TryGetValue(skillId, out var skill))
+                _abilitySkills[skillId] = skill = new SkillInfo(skillId, true);
+
+            return skill;
+        }
     }
 }

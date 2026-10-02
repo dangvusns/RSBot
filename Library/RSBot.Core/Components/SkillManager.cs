@@ -29,6 +29,13 @@ public static class SkillManager
     private static IEnumerable<uint> _baseSkills;
 
     /// <summary>
+    ///     The last skill a cast was requested for, to attribute a cooldown refusal from the server.
+    /// </summary>
+    private static SkillInfo _lastRequestedSkill;
+
+    private static int _lastRequestTick;
+
+    /// <summary>
     ///     Gets or sets the skills organized by their mob priority.
     /// </summary>
     /// <value>
@@ -116,6 +123,27 @@ public static class SkillManager
             return;
 
         Skills[monsterRarity] = skills;
+    }
+
+    private static void RememberCastRequest(SkillInfo skill)
+    {
+        _lastRequestedSkill = skill;
+        _lastRequestTick = Kernel.TickCount;
+    }
+
+    /// <summary>
+    ///     Called when the server refuses a cast because the skill is still on cooldown.
+    ///     The refusal does not name the skill, so it is attributed to the last cast request; our timer
+    ///     thought the skill was ready, so hold it back briefly instead of retrying every tick.
+    /// </summary>
+    internal static void OnCastRefusedByCooldown()
+    {
+        var skill = _lastRequestedSkill;
+        if (skill == null || Kernel.TickCount - _lastRequestTick > 2000 || skill.HasCooldown)
+            return;
+
+        Log.Debug($"Server refused [{skill.Record?.GetRealName()}]: still on cooldown. Retrying in 3 s.");
+        skill.SetRemainingCooldown(3000);
     }
 
     /// <summary>
@@ -321,6 +349,8 @@ public static class SkillManager
         if (!CheckSkillRequired(skill.Record))
             return false;
 
+        RememberCastRequest(skill);
+
         var packet = new Packet(0x7074);
         packet.WriteByte(ActionCommandType.Execute); //Execute
         packet.WriteByte(ActionType.Cast); //Use Skill
@@ -363,6 +393,8 @@ public static class SkillManager
 
         if (!CheckSkillRequired(skill.Record))
             return false;
+
+        RememberCastRequest(skill);
 
         var distance = entity.DistanceToPlayer;
         var speed = Game.Player.ActualSpeed;
@@ -457,6 +489,8 @@ public static class SkillManager
         */
         if (!CheckSkillRequired(skill.Record))
             return;
+
+        RememberCastRequest(skill);
 
         Log.Notify($"Casting skill (self-buff) [{skill.Record.GetRealName()}]");
 
@@ -557,6 +591,8 @@ public static class SkillManager
 
         if (!CheckSkillRequired(skill.Record))
             return;
+
+        RememberCastRequest(skill);
 
         var packet = new Packet(0x7074);
         packet.WriteByte(ActionCommandType.Execute); //Execute

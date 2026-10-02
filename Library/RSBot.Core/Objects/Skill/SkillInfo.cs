@@ -260,11 +260,14 @@ public class SkillInfo
     }
 
     /// <summary>
-    ///     Set cooldown
+    ///     Sets the cooldown so that <paramref name="remainingMilliseconds" /> are left until the skill is ready.
     /// </summary>
-    public void SetCoolDown(int milliseconds)
+    public void SetRemainingCooldown(int remainingMilliseconds)
     {
-        _cooldownTick = Kernel.TickCount - milliseconds;
+        var reuse = Record?.Action_ReuseDelay ?? 0;
+
+        // HasCooldown compares the time since _cooldownTick with the reuse delay.
+        _cooldownTick = Kernel.TickCount - (reuse - Math.Max(0, remainingMilliseconds));
     }
 
     /// <summary>

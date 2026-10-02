@@ -48,8 +48,14 @@ internal class BuffTokenUpdateResponse : IPacketHandler
 
             var skillInfo = Game.Player.Skills.GetSkillInfoById(skillId);
             skillInfo ??= SkillManager.Buffs.Find(p => p.Id == skillId);
+            if (skillInfo == null)
+                continue;
 
-            skillInfo?.SetCoolDown(milliseconds);
+            // The server sends the time left on the cooldown, not the time since the cast.
+            Log.Debug(
+                $"Cooldown after teleport: {skillInfo.Record?.GetRealName()} {milliseconds} ms left (reuse {skillInfo.Record?.Action_ReuseDelay} ms)"
+            );
+            skillInfo.SetRemainingCooldown(milliseconds);
         }
     }
 }

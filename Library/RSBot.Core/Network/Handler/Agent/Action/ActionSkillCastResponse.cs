@@ -46,7 +46,8 @@ internal class ActionSkillCastResponse : IPacketHandler
                     break;
 
                 case 0x05:
-                    Log.Debug("Skill cooldown error. Still have time!");
+                    // Still on cooldown: correct our timer so the bot stops retrying every tick.
+                    SkillManager.OnCastRefusedByCooldown();
                     break;
 
                 case 0x06: // invalid target
