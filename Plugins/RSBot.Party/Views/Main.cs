@@ -133,6 +133,30 @@ public partial class Main : DoubleBufferedControl
     }
 
     /// <summary>
+    ///     Adds and selects the default buffing group if there is no group yet.
+    /// </summary>
+    private void EnsureBuffingGroup()
+    {
+        if (listViewGroups.Items.Count > 0)
+            return;
+
+        var item = listViewGroups.Items.Add("Default", "Default", 0);
+        item.SubItems.Add("0");
+        item.Selected = true;
+        _selectedBuffingGroup = item;
+
+        SaveBuffingGroups();
+    }
+
+    /// <summary>
+    ///     Gets the buffing entry of the member in the selected group. A character can be in several groups.
+    /// </summary>
+    private BuffingPartyMember FindBuffingMember(string name)
+    {
+        return _buffings.Find(p => p.Name == name && p.Group == _selectedBuffingGroup.Text);
+    }
+
+    /// <summary>
     ///     Save the buffing groups
     /// </summary>
     private void SaveBuffingGroups()
@@ -155,9 +179,60 @@ public partial class Main : DoubleBufferedControl
         var collection = settings.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var item in collection)
-            buffingMembers.Add(new BuffingPartyMember(item));
+        {
+            // One broken entry must not lose the other members (and leave the tab without groups)
+            try
+            {
+                buffingMembers.Add(new BuffingPartyMember(item));
+            }
+            catch (InvalidOperationException)
+            {
+                Log.Warn($"[Party buffing] Skipped an invalid entry: {item}");
+            }
+        }
 
         _buffings = buffingMembers;
+
+        UpdateBuffingSkillLevels();
+    }
+
+    /// <summary>
+    ///     Replaces the saved buffs by the level the player knows now. A buff saved at a lower level isn't in the
+    ///     skill list anymore, so it couldn't be seen, removed or added again.
+    /// </summary>
+    private void UpdateBuffingSkillLevels()
+    {
+        if (Game.Player?.Skills == null)
+            return;
+
+        var changed = false;
+
+        foreach (var member in _buffings)
+        {
+            for (var i = 0; i < member.Buffs.Count; i++)
+            {
+                var savedId = member.Buffs[i];
+                if (Game.Player.Skills.HasSkill(savedId))
+                    continue;
+
+                var learned = Game.Player.Skills.FindLearnedSkill(savedId);
+                if (learned == null || learned.Id == savedId)
+                    continue;
+
+                member.Buffs[i] = learned.Id;
+                changed = true;
+            }
+
+            var distinct = member.Buffs.Distinct().ToList();
+            if (distinct.Count != member.Buffs.Count)
+            {
+                member.Buffs = distinct;
+                changed = true;
+            }
+        }
+
+        if (changed)
+            SaveBuffingPartyMembers();
     }
 
     /// <summary>
@@ -333,6 +408,13 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     private void OnLoadCharacter()
     {
+        // Raised on the network thread; the lists may only be changed on the UI thread
+        if (IsHandleCreated && InvokeRequired)
+        {
+            BeginInvoke(new Action(OnLoadCharacter));
+            return;
+        }
+
         listViewGroups.Items.Clear();
 
         var selectedGroup = PlayerConfig.Get("RSBot.Party.Buffing.SelectedGroup", "Default");
@@ -341,12 +423,7 @@ public partial class Main : DoubleBufferedControl
         var groups = LoadBuffingGroups();
         if (groups.Length == 0)
         {
-            var item = listViewGroups.Items.Add("Default", "Default", 0);
-            item.SubItems.Add("0");
-            item.Selected = true;
-            _selectedBuffingGroup = item;
-
-            SaveBuffingGroups();
+            EnsureBuffingGroup();
         }
         else
         {
@@ -894,7 +971,7 @@ public partial class Main : DoubleBufferedControl
         selectedMemberBuffs.Items.Clear();
 
         var name = listViewPartyMembers.SelectedItems[0].Text;
-        var member = _buffings.Find(p => p.Name == name);
+        var member = FindBuffingMember(name);
         if (member == null)
             return;
 
@@ -903,12 +980,20 @@ public partial class Main : DoubleBufferedControl
             var listViewItemOfMainList = listPartyBuffSkills
                 .Items.Cast<ListViewItem>()
                 .FirstOrDefault(p => ((SkillInfo)p.Tag).Id == skillId);
-            if (listViewItemOfMainList == null)
+            if (listViewItemOfMainList != null)
+            {
+                var clone = (ListViewItem)listViewItemOfMainList.Clone();
+                clone.SubItems.RemoveAt(1);
+                selectedMemberBuffs.Items.Add(clone);
+                continue;
+            }
+
+            // Hidden in the skill list (e.g. a lower level skill), still show it so it can be removed
+            var skill = Game.Player.Skills.GetSkillInfoById(skillId);
+            if (skill?.Record == null)
                 continue;
 
-            var clone = (ListViewItem)listViewItemOfMainList.Clone();
-            clone.SubItems.RemoveAt(1);
-            selectedMemberBuffs.Items.Add(clone);
+            selectedMemberBuffs.Items.Add(new ListViewItem(skill.Record.GetRealName()) { Tag = skill });
         }
     }
 
@@ -922,7 +1007,7 @@ public partial class Main : DoubleBufferedControl
 
         var memberName = listViewPartyMembers.SelectedItems[0].Text;
 
-        var buffingMember = _buffings.Find(p => p.Name == memberName);
+        var buffingMember = FindBuffingMember(memberName);
         if (buffingMember == null)
             return;
 
@@ -973,7 +1058,7 @@ public partial class Main : DoubleBufferedControl
 
         var memberName = listViewPartyMembers.SelectedItems[0].Text;
 
-        var buffingMember = _buffings.FirstOrDefault(p => p.Name == memberName);
+        var buffingMember = FindBuffingMember(memberName);
         if (buffingMember == null)
             return;
 
@@ -986,7 +1071,7 @@ public partial class Main : DoubleBufferedControl
             buffingMember.Buffs.Remove(skill.Id);
             viewItem.Remove();
 
-            var mainItem = listPartyBuffSkills.Items.Cast<ListViewItem>().FirstOrDefault(p => p.Tag == skill);
+            var mainItem = listPartyBuffSkills.Items.Cast<ListViewItem>().FirstOrDefault(p => (p.Tag as SkillInfo)?.Id == skill.Id);
             if (mainItem == null)
                 continue;
 
@@ -1014,11 +1099,14 @@ public partial class Main : DoubleBufferedControl
         var dialogDesc = LanguageManager.GetLang("SelectGroupDesc");
         var dialog = new InputDialog(dialogTitle, dialogTitle, dialogDesc, InputDialog.InputType.Combobox);
 
+        EnsureBuffingGroup();
+
         var groups = listViewGroups.Items.Cast<ListViewItem>().Select(p => p.Text).ToArray();
 
         dialog.Selector.Items.AddRange(groups);
 
-        dialog.Selector.SelectedIndex = 0;
+        if (dialog.Selector.Items.Count > 0)
+            dialog.Selector.SelectedIndex = Math.Max(0, Array.IndexOf(groups, _selectedBuffingGroup.Text));
 
         if (dialog.ShowDialog(this) == DialogResult.OK)
         {
