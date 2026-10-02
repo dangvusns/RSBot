@@ -101,12 +101,35 @@ public partial class Main : DoubleBufferedControl
         SubscribeViewEvent("OnWithdrawSkill", new Action<SkillInfo, SkillInfo>(OnWithdrawSkill));
         SubscribeViewEvent("OnLearnSkillMastery", new Action<MasteryInfo>(OnLearnSkillMastery));
 
-        SubscribeViewEvent("OnAddBuff", new Action<SkillInfo>(OnAddBuff));
-        SubscribeViewEvent("OnRemoveBuff", new Action<SkillInfo>(OnRemoveBuff));
+        // Active-buff list mutations are marshalled to the UI thread: events fire on the network
+        // thread, and BuffTimer_Tick enumerating the list concurrently throws inside ListView.
+        SubscribeViewEvent("OnAddBuff", new Action<SkillInfo>(b => RunOnUiThread(() => OnAddBuff(b))));
+        SubscribeViewEvent("OnRemoveBuff", new Action<SkillInfo>(b => RunOnUiThread(() => OnRemoveBuff(b))));
         SubscribeViewEvent("OnResurrectionRequest", OnResurrectionRequest);
         SubscribeViewEvent("OnExpSpUpdate", OnSpUpdated);
-        SubscribeViewEvent("OnAddItemPerk", new Action<uint, uint>(OnAddItemPerk));
-        SubscribeViewEvent("OnRemoveItemPerk", new Action<uint, ItemPerk>(OnRemoveItemPerk));
+        SubscribeViewEvent("OnAddItemPerk",
+            new Action<uint, uint>((t, k) => RunOnUiThread(() => OnAddItemPerk(t, k))));
+        SubscribeViewEvent("OnRemoveItemPerk",
+            new Action<uint, ItemPerk>((t, p) => RunOnUiThread(() => OnRemoveItemPerk(t, p))));
+    }
+
+    private void RunOnUiThread(System.Action action)
+    {
+        if (IsDisposed || Disposing)
+            return;
+
+        if (!IsHandleCreated || !InvokeRequired)
+        {
+            action();
+            return;
+        }
+
+        try
+        {
+            BeginInvoke(action);
+        }
+        catch (ObjectDisposedException) { }
+        catch (InvalidOperationException) { }
     }
 
     /// <summary>
@@ -141,7 +164,9 @@ public partial class Main : DoubleBufferedControl
         if (targetId != Game.Player.UniqueId)
             return;
 
-        var perk = Game.Player.State.ActiveItemPerks[token];
+        if (!Game.Player.State.ActiveItemPerks.TryGetValue(token, out var perk))
+            return;
+
         var item = new ListViewItem { Text = perk.Item?.GetRealName(), Tag = perk };
 
         listActiveBuffs.Items.Add(item);
@@ -945,7 +970,7 @@ public partial class Main : DoubleBufferedControl
         ApplyAttackSkills();
         ApplyBuffSkills();
 
-        listActiveBuffs.Items.Clear();
+        RunOnUiThread(listActiveBuffs.Items.Clear);
     }
 
     /// <summary>
