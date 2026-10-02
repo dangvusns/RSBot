@@ -17,6 +17,11 @@ public static class ReloginGuard
     private static int _attempts;
 
     /// <summary>
+    ///     1 while the character was logged out on purpose and must not log in again.
+    /// </summary>
+    private static int _suppressed;
+
+    /// <summary>
     ///     Subscribes the events.
     /// </summary>
     internal static void Initialize()
@@ -25,7 +30,14 @@ public static class ReloginGuard
         EventManager.SubscribeEvent("OnAgentServerConnected", Cancel);
 
         // Being in game again is the only real success; reset the backoff then.
-        EventManager.SubscribeEvent("OnLoadCharacter", () => Interlocked.Exchange(ref _attempts, 0));
+        EventManager.SubscribeEvent(
+            "OnLoadCharacter",
+            () =>
+            {
+                Interlocked.Exchange(ref _attempts, 0);
+                Interlocked.Exchange(ref _suppressed, 0);
+            }
+        );
     }
 
     /// <summary>
@@ -37,11 +49,25 @@ public static class ReloginGuard
     }
 
     /// <summary>
+    ///     Skips the automatic relogins until the character is in game again, for an intended logout.
+    /// </summary>
+    public static void SuppressUntilNextLogin()
+    {
+        Interlocked.Exchange(ref _suppressed, 1);
+    }
+
+    /// <summary>
     ///     Starts a relogin attempt and waits for its backoff delay.
     /// </summary>
     /// <returns><c>true</c> if the caller should relogin now; <c>false</c> if a newer event superseded it or the attempt limit was reached.</returns>
     public static async Task<bool> WaitForAttemptAsync()
     {
+        if (Volatile.Read(ref _suppressed) == 1)
+        {
+            Log.Notify("Automatic relogin skipped, the character was logged out on purpose.");
+            return false;
+        }
+
         var sequence = Interlocked.Increment(ref _sequence);
         var attempt = Interlocked.Increment(ref _attempts);
 

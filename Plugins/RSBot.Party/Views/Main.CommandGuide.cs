@@ -58,6 +58,12 @@ public partial class Main
         AddGuideLabel("CommandGuideTeleport", "• teleport from,to — Use a nearby teleporter to reach a matching destination.\n   Example: teleport ferry,donwhang");
         AddGuideLabel("CommandGuideRadius", "• radius value — Set the training radius.\n   Example: radius 50");
         AddGuideLabel("CommandGuideArea", "• area / setarea x,y,radius — Set the training position and radius.\n   Examples: area 100,200,50 · setarea 100,200,50");
+        AddGuideLabel("CommandGuideInvite", "• invite / inviteme — Invite the sender to the party (the sender must be near).\n   Example: inviteme");
+        AddGuideLabel("CommandGuideLeave", "• leave / leavept — Leave the party.\n   Example: leave");
+        AddGuideLabel("CommandGuideStatus", "• status — Reply with level, HP, MP, bot state and location.\n   Example: status");
+        AddGuideLabel("CommandGuideLogout", "• logout — Stop the bot and leave the game without relogging in.\n   Example: logout");
+        AddGuideLabel("CommandGuideHelp", "• help — Reply with the list of commands.\n   Example: help");
+        AddGuideLabel("CommandGuidePrivate", "Private messages work from anywhere; the sender doesn't have to be near.");
 
         groupBox2.SizeChanged += (s, e) => UpdateCommandGuideLayout();
         FontChanged += (s, e) => UpdateCommandGuideLayout();

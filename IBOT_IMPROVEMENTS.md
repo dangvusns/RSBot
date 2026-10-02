@@ -30,13 +30,15 @@ Goal: port the useful features iBot has that RSBot doesn't, step by step (tier 1
 - [x] 5. Area swap: next saved area when no target for N seconds (`Bundle/AreaSwap/AreaSwapBundle.cs`, option in the
       training areas dialog). Walks with an auto path when > 80m; back to the primary area when the town script runs
       or the bot stops. Config `RSBot.Training.checkSwapArea`, `RSBot.Training.numSwapAreaSeconds`.
+- [x] Create training area dialog: X / Y / Region can be typed (`CreateTrainingAreaDialog`).
+- [x] Fix: Skills tab crash in `BuffTimer_Tick` — skill lists are now reloaded on the UI thread.
+- [x] 7. Remote commands: private/party messages work without the sender near (`Commander` record in
+      `CommandsBundle`); new invite/inviteme, leave/leavept, status, logout (no relogin via
+      `ReloginGuard.SuppressUntilNextLogin`), help. "join party" skipped (needs a party number).
 
 ## Tier 1 (remaining)
 
-- [ ] 6. More sound alarms: GM nearby (name starts with `[GM]`), level up, died, disconnected, back in town,
-      chat per channel, Hunter/Thief trade starting. RSBot only has unique alarms (`NotificationSounds.cs`).
-- [ ] 7. Remote PM commands: accept commands from senders that aren't spawned nearby
-      (`Plugins/RSBot.Party/.../ChatResponse.cs`); add invite-me, join-party, leave-party, logout, relog, help.
+- [-] 6. Sound alarms: skipped, the user doesn't use alarms much.
 - [ ] 8. Pet-to-inventory transfer while training: pots/pills/arrows from pick pet to inventory, or empty the pet
       bag when full instead of returning to town (iBot `InventoryUpdate.bas:1408-1461`).
 

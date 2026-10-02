@@ -28,7 +28,7 @@ internal class CommandsBundle
     /// Stores the mapping of command names to their associated actions. The second parameter of an action is the
     /// argument text after the command name (empty if there is none).
     /// </summary>
-    private readonly Dictionary<string, Action<SpawnedPlayer, string>> _commands;
+    private readonly Dictionary<string, Action<Commander, string>> _commands;
 
     /// <summary>
     /// The prefix of the optional config keys that tune the trace (distances, intervals, debug logging).
@@ -58,6 +58,13 @@ internal class CommandsBundle
         _commands["radius"] = SetBotRadius;
         _commands["area"] = SetBotArea;
         _commands["setarea"] = SetBotArea;
+        _commands["invite"] = InviteCommander;
+        _commands["inviteme"] = InviteCommander;
+        _commands["leave"] = LeaveParty;
+        _commands["leavept"] = LeaveParty;
+        _commands["status"] = SendStatus;
+        _commands["logout"] = Logout;
+        _commands["help"] = SendHelp;
     }
 
     /// <summary>
@@ -105,7 +112,7 @@ internal class CommandsBundle
     /// </summary>
     /// <param name="player">The commander.</param>
     /// <param name="args">Not used.</param>
-    private void ReturnTown(SpawnedPlayer player, string args)
+    private void ReturnTown(Commander player, string args)
     {
         Task.Run(() =>
         {
@@ -128,7 +135,7 @@ internal class CommandsBundle
     /// not updated.</remarks>
     /// <param name="player">The commander.</param>
     /// <param name="radius">The radius. Must be a positive floating-point value.</param>
-    private void SetBotRadius(SpawnedPlayer player, string radius)
+    private void SetBotRadius(Commander player, string radius)
     {
         if (!TryParseNumber(radius, out var r) || r <= 0)
         {
@@ -145,7 +152,7 @@ internal class CommandsBundle
     /// </summary>
     /// <param name="player">The commander.</param>
     /// <param name="coods">The coordinates and radius. Usage: area x,y,r</param>
-    private void SetBotArea(SpawnedPlayer player, string coods)
+    private void SetBotArea(Commander player, string coods)
     {
         try
         {
@@ -187,12 +194,17 @@ internal class CommandsBundle
     /// <summary>
     ///     Handle the bundle
     /// </summary>
-    public void Handle(SpawnedPlayer player, string message)
+    /// <param name="senderName">The name of the player who sent the message.</param>
+    /// <param name="sender">The sender, <c>null</c> if it isn't near (a private message can come from anywhere).</param>
+    /// <param name="message">The message.</param>
+    public void Handle(string senderName, SpawnedPlayer sender, string message)
     {
         try
         {
-            if (player == null || Config == null || Config.PlayerList == null || string.IsNullOrWhiteSpace(message))
+            if (string.IsNullOrEmpty(senderName) || Config == null || Config.PlayerList == null || string.IsNullOrWhiteSpace(message))
                 return;
+
+            var player = new Commander(senderName, sender);
 
             // "Listen party master" only obeys the master of the own party
             var isMaster = Game.Party.IsInParty && Game.Party.Leader?.Name == player.Name;
@@ -224,7 +236,7 @@ internal class CommandsBundle
     /// </summary>
     /// <param name="player">The commander.</param>
     /// <param name="args">An optional player name.</param>
-    private void StartSmartTrace(SpawnedPlayer player, string args)
+    private void StartSmartTrace(Commander player, string args)
     {
         if (!TryResolveTarget(player, args, out var targetName, out var seed))
             return;
@@ -248,7 +260,7 @@ internal class CommandsBundle
     /// </summary>
     /// <param name="player">The commander.</param>
     /// <param name="args">Not used.</param>
-    private void StopTrace(SpawnedPlayer player, string args)
+    private void StopTrace(Commander player, string args)
     {
         TraceManager.Stop();
     }
@@ -258,7 +270,7 @@ internal class CommandsBundle
     /// that name (case-insensitive).
     /// </summary>
     private static bool TryResolveTarget(
-        SpawnedPlayer commander,
+        Commander commander,
         string name,
         out string targetName,
         out SpawnedPlayer seed
@@ -267,7 +279,7 @@ internal class CommandsBundle
         if (string.IsNullOrWhiteSpace(name))
         {
             targetName = commander.Name;
-            seed = commander;
+            seed = commander.Player;
 
             return true;
         }
@@ -295,7 +307,7 @@ internal class CommandsBundle
     /// </summary>
     /// <param name="player">The commander.</param>
     /// <param name="args">The source and the destination.</param>
-    private void Teleport(SpawnedPlayer player, string args)
+    private void Teleport(Commander player, string args)
     {
         var parts = args.Contains(',')
             ? args.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -393,7 +405,7 @@ internal class CommandsBundle
     /// </summary>
     /// <param name="player">The commander.</param>
     /// <param name="text">The message.</param>
-    private static void Reply(SpawnedPlayer player, string text)
+    private static void Reply(Commander player, string text)
     {
         try
         {
@@ -411,9 +423,89 @@ internal class CommandsBundle
     }
 
     /// <summary>
+    /// Invites the commander to the party, or creates one. The commander must be near, the server invites by unique id.
+    /// </summary>
+    private void InviteCommander(Commander player, string args)
+    {
+        if (player?.Player == null)
+        {
+            Reply(player, "I can't see you, come closer to be invited");
+            return;
+        }
+
+        if (Game.Party.GetMemberByName(player.Name) != null)
+        {
+            Reply(player, "You are already in my party");
+            return;
+        }
+
+        if (!Game.Party.CanInvite)
+        {
+            Reply(player, "I can't invite, I'm not the party leader");
+            return;
+        }
+
+        Game.Party.Invite(player.Player.UniqueId);
+    }
+
+    /// <summary>
+    /// Leaves the party.
+    /// </summary>
+    private void LeaveParty(Commander player, string args)
+    {
+        if (!Game.Party.IsInParty)
+        {
+            Reply(player, "I'm not in a party");
+            return;
+        }
+
+        Game.Party.Leave();
+    }
+
+    /// <summary>
+    /// Answers with the level, health, mana, bot state and location.
+    /// </summary>
+    private void SendStatus(Commander player, string args)
+    {
+        var character = Game.Player;
+        var location = Game.ReferenceManager.GetTranslation(character.Position.Region.ToString());
+
+        Reply(
+            player,
+            $"Lv {character.Level} | HP {character.Health}/{character.MaximumHealth} | MP {character.Mana}/{character.MaximumMana} | "
+                + $"Bot {(Kernel.Bot.Running ? "running" : "stopped")} | {location} ({character.Position.X:0},{character.Position.Y:0})"
+        );
+    }
+
+    /// <summary>
+    /// Stops the bot and leaves the game, without the automatic relogin.
+    /// </summary>
+    private void Logout(Commander player, string args)
+    {
+        Reply(player, "Logging out");
+
+        Kernel.Bot.Stop();
+        ReloginGuard.SuppressUntilNextLogin();
+
+        var packet = new Packet(0x7005);
+        packet.WriteByte(1); // exit the game
+
+        PacketManager.SendPacket(packet, PacketDestination.Server);
+    }
+
+    /// <summary>
+    /// Answers with the list of commands.
+    /// </summary>
+    private void SendHelp(Commander player, string args)
+    {
+        Reply(player, "Commands: start, stop, town, trace [name], notrace, sitdown, teleport from,to, radius r, area x,y,r");
+        Reply(player, "Commands: invite, leave, status, logout, help");
+    }
+
+    /// <summary>
     ///     Sends the sit down / stand up request.
     /// </summary>
-    private void SendSitdownRequest(SpawnedPlayer player, string args)
+    private void SendSitdownRequest(Commander player, string args)
     {
         var packet = new Packet(0x704F);
         packet.WriteByte(4);
@@ -433,4 +525,9 @@ internal class CommandsBundle
             ListenOnlyMaster = PlayerConfig.Get<bool>("RSBot.Party.Commands.ListenFromMaster"),
         };
     }
+
+    /// <summary>
+    /// The player who sent a command. <see cref="Player" /> is <c>null</c> when the player isn't near.
+    /// </summary>
+    internal sealed record Commander(string Name, SpawnedPlayer Player);
 }

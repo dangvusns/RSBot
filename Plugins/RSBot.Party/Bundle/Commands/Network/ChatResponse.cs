@@ -50,7 +50,7 @@ internal class ChatResponse : IPacketHandler
                 if (!SpawnManager.TryGetEntity(senderId, out player))
                     return;
 
-                Container.Commands.Handle(player, message.Trim());
+                Container.Commands.Handle(player.Name, player, message.Trim());
 
                 break;
 
@@ -64,10 +64,10 @@ internal class ChatResponse : IPacketHandler
                 if (sender == Game.Player.Name)
                     return;
 
-                if (!SpawnManager.TryGetEntity(p => p.Name == sender, out player))
-                    return;
+                // The sender of a private or party message doesn't have to be near
+                SpawnManager.TryGetEntity(p => p.Name == sender, out player);
 
-                Container.Commands.Handle(player, message.Trim());
+                Container.Commands.Handle(sender, player, message.Trim());
 
                 break;
         }
