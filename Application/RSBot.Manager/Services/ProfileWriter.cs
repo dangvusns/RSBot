@@ -94,17 +94,20 @@ public static class ProfileWriter
     {
         var profile = account.ProfileName;
 
+        // Locked update: running bots write Profiles.rs too.
         if (File.Exists(ProfilesFile))
-        {
-            var config = new Config(ProfilesFile);
-            var profiles = config
-                .GetArray<string>(ProfilesKey, '|')
-                .Where(p => !p.Equals(profile, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
+            Config.Update(
+                ProfilesFile,
+                config =>
+                {
+                    var profiles = config
+                        .GetArray<string>(ProfilesKey, '|')
+                        .Where(p => !p.Equals(profile, StringComparison.OrdinalIgnoreCase))
+                        .ToArray();
 
-            config.SetArray(ProfilesKey, profiles, "|");
-            config.Save();
-        }
+                    config.SetArray(ProfilesKey, profiles, "|");
+                }
+            );
 
         if (!deleteFiles)
             return;
@@ -118,15 +121,19 @@ public static class ProfileWriter
 
     private static void AddToProfileList(string profile)
     {
-        var config = new Config(ProfilesFile);
-        var profiles = config.GetArray<string>(ProfilesKey, '|').ToList();
+        // Locked update: running bots write Profiles.rs too.
+        Config.Update(
+            ProfilesFile,
+            config =>
+            {
+                var profiles = config.GetArray<string>(ProfilesKey, '|').ToList();
+                if (profiles.Any(p => p.Equals(profile, StringComparison.OrdinalIgnoreCase)))
+                    return;
 
-        if (profiles.Any(p => p.Equals(profile, StringComparison.OrdinalIgnoreCase)))
-            return;
-
-        profiles.Add(profile);
-        config.SetArray(ProfilesKey, profiles, "|");
-        config.Save();
+                profiles.Add(profile);
+                config.SetArray(ProfilesKey, profiles, "|");
+            }
+        );
     }
 
     /// <summary>

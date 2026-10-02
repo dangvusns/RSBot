@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
+using System;
 using System.IO;
 using System.Linq;
 
@@ -8,30 +6,39 @@ namespace RSBot.Core.Components;
 
 public class ProfileManager
 {
-    /// <summary>
-    ///     The profile config
-    /// </summary>
-    private static readonly Config _config;
+    private const string ProfilesKey = "RSBot.Profiles";
+    private const string SelectedProfileKey = "RSBot.SelectedProfile";
+    private const string ShowProfileDialogKey = "RSBot.ShowProfileDialog";
 
     /// <summary>
-    ///     Get active profiles
+    ///     The profile that always exists.
     /// </summary>
-    private static readonly ObservableCollection<string> _profiles;
+    public const string DefaultProfile = "Default";
 
     /// <summary>
-    ///     Initialize static ctor
+    ///     Names that collide with files in the user folder.
     /// </summary>
-    static ProfileManager()
+    private static readonly string[] _reservedNames = { "Profiles", "Settings" };
+
+    /// <summary>
+    ///     The profile this process runs with. Kept in memory once chosen, so another RSBot window selecting a
+    ///     different profile can not switch the config files of this one.
+    /// </summary>
+    private static string _currentProfile;
+
+    /// <summary>
+    ///     Gets the profiles. Read from disk every time, because other bot instances and the Manager add profiles
+    ///     while this one runs. The default profile is always included.
+    /// </summary>
+    public static string[] Profiles
     {
-        _config = new Config(GetProfileConfigFileName());
-        _profiles = new ObservableCollection<string>(_config.GetArray<string>("RSBot.Profiles", '|'));
-        _profiles.CollectionChanged += Profiles_CollectionChanged;
-    }
+        get
+        {
+            var profiles = ReadConfig().GetArray<string>(ProfilesKey, '|').Where(p => !string.IsNullOrWhiteSpace(p));
 
-    /// <summary>
-    ///     Get active profiles
-    /// </summary>
-    public static string[] Profiles => _profiles.ToArray();
+            return profiles.Prepend(DefaultProfile).Distinct(StringComparer.InvariantCultureIgnoreCase).ToArray();
+        }
+    }
 
     /// <summary>
     ///     If the selected profile loaded via program args <c>true</c>; otherwise <c>false</c>.
@@ -46,19 +53,15 @@ public class ProfileManager
     /// <summary>
     ///     The selected profile
     /// </summary>
-    public static string SelectedProfile => _config.Get("RSBot.SelectedProfile", "Default");
+    public static string SelectedProfile => _currentProfile ??= ReadConfig().Get(SelectedProfileKey, DefaultProfile);
 
     /// <summary>
     ///     Show the profile dialog <c>true</c>; otherwise <c>false</c>
     /// </summary>
     public static bool ShowProfileDialog
     {
-        get => _config.Get("RSBot.ShowProfileDialog", false);
-        set
-        {
-            _config.Set("RSBot.ShowProfileDialog", value);
-            _config.Save();
-        }
+        get => ReadConfig().Get(ShowProfileDialogKey, false);
+        set => Config.Update(GetProfileConfigFileName(), config => config.Set(ShowProfileDialogKey, value));
     }
 
     /// <summary>
@@ -66,16 +69,7 @@ public class ProfileManager
     /// </summary>
     public static bool Any()
     {
-        return _profiles.Any();
-    }
-
-    /// <summary>
-    ///     Called after Profiles are changed
-    /// </summary>
-    private static void Profiles_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        _config.SetArray("RSBot.Profiles", _profiles, "|");
-        _config.Save();
+        return Profiles.Any();
     }
 
     /// <summary>
@@ -84,11 +78,15 @@ public class ProfileManager
     /// <param name="profile">The profile</param>
     public static bool SetSelectedProfile(string profile)
     {
-        if (!_profiles.Any(p => p == profile))
+        var existing = Profiles.FirstOrDefault(p => p.Equals(profile, StringComparison.InvariantCultureIgnoreCase));
+        if (existing == null)
             return false;
 
-        _config.Set("RSBot.SelectedProfile", profile);
-        _config.Save();
+        _currentProfile = existing;
+
+        // A profile chosen by program args (e.g. by the Manager) is not remembered as the one to open next time.
+        if (!IsProfileLoadedByArgs)
+            Config.Update(GetProfileConfigFileName(), config => config.Set(SelectedProfileKey, existing));
 
         return true;
     }
@@ -99,45 +97,73 @@ public class ProfileManager
     /// <param name="profile">The profile</param>
     public static bool ProfileExists(string profile)
     {
-        return _profiles.Any(p => p.Equals(profile, StringComparison.InvariantCultureIgnoreCase));
+        return Profiles.Any(p => p.Equals(profile, StringComparison.InvariantCultureIgnoreCase));
     }
 
     /// <summary>
-    ///     Create new profile
+    ///     Create new profile and select it.
     /// </summary>
     /// <param name="profile">The profile</param>
-    /// <param name="useAsBase">Use as base <c>true</c>; otherwise <c>false</c></param>
-    /// <returns>Is created <c>true</c>; otherwise <c>false</c></returns>
+    /// <param name="useAsBase">Copy the settings of the selected profile <c>true</c>; otherwise <c>false</c></param>
+    /// <returns>Is created <c>true</c>; otherwise <c>false</c> (invalid or existing name)</returns>
     public static bool Add(string profile, bool useAsBase = false)
     {
-        if (profile.Equals("Profiles", StringComparison.InvariantCultureIgnoreCase))
+        if (string.IsNullOrWhiteSpace(profile) || profile.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
             return false;
 
-        if (profile == SelectedProfile)
-            return true;
+        if (_reservedNames.Any(n => n.Equals(profile, StringComparison.InvariantCultureIgnoreCase)))
+            return false;
 
-        _profiles.Add(profile);
+        if (ProfileExists(profile))
+            return false;
+
+        // The directory must exist before the base profile's files are copied into it.
+        Directory.CreateDirectory(GetProfileDirectory(profile));
 
         if (useAsBase)
             CopyOldProfileData(profile);
 
-        var newProfileDirectory = GetProfileDirectory(profile);
-        if (!Directory.Exists(newProfileDirectory))
-            Directory.CreateDirectory(newProfileDirectory);
+        Config.Update(
+            GetProfileConfigFileName(),
+            config =>
+            {
+                var profiles = config.GetArray<string>(ProfilesKey, '|').ToList();
+                if (!profiles.Any(p => p.Equals(profile, StringComparison.InvariantCultureIgnoreCase)))
+                    profiles.Add(profile);
+
+                config.SetArray(ProfilesKey, profiles, "|");
+            }
+        );
 
         SetSelectedProfile(profile);
 
-        return false;
+        return true;
     }
 
     /// <summary>
-    ///     Remove the profile
+    ///     Remove the profile from the list. Its files are kept.
     /// </summary>
     /// <param name="profile">The profile</param>
     /// <returns>Is removed <c>true</c>; otherwise <c>false</c></returns>
     public static bool Remove(string profile)
     {
-        return _profiles.Remove(profile);
+        if (profile == null || profile.Equals(DefaultProfile, StringComparison.InvariantCultureIgnoreCase))
+            return false;
+
+        var removed = false;
+
+        Config.Update(
+            GetProfileConfigFileName(),
+            config =>
+            {
+                var profiles = config.GetArray<string>(ProfilesKey, '|').ToList();
+                removed = profiles.RemoveAll(p => p.Equals(profile, StringComparison.InvariantCultureIgnoreCase)) > 0;
+
+                config.SetArray(ProfilesKey, profiles, "|");
+            }
+        );
+
+        return removed;
     }
 
     /// <summary>
@@ -153,16 +179,21 @@ public class ProfileManager
             var oldAutoLoginFile = Path.Combine(GetProfileDirectory(SelectedProfile), "autologin.data");
             var newAutoLoginFile = Path.Combine(GetProfileDirectory(profile), "autologin.data");
 
-            if (File.Exists(oldProfileFilePath))
+            if (File.Exists(oldProfileFilePath) && !File.Exists(newProfileFilePath))
                 File.Copy(oldProfileFilePath, newProfileFilePath);
 
-            if (File.Exists(oldAutoLoginFile))
+            if (File.Exists(oldAutoLoginFile) && !File.Exists(newAutoLoginFile))
                 File.Copy(oldAutoLoginFile, newAutoLoginFile);
         }
         catch (Exception ex)
         {
             Log.Warn($"Could not copy old profile data to the new profile: {ex.Message}");
         }
+    }
+
+    private static Config ReadConfig()
+    {
+        return new Config(GetProfileConfigFileName());
     }
 
     /// <summary>

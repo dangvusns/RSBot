@@ -3,6 +3,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
 
 namespace RSBot.Core;
 
@@ -190,7 +193,72 @@ public class Config
             index++;
         }
 
-        File.WriteAllLines(_path, serializedConfig);
+        // Write a temporary file and swap it in, so a crash mid-save can not leave a half-written config.
+        var tempPath = _path + ".tmp";
+        File.WriteAllLines(tempPath, serializedConfig);
+
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                File.Move(tempPath, _path, true);
+                return;
+            }
+            catch (IOException) when (attempt < 3)
+            {
+                // Another process may be reading the file right now.
+                Thread.Sleep(50);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                Log.Warn($"[Config] Could not replace {Path.GetFileName(_path)} ({e.Message}), writing it directly");
+                File.WriteAllLines(_path, serializedConfig);
+                File.Delete(tempPath);
+                return;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Re-reads a config file, applies <paramref name="change" /> and saves it, while holding a lock shared by
+    ///     all processes. Use it for files that several bot instances (and the Manager) write, like Profiles.rs,
+    ///     so one process does not overwrite what another one just saved.
+    /// </summary>
+    /// <param name="path">The config file.</param>
+    /// <param name="change">The change to apply.</param>
+    public static void Update(string path, Action<Config> change)
+    {
+        var name = "RSBot.Config." + Convert.ToHexString(
+            SHA1.HashData(Encoding.UTF8.GetBytes(Path.GetFullPath(path).ToLowerInvariant()))
+        );
+
+        using var mutex = new Mutex(false, name);
+        var owned = false;
+
+        try
+        {
+            try
+            {
+                owned = mutex.WaitOne(TimeSpan.FromSeconds(5));
+            }
+            catch (AbandonedMutexException)
+            {
+                // The previous owner exited without releasing; the lock is ours now.
+                owned = true;
+            }
+
+            if (!owned)
+                Log.Warn($"[Config] Timed out waiting for {Path.GetFileName(path)}, saving anyway");
+
+            var config = new Config(path);
+            change(config);
+            config.Save();
+        }
+        finally
+        {
+            if (owned)
+                mutex.ReleaseMutex();
+        }
     }
 
     /// <summary>

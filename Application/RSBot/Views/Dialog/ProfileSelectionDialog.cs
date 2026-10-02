@@ -70,7 +70,17 @@ public partial class ProfileSelectionDialog : UIWindowBase
             return string.Empty;
         }
 
-        ProfileManager.Add(profile, true);
+        if (!ProfileManager.Add(profile, true))
+        {
+            MessageBox.Show(
+                $"The profile name '{profile}' can not be used!",
+                "Invalid name",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
+
+            return string.Empty;
+        }
 
         return profile;
     }
@@ -94,7 +104,10 @@ public partial class ProfileSelectionDialog : UIWindowBase
 
     private void buttonDeleteProfile_Click(object sender, EventArgs e)
     {
-        if (comboProfiles.SelectedIndex == 0) //Default
+        if (
+            comboProfiles.SelectedItem is not string selectedName
+            || selectedName.Equals(ProfileManager.DefaultProfile, StringComparison.InvariantCultureIgnoreCase)
+        )
         {
             MessageBox.Show(
                 "You can not delete the default profile!",

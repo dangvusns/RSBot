@@ -114,12 +114,14 @@ internal static class Program
         if (!string.IsNullOrEmpty(options.Profile))
         {
             var profile = options.Profile;
+
+            // Set first: a profile chosen by args is used by this process only and not saved as the selected one.
+            ProfileManager.IsProfileLoadedByArgs = true;
+
             if (ProfileManager.ProfileExists(profile))
                 ProfileManager.SetSelectedProfile(profile);
             else
                 ProfileManager.Add(profile);
-
-            ProfileManager.IsProfileLoadedByArgs = true;
             Log.Debug($"Selected profile by args: {profile}");
         }
 
