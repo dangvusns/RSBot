@@ -18,24 +18,14 @@ namespace RSBot.Core.Objects;
 public class Player : SpawnedBionic
 {
     /// <summary>
-    ///     Gets or sets the last hp potion item duration
+    ///     The tick count from which the next hp potion may be used
     /// </summary>
-    private int _lastHPDuration;
+    private int _hpPotionReadyTick;
 
     /// <summary>
-    ///     Gets or sets the last hp potion item tick count
+    ///     The tick count from which the next mp potion may be used
     /// </summary>
-    public int _lastHpPotionTick;
-
-    /// <summary>
-    ///     Gets or sets the last mp potion item duration
-    /// </summary>
-    private int _lastMPDuration;
-
-    /// <summary>
-    ///     Gets or sets the last mp potion item tick count
-    /// </summary>
-    private int _lastMpPotionTick;
+    private int _mpPotionReadyTick;
 
     /// <summary>
     ///     Gets or sets the last purification pill potion item tick count
@@ -48,14 +38,9 @@ public class Player : SpawnedBionic
     private int _lastUniversalPillTick;
 
     /// <summary>
-    ///     Gets or sets the last vigor potion item duration
+    ///     The tick count from which the next vigor potion may be used
     /// </summary>
-    private int _lastVigorDuration;
-
-    /// <summary>
-    ///     Gets or sets the last vigor potion item tick count
-    /// </summary>
-    private int _lastVigorPotionTick;
+    private int _vigorPotionReadyTick;
 
     /// <summary>
     ///     Item ability skills by id, see <see cref="GetAbilitySkill" />.
@@ -743,7 +728,13 @@ public class Player : SpawnedBionic
         return false;
     }
 
-    private bool UsePotion(TypeIdFilter filter, ref int tick, ref int duration)
+    /// <summary>
+    ///     Uses a potion of the given type once its cooldown is over.
+    /// </summary>
+    /// <param name="filter">The potion type.</param>
+    /// <param name="readyTick">The tick count from which this potion type may be used.</param>
+    /// <param name="isVigor">A vigor potion also puts hp and mp potions on cooldown.</param>
+    private bool UsePotion(TypeIdFilter filter, ref int readyTick, bool isVigor = false)
     {
         lock (_lock)
         {
@@ -753,53 +744,84 @@ public class Player : SpawnedBionic
             if (Game.SelectedEntity is SpawnedNpcNpc)
                 return false;
 
+            var now = Kernel.TickCount;
+            if (!IsReady(readyTick, now) || (isVigor && (!IsReady(_hpPotionReadyTick, now) || !IsReady(_mpPotionReadyTick, now))))
+                return false;
+
             var potionItem = Inventory.GetItem(filter);
             if (potionItem == null)
                 return false;
 
-            if (duration == 0)
+            if (!potionItem.Use())
             {
-                var record = potionItem.Record;
-                // potion
-                if (record.Param1 > 0 || record.Param3 > 0)
-                {
-                    if (Race == ObjectCountry.Chinese)
-                        duration = 1050;
-                    else
-                        duration = 15050;
-                }
-                // grain
-                else if (record.Param2 > 0 || record.Param4 > 0)
-                {
-                    duration = 4050;
-                }
-                else
-                {
-                    Log.Debug($"Unknown poion type: {record}");
-                }
-            }
+                // Refused (still on cooldown on the server, or no response): try again shortly, not every tick.
+                readyTick = now + 1000;
+                Log.Debug($"Potion [{potionItem.Record.GetRealName()}] could not be used");
 
-            var elapsed = Kernel.TickCount - tick;
-
-            if (elapsed < duration)
                 return false;
-
-            var result = potionItem.Use();
-
-            if (result)
-            {
-                tick = Kernel.TickCount;
-
-                Log.Debug($"Potion [{potionItem.Record.GetRealName()}] used");
-            }
-            else
-            {
-                Log.Debug(
-                    $"[ERROR] Potion [{potionItem.Record.GetRealName()}] used Elapsed:{elapsed} Duration:{duration} Condition:{elapsed < duration}"
-                );
             }
 
-            return result;
+            // The wait depends on the item used (potion or grain), so it is worked out every time.
+            readyTick = now + GetPotionCooldown(potionItem.Record);
+            if (isVigor)
+            {
+                _hpPotionReadyTick = Math.Max(_hpPotionReadyTick, readyTick);
+                _mpPotionReadyTick = Math.Max(_mpPotionReadyTick, readyTick);
+            }
+
+            Log.Debug($"Potion [{potionItem.Record.GetRealName()}] used");
+
+            return true;
+        }
+    }
+
+    private static bool IsReady(int readyTick, int now) => now - readyTick >= 0;
+
+    /// <summary>
+    ///     Gets the cooldown of a potion or grain. Private servers may change it, so it can be overridden in the config.
+    /// </summary>
+    private int GetPotionCooldown(RefObjItem record)
+    {
+        // Potions heal a fixed amount (Param1/3), grains a percentage (Param2/4).
+        if (record.Param1 > 0 || record.Param3 > 0)
+            return Race == ObjectCountry.Chinese
+                ? GlobalConfig.Get("RSBot.Protection.PotionCooldownChinese", 1050)
+                : GlobalConfig.Get("RSBot.Protection.PotionCooldownEuropean", 15050);
+
+        if (record.Param2 > 0 || record.Param4 > 0)
+            return GlobalConfig.Get("RSBot.Protection.GrainCooldown", 4050);
+
+        Log.Debug($"Unknown potion type: {record}");
+
+        return 1050;
+    }
+
+    /// <summary>
+    ///     Applies a potion cooldown the server reported (after a teleport or login).
+    /// </summary>
+    /// <param name="record">The potion item.</param>
+    /// <param name="remainingMilliseconds">The time left on the cooldown.</param>
+    public void SetPotionCooldown(RefObjItem record, int remainingMilliseconds)
+    {
+        if (record == null || record.TypeID1 != 3 || record.TypeID2 != 3 || record.TypeID3 != 1)
+            return;
+
+        var readyTick = Kernel.TickCount + Math.Max(0, remainingMilliseconds);
+
+        lock (_lock)
+        {
+            switch (record.TypeID4)
+            {
+                case 1:
+                    _hpPotionReadyTick = readyTick;
+                    break;
+                case 2:
+                    _mpPotionReadyTick = readyTick;
+                    break;
+                case 3:
+                    _vigorPotionReadyTick = readyTick;
+                    break;
+            }
         }
     }
 
@@ -808,15 +830,15 @@ public class Player : SpawnedBionic
     /// </summary>
     public bool UseHealthPotion()
     {
-        return UsePotion(new TypeIdFilter(3, 3, 1, 1), ref _lastHpPotionTick, ref _lastHPDuration);
+        return UsePotion(new TypeIdFilter(3, 3, 1, 1), ref _hpPotionReadyTick);
     }
 
     /// <summary>
-    ///     Uses the health potion.
+    ///     Uses the mana potion.
     /// </summary>
     public bool UseManaPotion()
     {
-        return UsePotion(new TypeIdFilter(3, 3, 1, 2), ref _lastMpPotionTick, ref _lastMPDuration);
+        return UsePotion(new TypeIdFilter(3, 3, 1, 2), ref _mpPotionReadyTick);
     }
 
     /// <summary>
@@ -825,7 +847,7 @@ public class Player : SpawnedBionic
     /// <returns></returns>
     public bool UseVigorPotion()
     {
-        return UsePotion(new TypeIdFilter(3, 3, 1, 3), ref _lastVigorPotionTick, ref _lastVigorDuration);
+        return UsePotion(new TypeIdFilter(3, 3, 1, 3), ref _vigorPotionReadyTick, true);
     }
 
     /// <summary>

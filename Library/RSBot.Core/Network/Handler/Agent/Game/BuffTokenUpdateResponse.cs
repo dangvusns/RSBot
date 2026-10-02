@@ -38,6 +38,14 @@ internal class BuffTokenUpdateResponse : IPacketHandler
         {
             var itemId = packet.ReadUInt();
             var milliseconds = packet.ReadInt();
+
+            // Potion cooldowns still running from before the teleport.
+            var record = Game.ReferenceManager.GetRefItem(itemId);
+            if (record == null)
+                continue;
+
+            Log.Debug($"Item cooldown after teleport: {record.GetRealName()} {milliseconds} ms left");
+            Game.Player.SetPotionCooldown(record, milliseconds);
         }
 
         var skillCount = packet.ReadByte();
