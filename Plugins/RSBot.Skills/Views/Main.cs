@@ -432,6 +432,13 @@ public partial class Main : DoubleBufferedControl
     /// <param name="index">The index.</param>
     private void LoadAttacks(int index = 0)
     {
+        // The lists are only changed on the UI thread, the cooldown timer reads them there too
+        if (IsHandleCreated && InvokeRequired)
+        {
+            RunOnUiThread(() => LoadAttacks(index));
+            return;
+        }
+
         lock (_lock)
         {
             listAttackingSkills.BeginUpdate();
@@ -464,6 +471,12 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     private void LoadBuffs()
     {
+        if (IsHandleCreated && InvokeRequired)
+        {
+            RunOnUiThread(LoadBuffs);
+            return;
+        }
+
         lock (_lock)
         {
             listBuffs.BeginUpdate();
@@ -564,6 +577,13 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     private void LoadSkills()
     {
+        // Called from game events on other threads; changing the lists there races with the cooldown timer
+        if (IsHandleCreated && InvokeRequired)
+        {
+            RunOnUiThread(LoadSkills);
+            return;
+        }
+
         lock (_lock)
         {
             var player = Game.Player;
@@ -735,7 +755,7 @@ public partial class Main : DoubleBufferedControl
         {
             if (!list.Visible) continue;
             var cooling = list.Items.Cast<ListViewItem>()
-                .Any(item => item.Tag is SkillInfo skill && skill.HasCooldown);
+                .Any(item => item?.Tag is SkillInfo { Record: not null } skill && skill.HasCooldown);
             // One final repaint removes an overlay after its cooldown expires.
             if (cooling || _coolingLists.Remove(list)) list.Invalidate();
             if (cooling) _coolingLists.Add(list);
