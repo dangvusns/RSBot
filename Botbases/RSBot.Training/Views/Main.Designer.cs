@@ -734,10 +734,10 @@
             // groupBoxAdvanced
             // 
             groupBoxAdvanced.BackColor = System.Drawing.Color.Transparent;
-            groupBoxAdvanced.Controls.Add(checkBoxAvoidKillSteal);
-            groupBoxAdvanced.Controls.Add(checkBoxSwitchTargetIfStolen);
             groupBoxAdvanced.Controls.Add(checkBoxPetAttackTarget);
             groupBoxAdvanced.Controls.Add(checkBoxDefendPet);
+            groupBoxAdvanced.Controls.Add(checkBoxAvoidKillSteal);
+            groupBoxAdvanced.Controls.Add(checkBoxSwitchTargetIfStolen);
             groupBoxAdvanced.Controls.Add(checkBoxDontFollowMobs);
             groupBoxAdvanced.Controls.Add(linkAttackWeakerMobsHelp);
             groupBoxAdvanced.Controls.Add(checkAttackWeakerFirst);
@@ -813,7 +813,7 @@
             // 
             // checkBoxAvoidKillSteal
             // 
-            checkBoxAvoidKillSteal.AutoSize = true;
+            checkBoxAvoidKillSteal.AutoSize = false;
             checkBoxAvoidKillSteal.BackColor = System.Drawing.Color.Transparent;
             checkBoxAvoidKillSteal.Depth = 0;
             checkBoxAvoidKillSteal.Location = new System.Drawing.Point(21, 99);
@@ -829,7 +829,7 @@
             // 
             // checkBoxSwitchTargetIfStolen
             // 
-            checkBoxSwitchTargetIfStolen.AutoSize = true;
+            checkBoxSwitchTargetIfStolen.AutoSize = false;
             checkBoxSwitchTargetIfStolen.BackColor = System.Drawing.Color.Transparent;
             checkBoxSwitchTargetIfStolen.Depth = 0;
             checkBoxSwitchTargetIfStolen.Location = new System.Drawing.Point(21, 123);
@@ -845,7 +845,7 @@
             // 
             // checkBoxPetAttackTarget
             // 
-            checkBoxPetAttackTarget.AutoSize = true;
+            checkBoxPetAttackTarget.AutoSize = false;
             checkBoxPetAttackTarget.BackColor = System.Drawing.Color.Transparent;
             checkBoxPetAttackTarget.Depth = 0;
             checkBoxPetAttackTarget.Location = new System.Drawing.Point(270, 99);
@@ -861,7 +861,7 @@
             // 
             // checkBoxDefendPet
             // 
-            checkBoxDefendPet.AutoSize = true;
+            checkBoxDefendPet.AutoSize = false;
             checkBoxDefendPet.BackColor = System.Drawing.Color.Transparent;
             checkBoxDefendPet.Depth = 0;
             checkBoxDefendPet.Location = new System.Drawing.Point(270, 123);

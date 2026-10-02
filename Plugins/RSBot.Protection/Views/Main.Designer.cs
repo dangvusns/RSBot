@@ -132,6 +132,9 @@
             // 
             groupBackTown.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             groupBackTown.BackColor = System.Drawing.Color.Transparent;
+            groupBackTown.Controls.Add(checkUniqueNearby);
+            groupBackTown.Controls.Add(checkPetDied);
+            groupBackTown.Controls.Add(checkTransportDied);
             groupBackTown.Controls.Add(label19);
             groupBackTown.Controls.Add(numShardFatigueMinToDC);
             groupBackTown.Controls.Add(numMPPotionsLeft);
@@ -145,9 +148,6 @@
             groupBackTown.Controls.Add(checkNoMPPotions);
             groupBackTown.Controls.Add(checkNoHPPotions);
             groupBackTown.Controls.Add(checkDurability);
-            groupBackTown.Controls.Add(checkUniqueNearby);
-            groupBackTown.Controls.Add(checkPetDied);
-            groupBackTown.Controls.Add(checkTransportDied);
             groupBackTown.Controls.Add(checkQuestCompleted);
             groupBackTown.Controls.Add(checkDead);
             groupBackTown.Controls.Add(checkInventory);
@@ -378,7 +378,7 @@
             // 
             // checkUniqueNearby
             // 
-            checkUniqueNearby.AutoSize = true;
+            checkUniqueNearby.AutoSize = false;
             checkUniqueNearby.BackColor = System.Drawing.Color.Transparent;
             checkUniqueNearby.Depth = 0;
             checkUniqueNearby.Location = new System.Drawing.Point(175, 139);
@@ -394,7 +394,7 @@
             // 
             // checkPetDied
             // 
-            checkPetDied.AutoSize = true;
+            checkPetDied.AutoSize = false;
             checkPetDied.BackColor = System.Drawing.Color.Transparent;
             checkPetDied.Depth = 0;
             checkPetDied.Location = new System.Drawing.Point(175, 169);
@@ -410,7 +410,7 @@
             // 
             // checkTransportDied
             // 
-            checkTransportDied.AutoSize = true;
+            checkTransportDied.AutoSize = false;
             checkTransportDied.BackColor = System.Drawing.Color.Transparent;
             checkTransportDied.Depth = 0;
             checkTransportDied.Location = new System.Drawing.Point(175, 289);
@@ -426,7 +426,7 @@
             // 
             // checkQuestCompleted
             // 
-            checkQuestCompleted.AutoSize = true;
+            checkQuestCompleted.AutoSize = false;
             checkQuestCompleted.BackColor = System.Drawing.Color.Transparent;
             checkQuestCompleted.Depth = 0;
             checkQuestCompleted.Location = new System.Drawing.Point(15, 349);
