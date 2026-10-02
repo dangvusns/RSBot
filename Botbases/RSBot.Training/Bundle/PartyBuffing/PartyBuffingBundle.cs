@@ -23,6 +23,18 @@ internal class PartyBuffingBundle : IBundle
     private List<BuffingPartyMember> BuffingPartyMembers;
 
     /// <summary>
+    ///     A buff that is cast this often on a member without showing up there is paused for a while.
+    /// </summary>
+    private const int MAX_FAILED_CASTS = 3;
+
+    private const int FAILED_CAST_PAUSE_MS = 60_000;
+
+    /// <summary>
+    ///     The casts per member and buff that did not show up on the member yet: count, tick of the last cast.
+    /// </summary>
+    private readonly Dictionary<(string Member, uint Skill), (int Count, int Tick)> _pendingCasts = new();
+
+    /// <summary>
     ///     Initialize the instance of <seealso cref="PartyBuffingBundle" />
     /// </summary>
     public PartyBuffingBundle()
@@ -50,7 +62,8 @@ internal class PartyBuffingBundle : IBundle
 
         foreach (var member in members)
         {
-            var buffingMember = BuffingPartyMembers.Find(p => p.Name == member.Name);
+            // A character can be in several groups, only the selected group's buffs are cast
+            var buffingMember = BuffingPartyMembers.Find(p => p.Name == member.Name && p.Group == selectedGroup);
             if (buffingMember == null)
                 continue;
 
@@ -67,7 +80,8 @@ internal class PartyBuffingBundle : IBundle
 
             foreach (var buff in buffingMember.Buffs)
             {
-                var skill = Game.Player.Skills.GetSkillInfoById(buff);
+                // The saved id is of the level the buff had when it was added; use the level learned now
+                var skill = Game.Player.Skills.FindLearnedSkill(buff);
 
                 if (skill == null || skill.HasCooldown)
                     continue;
@@ -92,11 +106,30 @@ internal class PartyBuffingBundle : IBundle
                     continue;
                 }
 
+                var key = (member.Name, skill.Id);
                 if (isActive)
+                {
+                    _pendingCasts.Remove(key);
                     continue;
+                }
+
+                if (_pendingCasts.TryGetValue(key, out var pending) && pending.Count >= MAX_FAILED_CASTS)
+                {
+                    if (Kernel.TickCount - pending.Tick < FAILED_CAST_PAUSE_MS)
+                        continue;
+
+                    _pendingCasts.Remove(key);
+                    pending = default;
+                }
 
                 Log.Status($"Buffing {skill.Record?.GetRealName()} party member {member.Name}");
                 skill.Cast(member.UniqueId, true);
+
+                _pendingCasts[key] = (pending.Count + 1, Kernel.TickCount);
+                if (pending.Count + 1 == MAX_FAILED_CASTS)
+                    Log.Warn(
+                        $"[Party buffing] {skill.Record?.GetRealName()} did not show up on {member.Name} after {MAX_FAILED_CASTS} casts, pausing it for {FAILED_CAST_PAUSE_MS / 1000}s"
+                    );
             }
         }
     }
@@ -115,8 +148,18 @@ internal class PartyBuffingBundle : IBundle
         var collection = settings.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var item in collection)
-            BuffingPartyMembers.Add(new BuffingPartyMember(item));
+        {
+            try
+            {
+                BuffingPartyMembers.Add(new BuffingPartyMember(item));
+            }
+            catch (InvalidOperationException)
+            {
+                // A broken entry must not stop the other members from being buffed
+            }
+        }
 
+        _pendingCasts.Clear();
         _refreshing = false;
     }
 

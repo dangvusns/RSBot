@@ -566,14 +566,23 @@ public static class SkillManager
 
         RememberCastRequest(skill);
 
-        Log.Notify($"Casting skill (self-buff) [{skill.Record.GetRealName()}]");
+        if (target == 0 || target == Game.Player.UniqueId)
+            Log.Notify($"Casting skill (self-buff) [{skill.Record.GetRealName()}]");
+        else
+            Log.Notify($"Casting buff [{skill.Record.GetRealName()}] on {SpawnManager.GetEntity<SpawnedPlayer>(target)?.Name ?? target.ToString()}");
 
         var packet = new Packet(0x7074);
         packet.WriteByte(1); //Execute
         packet.WriteByte(4); //Use Skill
         packet.WriteUInt(skill.Id);
 
-        if (skill.Record.TargetGroup_Self || skill.Record.TargetGroup_Party)
+        // An ally buff on another player (e.g. a party member) needs that player as its target. Area buffs
+        // without a target group (e.g. marches) are still sent without one.
+        if (
+            skill.Record.TargetGroup_Self
+            || skill.Record.TargetGroup_Party
+            || (target != 0 && skill.Record.TargetGroup_Ally)
+        )
         {
             packet.WriteByte(ActionTarget.Entity);
             packet.WriteUInt(target == 0 ? Game.Player.UniqueId : target);
