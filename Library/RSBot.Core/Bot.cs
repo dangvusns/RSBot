@@ -149,27 +149,32 @@ public class Bot
     private void CancelActionOnStop()
     {
         var player = Game.Player;
-        if (player == null || !player.InAction)
+        if (player == null)
             return;
 
+        // Not gated on InAction: the worker tick may still send an attack after Stop was requested,
+        // so the attack can start after this point and must be cancelled then.
+        var workerTask = _workerTask;
         _ = CancelActionOnStopAsync();
 
         async Task CancelActionOnStopAsync()
         {
-            const int attempts = 5;
-            const int retryDelay = 1000;
+            const int watchDuration = 3000;
+            const int pollDelay = 500;
 
-            for (var i = 0; i < attempts; i++)
+            // Let the running tick finish so it can not start an attack after we stop watching.
+            if (workerTask != null)
+                await Task.WhenAny(workerTask, Task.Delay(watchDuration)).ConfigureAwait(false);
+
+            for (var elapsed = 0; elapsed <= watchDuration; elapsed += pollDelay)
             {
-                if (Running || !Game.Ready || !ReferenceEquals(Game.Player, player) || !player.InAction)
+                if (Running || !Game.Ready || !ReferenceEquals(Game.Player, player))
                     return;
 
-                SkillManager.CancelAction(0);
+                if (player.InAction)
+                    SkillManager.CancelAction(0);
 
-                if (i == attempts - 1)
-                    return;
-
-                await Task.Delay(retryDelay).ConfigureAwait(false);
+                await Task.Delay(pollDelay).ConfigureAwait(false);
             }
         }
     }

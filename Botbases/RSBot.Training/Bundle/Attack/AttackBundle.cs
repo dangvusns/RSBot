@@ -80,6 +80,10 @@ internal class AttackBundle : IBundle
         if (!Game.Player.InAction)
             Log.Status("Attacking");
 
+        // Stop may have been requested while this tick was choosing a skill; never start a new attack then.
+        if (!Kernel.Bot.Running)
+            return;
+
         if (skill == null)
         {
             if (Game.Player.InAction)
@@ -95,7 +99,7 @@ internal class AttackBundle : IBundle
             SkillManager.CancelAction();
 
         var uniqueId = Game.SelectedEntity?.UniqueId;
-        if (uniqueId == null)
+        if (uniqueId == null || !Kernel.Bot.Running)
             return;
 
         skill?.Cast(uniqueId.Value);
