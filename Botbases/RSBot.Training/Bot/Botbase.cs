@@ -61,17 +61,8 @@ internal class Botbase
         if (PickupManager.RunningPlayerPickup)
             return;
 
-        if (
-            Bundles.Loop.Config.UseSpeedDrug
-            && Game.Player.State.ActiveBuffs.FindIndex(p => p.Record.Params.Contains(1752396901)) < 0
-        )
-        {
-            var item = Game.Player.Inventory.GetItem(
-                new TypeIdFilter(3, 3, 13, 1),
-                p => p.Record.Desc1.Contains("_SPEED_")
-            );
-            item?.Use();
-        }
+        if (Bundles.Loop.Config.UseSpeedDrug)
+            SpeedDrugManager.TryUse();
 
         var noAttack = PlayerConfig.Get("RSBot.Skills.checkBoxNoAttack", false);
 

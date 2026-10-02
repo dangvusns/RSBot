@@ -59,7 +59,13 @@ internal class BuffBundle : IBundle
                 }
             }
 
-            var buffs = SkillManager.Buffs.FindAll(p => !Game.Player.State.HasActiveBuff(p, out _) && p.CanBeCasted);
+            // A speed skill can not be cast over a speed potion buff; wait until the potion runs out.
+            var itemSpeedBuff = SpeedDrugManager.HasItemSpeedBuff;
+            var buffs = SkillManager.Buffs.FindAll(p =>
+                !Game.Player.State.HasActiveBuff(p, out _)
+                && p.CanBeCasted
+                && !(itemSpeedBuff && SpeedDrugManager.IsSpeedBuff(p))
+            );
             if (buffs == null || buffs.Count == 0)
                 return;
 
