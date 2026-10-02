@@ -1,4 +1,5 @@
-﻿using RSBot.Training.Bundle.Attack;
+﻿using RSBot.Training.Bundle.AreaSwap;
+using RSBot.Training.Bundle.Attack;
 using RSBot.Training.Bundle.Avoidance;
 using RSBot.Training.Bundle.Berzerk;
 using RSBot.Training.Bundle.Buff;
@@ -80,6 +81,14 @@ internal static class Bundles
     public static PetBundle Pet { get; } = new();
 
     /// <summary>
+    ///     Gets the area swap.
+    /// </summary>
+    /// <value>
+    ///     The area swap.
+    /// </value>
+    public static AreaSwapBundle AreaSwap { get; } = new();
+
+    /// <summary>
     ///     Gets the loot.
     /// </summary>
     /// <value>
@@ -124,6 +133,7 @@ internal static class Bundles
         Target.Refresh();
         Attack.Refresh();
         Pet.Refresh();
+        AreaSwap.Refresh();
         Loot.Refresh();
         Loop.Refresh();
         Resurrect.Refresh();
@@ -140,6 +150,7 @@ internal static class Bundles
         Target?.Stop();
         Attack?.Stop();
         Pet?.Stop();
+        AreaSwap?.Stop();
         Loot?.Stop();
         Loop?.Stop();
         Resurrect?.Stop();

@@ -27,11 +27,12 @@ Goal: port the useful features iBot has that RSBot doesn't, step by step (tier 1
 - [x] 4. Opener skills and strong-monster-only buffs. Skills tab, right-click the attack skill list / buff list.
       Config `RSBot.Skills.Openers_<monster type index>` and `RSBot.Skills.StrongTargetBuffs`;
       logic in `SkillManager.GetNextSkill` / `IsBuffAllowedNow`, used by `BuffBundle`.
+- [x] 5. Area swap: next saved area when no target for N seconds (`Bundle/AreaSwap/AreaSwapBundle.cs`, option in the
+      training areas dialog). Walks with an auto path when > 80m; back to the primary area when the town script runs
+      or the bot stops. Config `RSBot.Training.checkSwapArea`, `RSBot.Training.numSwapAreaSeconds`.
 
 ## Tier 1 (remaining)
 
-- [ ] 5. Swap to the next training area when no mobs are found for N seconds (iBot `AutoTrain.bas:300-305`).
-      RSBot already stores several areas (`TrainingAreasDialog.cs`).
 - [ ] 6. More sound alarms: GM nearby (name starts with `[GM]`), level up, died, disconnected, back in town,
       chat per channel, Hunter/Thief trade starting. RSBot only has unique alarms (`NotificationSounds.cs`).
 - [ ] 7. Remote PM commands: accept commands from senders that aren't spawned nearby

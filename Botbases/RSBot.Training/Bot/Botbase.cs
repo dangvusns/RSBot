@@ -88,6 +88,10 @@ internal class Botbase
         //Check for berzerk
         Bundles.Berzerk.Invoke();
 
+        //Move to the next training area if this one has no monsters
+        if (!noAttack)
+            Bundles.AreaSwap.Invoke();
+
         //Send the pets after the target
         if (!noAttack)
             Bundles.Pet.Invoke();

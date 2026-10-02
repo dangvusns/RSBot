@@ -114,6 +114,9 @@ internal class LoopBundle : IBundle
             return;
         }
 
+        // The walkscript leads to the primary training area
+        Bundles.AreaSwap.RestorePrimaryArea();
+
         if (PlayerConfig.Get<bool>("RSBot.Protection.checkStopBotOnReturnToTown"))
         {
             Kernel.Bot.Stop();

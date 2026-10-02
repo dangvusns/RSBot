@@ -44,6 +44,13 @@ public partial class TrainingAreasDialog : UIWindowBase
 
     private void TrainingAreas_Load(object sender, EventArgs e)
     {
+        checkSwapArea.Checked = PlayerConfig.Get("RSBot.Training.checkSwapArea", false);
+        numSwapAreaSeconds.Value = Math.Clamp(
+            PlayerConfig.Get("RSBot.Training.numSwapAreaSeconds", 60),
+            (int)numSwapAreaSeconds.Minimum,
+            (int)numSwapAreaSeconds.Maximum
+        );
+
         var selectedIndex = PlayerConfig.Get("RSBot.Training.Index", 0);
 
         listView.BeginUpdate();
@@ -81,6 +88,16 @@ public partial class TrainingAreasDialog : UIWindowBase
         }
 
         listView.EndUpdate();
+    }
+
+    private void checkSwapArea_CheckedChanged(object sender, EventArgs e)
+    {
+        PlayerConfig.Set("RSBot.Training.checkSwapArea", checkSwapArea.Checked);
+    }
+
+    private void numSwapAreaSeconds_ValueChanged(object sender, EventArgs e)
+    {
+        PlayerConfig.Set("RSBot.Training.numSwapAreaSeconds", (int)numSwapAreaSeconds.Value);
     }
 
     private void TrainingAreas_FormClosing(object sender, FormClosingEventArgs e)

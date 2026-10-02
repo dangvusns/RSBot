@@ -43,8 +43,13 @@
             this.buttonCancel = new SDUI.Controls.Button();
             this.buttonAccept = new SDUI.Controls.Button();
             this.removeSelectedAreaToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.panelSwap = new SDUI.Controls.Panel();
+            this.checkSwapArea = new SDUI.Controls.CheckBox();
+            this.numSwapAreaSeconds = new SDUI.Controls.NumUpDown();
+            this.labelSwapSeconds = new SDUI.Controls.Label();
             this.contextMenuStrip.SuspendLayout();
             this.panel1.SuspendLayout();
+            this.panelSwap.SuspendLayout();
             this.SuspendLayout();
             // 
             // contextMenuStrip
@@ -177,15 +182,72 @@
             this.removeSelectedAreaToolStripMenuItem.Text = "Remove selected area";
             this.removeSelectedAreaToolStripMenuItem.Click += new System.EventHandler(this.removeSelectedAreaToolStripMenuItem_Click);
             // 
+            // panelSwap
+            // 
+            this.panelSwap.BackColor = System.Drawing.Color.Transparent;
+            this.panelSwap.Border = new System.Windows.Forms.Padding(0, 1, 0, 0);
+            this.panelSwap.BorderColor = System.Drawing.Color.Transparent;
+            this.panelSwap.Controls.Add(this.labelSwapSeconds);
+            this.panelSwap.Controls.Add(this.numSwapAreaSeconds);
+            this.panelSwap.Controls.Add(this.checkSwapArea);
+            this.panelSwap.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.panelSwap.Location = new System.Drawing.Point(1, 242);
+            this.panelSwap.Name = "panelSwap";
+            this.panelSwap.Radius = 0;
+            this.panelSwap.ShadowDepth = 0F;
+            this.panelSwap.Size = new System.Drawing.Size(613, 36);
+            this.panelSwap.TabIndex = 3;
+            // 
+            // checkSwapArea
+            // 
+            this.checkSwapArea.AutoSize = false;
+            this.checkSwapArea.BackColor = System.Drawing.Color.Transparent;
+            this.checkSwapArea.Depth = 0;
+            this.checkSwapArea.Location = new System.Drawing.Point(12, 3);
+            this.checkSwapArea.Margin = new System.Windows.Forms.Padding(0);
+            this.checkSwapArea.MouseLocation = new System.Drawing.Point(-1, -1);
+            this.checkSwapArea.Name = "checkSwapArea";
+            this.checkSwapArea.Ripple = true;
+            this.checkSwapArea.Size = new System.Drawing.Size(300, 30);
+            this.checkSwapArea.TabIndex = 0;
+            this.checkSwapArea.Text = "Move to the next area when there are no monsters for";
+            this.checkSwapArea.UseVisualStyleBackColor = false;
+            this.checkSwapArea.CheckedChanged += new System.EventHandler(this.checkSwapArea_CheckedChanged);
+            // 
+            // numSwapAreaSeconds
+            // 
+            this.numSwapAreaSeconds.BackColor = System.Drawing.Color.Transparent;
+            this.numSwapAreaSeconds.Font = new System.Drawing.Font("Segoe UI", 9.25F);
+            this.numSwapAreaSeconds.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.numSwapAreaSeconds.Location = new System.Drawing.Point(318, 6);
+            this.numSwapAreaSeconds.Maximum = new decimal(new int[] { 3600, 0, 0, 0 });
+            this.numSwapAreaSeconds.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
+            this.numSwapAreaSeconds.MinimumSize = new System.Drawing.Size(80, 25);
+            this.numSwapAreaSeconds.Name = "numSwapAreaSeconds";
+            this.numSwapAreaSeconds.Size = new System.Drawing.Size(80, 25);
+            this.numSwapAreaSeconds.TabIndex = 1;
+            this.numSwapAreaSeconds.Value = new decimal(new int[] { 60, 0, 0, 0 });
+            this.numSwapAreaSeconds.ValueChanged += new System.EventHandler(this.numSwapAreaSeconds_ValueChanged);
+            // 
+            // labelSwapSeconds
+            // 
+            this.labelSwapSeconds.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.labelSwapSeconds.Location = new System.Drawing.Point(404, 8);
+            this.labelSwapSeconds.Name = "labelSwapSeconds";
+            this.labelSwapSeconds.Size = new System.Drawing.Size(120, 20);
+            this.labelSwapSeconds.TabIndex = 2;
+            this.labelSwapSeconds.Text = "seconds";
+            // 
             // TrainingAreasDialog
             // 
             this.AcceptButton = this.buttonAccept;
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.buttonCancel;
-            this.ClientSize = new System.Drawing.Size(615, 318);
+            this.ClientSize = new System.Drawing.Size(615, 354);
             this.ControlBox = false;
             this.Controls.Add(this.listView);
+            this.Controls.Add(this.panelSwap);
             this.Controls.Add(this.panel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
@@ -200,6 +262,7 @@
             this.Load += new System.EventHandler(this.TrainingAreas_Load);
             this.contextMenuStrip.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
+            this.panelSwap.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -220,5 +283,9 @@
         private System.Windows.Forms.ColumnHeader columnHeaderRegion;
         private SDUI.Controls.Label labelPos;
         private System.Windows.Forms.ToolStripMenuItem removeSelectedAreaToolStripMenuItem;
+        private SDUI.Controls.Panel panelSwap;
+        private SDUI.Controls.CheckBox checkSwapArea;
+        private SDUI.Controls.NumUpDown numSwapAreaSeconds;
+        private SDUI.Controls.Label labelSwapSeconds;
     }
 }
