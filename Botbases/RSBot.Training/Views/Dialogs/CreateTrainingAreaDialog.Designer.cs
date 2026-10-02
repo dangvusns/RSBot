@@ -34,7 +34,13 @@
             this.TrainingName = new SDUI.Controls.TextBox();
             this.Radius = new SDUI.Controls.NumUpDown();
             this.labelArea = new SDUI.Controls.Label();
-            this.labelPos = new SDUI.Controls.Label();
+            this.labelX = new SDUI.Controls.Label();
+            this.textX = new SDUI.Controls.TextBox();
+            this.labelY = new SDUI.Controls.Label();
+            this.textY = new SDUI.Controls.TextBox();
+            this.labelRegion = new SDUI.Controls.Label();
+            this.textRegion = new SDUI.Controls.TextBox();
+            this.buttonUseMyPosition = new SDUI.Controls.Button();
             this.label2 = new SDUI.Controls.Label();
             this.label1 = new SDUI.Controls.Label();
             this.label3 = new SDUI.Controls.Label();
@@ -118,7 +124,7 @@
             // labelArea
             // 
             this.labelArea.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.labelArea.Location = new System.Drawing.Point(8, 145);
+            this.labelArea.Location = new System.Drawing.Point(8, 175);
             this.labelArea.Name = "labelArea";
             this.labelArea.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.labelArea.Size = new System.Drawing.Size(235, 20);
@@ -126,15 +132,82 @@
             this.labelArea.Text = "< Area >";
             this.labelArea.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // labelPos
+            // labelX
             // 
-            this.labelPos.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.labelPos.Location = new System.Drawing.Point(8, 121);
-            this.labelPos.Name = "labelPos";
-            this.labelPos.Size = new System.Drawing.Size(234, 17);
-            this.labelPos.TabIndex = 0;
-            this.labelPos.Text = "<Coordinate>";
-            this.labelPos.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.labelX.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.labelX.Location = new System.Drawing.Point(6, 124);
+            this.labelX.Name = "labelX";
+            this.labelX.Size = new System.Drawing.Size(17, 15);
+            this.labelX.TabIndex = 0;
+            this.labelX.Text = "X:";
+            // 
+            // textX
+            // 
+            this.textX.Location = new System.Drawing.Point(26, 121);
+            this.textX.MaxLength = 32767;
+            this.textX.MultiLine = false;
+            this.textX.Name = "textX";
+            this.textX.Radius = 2;
+            this.textX.Size = new System.Drawing.Size(87, 21);
+            this.textX.TabIndex = 2;
+            this.textX.TextAlignment = System.Windows.Forms.HorizontalAlignment.Left;
+            this.textX.UseSystemPasswordChar = false;
+            // 
+            // labelY
+            // 
+            this.labelY.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.labelY.Location = new System.Drawing.Point(122, 124);
+            this.labelY.Name = "labelY";
+            this.labelY.Size = new System.Drawing.Size(17, 15);
+            this.labelY.TabIndex = 0;
+            this.labelY.Text = "Y:";
+            // 
+            // textY
+            // 
+            this.textY.Location = new System.Drawing.Point(142, 121);
+            this.textY.MaxLength = 32767;
+            this.textY.MultiLine = false;
+            this.textY.Name = "textY";
+            this.textY.Radius = 2;
+            this.textY.Size = new System.Drawing.Size(100, 21);
+            this.textY.TabIndex = 3;
+            this.textY.TextAlignment = System.Windows.Forms.HorizontalAlignment.Left;
+            this.textY.UseSystemPasswordChar = false;
+            // 
+            // labelRegion
+            // 
+            this.labelRegion.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.labelRegion.Location = new System.Drawing.Point(6, 151);
+            this.labelRegion.Name = "labelRegion";
+            this.labelRegion.Size = new System.Drawing.Size(48, 15);
+            this.labelRegion.TabIndex = 0;
+            this.labelRegion.Text = "Region:";
+            // 
+            // textRegion
+            // 
+            this.textRegion.Location = new System.Drawing.Point(56, 148);
+            this.textRegion.MaxLength = 32767;
+            this.textRegion.MultiLine = false;
+            this.textRegion.Name = "textRegion";
+            this.textRegion.Radius = 2;
+            this.textRegion.Size = new System.Drawing.Size(57, 21);
+            this.textRegion.TabIndex = 4;
+            this.textRegion.TextAlignment = System.Windows.Forms.HorizontalAlignment.Left;
+            this.textRegion.UseSystemPasswordChar = false;
+            this.textRegion.TextChanged += new System.EventHandler(this.textRegion_TextChanged);
+            // 
+            // buttonUseMyPosition
+            // 
+            this.buttonUseMyPosition.Color = System.Drawing.Color.Transparent;
+            this.buttonUseMyPosition.Location = new System.Drawing.Point(122, 147);
+            this.buttonUseMyPosition.Name = "buttonUseMyPosition";
+            this.buttonUseMyPosition.Radius = 6;
+            this.buttonUseMyPosition.ShadowDepth = 4F;
+            this.buttonUseMyPosition.Size = new System.Drawing.Size(120, 23);
+            this.buttonUseMyPosition.TabIndex = 5;
+            this.buttonUseMyPosition.Text = "Use my position";
+            this.buttonUseMyPosition.UseVisualStyleBackColor = true;
+            this.buttonUseMyPosition.Click += new System.EventHandler(this.buttonUseMyPosition_Click);
             // 
             // label2
             // 
@@ -175,7 +248,7 @@
             this.bottomPanel.Controls.Add(this.buttonAccept);
             this.bottomPanel.Controls.Add(this.buttonCancel);
             this.bottomPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.bottomPanel.Location = new System.Drawing.Point(1, 207);
+            this.bottomPanel.Location = new System.Drawing.Point(1, 234);
             this.bottomPanel.Name = "bottomPanel";
             this.bottomPanel.Radius = 0;
             this.bottomPanel.ShadowDepth = 4F;
@@ -195,7 +268,13 @@
             // 
             this.panel2.Controls.Add(this.TrainingName);
             this.panel2.Controls.Add(this.labelArea);
-            this.panel2.Controls.Add(this.labelPos);
+            this.panel2.Controls.Add(this.labelX);
+            this.panel2.Controls.Add(this.textX);
+            this.panel2.Controls.Add(this.labelY);
+            this.panel2.Controls.Add(this.textY);
+            this.panel2.Controls.Add(this.labelRegion);
+            this.panel2.Controls.Add(this.textRegion);
+            this.panel2.Controls.Add(this.buttonUseMyPosition);
             this.panel2.Controls.Add(this.separator1);
             this.panel2.Controls.Add(this.Radius);
             this.panel2.Controls.Add(this.label1);
@@ -203,7 +282,7 @@
             this.panel2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel2.Location = new System.Drawing.Point(1, 36);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(251, 171);
+            this.panel2.Size = new System.Drawing.Size(251, 198);
             this.panel2.TabIndex = 8;
             // 
             // CreateTrainingAreaDialog
@@ -212,7 +291,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.buttonCancel;
-            this.ClientSize = new System.Drawing.Size(253, 243);
+            this.ClientSize = new System.Drawing.Size(253, 270);
             this.ControlBox = false;
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
@@ -246,7 +325,13 @@
         private SDUI.Controls.Button buttonAccept;
         public SDUI.Controls.TextBox TrainingName;
         public SDUI.Controls.NumUpDown Radius;
-        private SDUI.Controls.Label labelPos;
+        private SDUI.Controls.Label labelX;
+        private SDUI.Controls.TextBox textX;
+        private SDUI.Controls.Label labelY;
+        private SDUI.Controls.TextBox textY;
+        private SDUI.Controls.Label labelRegion;
+        private SDUI.Controls.TextBox textRegion;
+        private SDUI.Controls.Button buttonUseMyPosition;
         private SDUI.Controls.Separator separator1;
         private SDUI.Controls.Label labelArea;
         private SDUI.Controls.Label label3;

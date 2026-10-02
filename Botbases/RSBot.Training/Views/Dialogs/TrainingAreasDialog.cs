@@ -112,7 +112,7 @@ public partial class TrainingAreasDialog : UIWindowBase
 
         if (dialog.ShowDialog() == DialogResult.OK)
         {
-            var position = Game.Player.Position;
+            var position = dialog.AreaPosition;
 
             var trainingArea = new Area
             {
