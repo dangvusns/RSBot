@@ -35,12 +35,14 @@ Goal: port the useful features iBot has that RSBot doesn't, step by step (tier 1
 - [x] 7. Remote commands: private/party messages work without the sender near (`Commander` record in
       `CommandsBundle`); new invite/inviteme, leave/leavept, status, logout (no relogin via
       `ReloginGuard.SuppressUntilNextLogin`), help. "join party" skipped (needs a party number).
+- [x] 8. Pick pet → inventory transfer (`Plugins/RSBot.Protection/Components/Pet/PetTransferHandler.cs`, Protection
+      tab pet box): supplies right away, everything when the pet is full; the "full pet inventory" town trip waits
+      while the inventory has room. Config `RSBot.Protection.checkPetTransferSupplies` / `checkPetTransferWhenFull`.
+- [x] Fix: Inventory tab "Move to pet" had an inverted null check and never moved anything.
 
 ## Tier 1 (remaining)
 
 - [-] 6. Sound alarms: skipped, the user doesn't use alarms much.
-- [ ] 8. Pet-to-inventory transfer while training: pots/pills/arrows from pick pet to inventory, or empty the pet
-      bag when full instead of returning to town (iBot `InventoryUpdate.bas:1408-1461`).
 
 ## Tier 2
 

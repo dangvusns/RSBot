@@ -52,6 +52,7 @@ public class Bootstrap : IPlugin
         CosBadStatusHandler.Initialize();
         CosReviveHandler.Initialize();
         AutoSummonAttackPet.Initialize();
+        PetTransferHandler.Initialize();
 
         //Back town
         DeadHandler.Initialize();

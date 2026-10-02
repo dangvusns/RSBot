@@ -537,7 +537,7 @@ public partial class Main : DoubleBufferedControl
         if (inventoryItem == null)
             return;
 
-        if (Game.Player.AbilityPet != null)
+        if (Game.Player.AbilityPet == null)
             return;
 
         var freeSlot = Game.Player.AbilityPet.Inventory.GetFreeSlot();

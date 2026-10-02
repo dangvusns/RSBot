@@ -1,5 +1,6 @@
 ﻿using RSBot.Core;
 using RSBot.Core.Event;
+using RSBot.Protection.Components.Pet;
 
 namespace RSBot.Protection.Components.Town;
 
@@ -38,6 +39,10 @@ public class PetInventoryFullHandler : AbstractTownHandler
             return;
 
         if (PlayerInTownScriptRegion())
+            return;
+
+        // The pet's items are moved to the inventory instead, while it has room
+        if (PetTransferHandler.WillEmptyFullPet())
             return;
 
         Log.NotifyLang("ReturnToTownPetInventoryFull");

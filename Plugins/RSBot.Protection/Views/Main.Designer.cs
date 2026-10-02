@@ -45,6 +45,8 @@
             checkNoHPPotions = new SDUI.Controls.CheckBox();
             checkDurability = new SDUI.Controls.CheckBox();
             checkDead = new SDUI.Controls.CheckBox();
+            checkPetTransferSupplies = new SDUI.Controls.CheckBox();
+            checkPetTransferWhenFull = new SDUI.Controls.CheckBox();
             checkUniqueNearby = new SDUI.Controls.CheckBox();
             checkPetDied = new SDUI.Controls.CheckBox();
             checkTransportDied = new SDUI.Controls.CheckBox();
@@ -439,6 +441,38 @@
             checkQuestCompleted.Text = "Quest completed";
             checkQuestCompleted.UseVisualStyleBackColor = false;
             checkQuestCompleted.CheckedChanged += settings_CheckedChanged;
+            // 
+            // checkPetTransferSupplies
+            // 
+            checkPetTransferSupplies.AutoSize = false;
+            checkPetTransferSupplies.BackColor = System.Drawing.Color.Transparent;
+            checkPetTransferSupplies.Depth = 0;
+            checkPetTransferSupplies.Location = new System.Drawing.Point(320, 108);
+            checkPetTransferSupplies.Margin = new System.Windows.Forms.Padding(0);
+            checkPetTransferSupplies.MouseLocation = new System.Drawing.Point(-1, -1);
+            checkPetTransferSupplies.Name = "checkPetTransferSupplies";
+            checkPetTransferSupplies.Ripple = true;
+            checkPetTransferSupplies.Size = new System.Drawing.Size(255, 30);
+            checkPetTransferSupplies.TabIndex = 40;
+            checkPetTransferSupplies.Text = "Move pots, pills, arrows from pick pet";
+            checkPetTransferSupplies.UseVisualStyleBackColor = false;
+            checkPetTransferSupplies.CheckedChanged += settings_CheckedChanged;
+            // 
+            // checkPetTransferWhenFull
+            // 
+            checkPetTransferWhenFull.AutoSize = false;
+            checkPetTransferWhenFull.BackColor = System.Drawing.Color.Transparent;
+            checkPetTransferWhenFull.Depth = 0;
+            checkPetTransferWhenFull.Location = new System.Drawing.Point(320, 138);
+            checkPetTransferWhenFull.Margin = new System.Windows.Forms.Padding(0);
+            checkPetTransferWhenFull.MouseLocation = new System.Drawing.Point(-1, -1);
+            checkPetTransferWhenFull.Name = "checkPetTransferWhenFull";
+            checkPetTransferWhenFull.Ripple = true;
+            checkPetTransferWhenFull.Size = new System.Drawing.Size(255, 30);
+            checkPetTransferWhenFull.TabIndex = 41;
+            checkPetTransferWhenFull.Text = "Empty a full pick pet into inventory";
+            checkPetTransferWhenFull.UseVisualStyleBackColor = false;
+            checkPetTransferWhenFull.CheckedChanged += settings_CheckedChanged;
             // 
             // checkDead
             // 
@@ -1083,6 +1117,8 @@
             // groupPet
             // 
             groupPet.BackColor = System.Drawing.Color.Transparent;
+            groupPet.Controls.Add(checkPetTransferSupplies);
+            groupPet.Controls.Add(checkPetTransferWhenFull);
             groupPet.Controls.Add(checkAutoSummonAttackPet);
             groupPet.Controls.Add(checkUseAbnormalStatePotion);
             groupPet.Controls.Add(checkReviveAttackPet);
@@ -1498,6 +1534,8 @@
         private SDUI.Controls.CheckBox checkNoHPPotions;
         private SDUI.Controls.CheckBox checkDurability;
         private SDUI.Controls.CheckBox checkDead;
+        private SDUI.Controls.CheckBox checkPetTransferSupplies;
+        private SDUI.Controls.CheckBox checkPetTransferWhenFull;
         private SDUI.Controls.CheckBox checkUniqueNearby;
         private SDUI.Controls.CheckBox checkPetDied;
         private SDUI.Controls.CheckBox checkTransportDied;

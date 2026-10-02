@@ -45,3 +45,5 @@ ReturnToTownUniqueNearby="Đang trở về thành:Gặp quái Unique [{0}] gần
 ReturnToTownPetDied="Đang trở về thành:Thú nuôi đã chết."
 ReturnToTownTransportDied="Đang trở về thành:Ngựa/xe đã chết."
 ReturnToTownQuestCompleted="Đang trở về thành:Đã hoàn thành nhiệm vụ [{0}]."
+RSBot.Protection.Main.GroupBox.checkPetTransferSupplies="Chuyển bình, thuốc, tên từ thú nhặt đồ"
+RSBot.Protection.Main.GroupBox.checkPetTransferWhenFull="Chuyển đồ khi thú nhặt đồ đầy"
