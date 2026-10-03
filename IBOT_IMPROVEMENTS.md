@@ -48,6 +48,10 @@ Goal: port the useful features iBot has that RSBot doesn't, step by step (tier 1
       are stacked and resumed in reverse order. HP only breaks ties. Added recent threat evidence,
       explicit server HP tracking, selection confirmation and switch/resume/release diagnostics.
       Training boundaries take precedence over combat, pickup and party-leader following.
+      Follow-up diagnostics: evaluate defensive switching before the Warlock two-DOT early return;
+      log enabled state, current type and up to four attacker candidates/rejection reasons every 5s.
+      Full log shows GiantParty 6245503 -> General 6246941 at 13:27:51 and resumption at 13:27:53;
+      earlier attacker detection needs the new diagnostics. Windows/game verification pending.
 
 ## Tier 1 (remaining)
 

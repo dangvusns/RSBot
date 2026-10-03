@@ -26,6 +26,8 @@ internal class TargetBundle : IBundle
     private readonly Stack<uint> _interruptedTargets = new();
     private int _invoking;
     private int _lifecycleVersion;
+    private int _lastDecisionLogTick;
+    private bool _hasLoggedDecision;
 
     #endregion Fields
 
@@ -112,6 +114,7 @@ internal class TargetBundle : IBundle
 
         // Type-based interruption replaces the legacy emergency rule when enabled.
         var weakestEnabled = PlayerConfig.Get("RSBot.Training.checkBoxKillWeakestAttacker", false);
+        LogDefensiveDecision(weakestEnabled);
         var attacker = weakestEnabled ? null : GetFromCurrentAttackers();
         if (attacker != null && !Container.Bot.Area.IsInSight(attacker))
             attacker = null;
@@ -141,15 +144,15 @@ internal class TargetBundle : IBundle
             return;
         }
 
-        var warlockModeEnabled = PlayerConfig.Get("RSBot.Skills.checkWarlockMode", false);
-        if (warlockModeEnabled && Game.SelectedEntity?.State.HasTwoDots() == true)
-            return;
-
         if (Game.SelectedEntity != null && Game.SelectedEntity is not SpawnedMonster)
             Game.SelectedEntity = null;
 
-        // Several monsters hit the player: kill the one that dies fastest first, so fewer keep hitting
+        // Defensive type interruption must run even when the current Warlock target has two DOTs.
         if (HandleWeakestAttacker())
+            return;
+
+        var warlockModeEnabled = PlayerConfig.Get("RSBot.Skills.checkWarlockMode", false);
+        if (warlockModeEnabled && Game.SelectedEntity?.State.HasTwoDots() == true)
             return;
 
         // Defend the pet: attack the monster that is hitting it, unless the selected monster is already hitting
@@ -517,6 +520,50 @@ internal class TargetBundle : IBundle
         return monster.TargetId == Game.Player.UniqueId && IsRecent(monster.TargetTick);
     }
 
+    private void LogDefensiveDecision(bool enabled)
+    {
+        // Include disabled state: otherwise an old binary or unchecked option looks like a failed decision.
+        if (_hasLoggedDecision && Kernel.TickCount - _lastDecisionLogTick < 5000)
+            return;
+        _hasLoggedDecision = true;
+        _lastDecisionLogTick = Kernel.TickCount;
+
+        var current = Game.SelectedEntity as SpawnedMonster;
+        var candidates = "none";
+        if (SpawnManager.TryGetEntities<SpawnedMonster>(
+                m => m.TargetId == Game.Player.UniqueId || m.AttackingPlayer, out var monsters))
+        {
+            var details = monsters.OrderByDescending(IsRecentPlayerAttacker)
+                .ThenBy(m => GetTypePriority(m.Rarity)).ThenBy(m => m.DistanceToPlayer)
+                .Take(4).Select(m => $"id={m.UniqueId} type={m.Rarity} target={m.TargetId} "
+                    + $"ageMs={Kernel.TickCount - m.TargetTick} distance={m.DistanceToPlayer:F1} "
+                    + $"reason={GetDefensiveRejectionReason(m) ?? (current != null && GetTypePriority(m.Rarity) >= GetTypePriority(current.Rarity) ? "not-lower-type" : "eligible")}");
+            candidates = string.Join("; ", details);
+        }
+        Log.Debug($"[TargetBundle] Type-switch decision: enabled={enabled} "
+            + $"current={current?.UniqueId} type={current?.Rarity} committed={_committedAttackerId} "
+            + $"interrupted={_interruptedTargets.Count} attackers=[{candidates}]");
+    }
+
+    private string GetDefensiveRejectionReason(SpawnedMonster monster)
+    {
+        if (!IsRecentPlayerAttacker(monster))
+            return monster.TargetId != Game.Player.UniqueId ? "attacking-other-target" : "stale-threat";
+        if (GetTypePriority(monster.Rarity) < 0)
+            return "unclassified-type";
+        if (monster.State.LifeState != LifeState.Alive || monster.Health <= 0)
+            return "dead";
+        if (monster.IsBehindObstacle)
+            return "obstacle";
+        if (_blacklist != null && _blacklist.ContainsKey(monster.UniqueId))
+            return "blacklisted";
+        if (!Container.Bot.Area.IsInSight(monster))
+            return "outside-training-area";
+        if (PlayerConfig.Get("RSBot.Skills.checkWarlockMode", false) && monster.State.HasTwoDots())
+            return "warlock-two-dots";
+        return null;
+    }
+
     private bool IsDefensiveTargetEligible(SpawnedMonster monster)
     {
         return monster.State.LifeState == LifeState.Alive
@@ -629,6 +676,7 @@ internal class TargetBundle : IBundle
     /// </summary>
     public void Refresh()
     {
+        _hasLoggedDecision = false;
         Interlocked.Increment(ref _lifecycleVersion);
         ReleaseCommittedAttacker("refresh");
         _interruptedTargets.Clear();
