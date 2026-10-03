@@ -82,6 +82,9 @@ public sealed class TraceSession
     /// </summary>
     public TraceOptions Options { get; }
 
+    /// <summary>Optional movement boundary. Native continuous tracing is disabled when supplied.</summary>
+    public Func<Vector2, bool> MovementAllowed { get; set; }
+
     /// <summary>
     ///     Gets a value indicating whether the session evaluates itself.
     /// </summary>
@@ -204,10 +207,14 @@ public sealed class TraceSession
         switch (decision.Action)
         {
             case TraceAction.SendGameTrace:
+                if (MovementAllowed != null)
+                    break;
                 GameTraceBackend.Send(input.TargetPlayerId);
                 break;
 
             case TraceAction.Move:
+                if (MovementAllowed != null && !MovementAllowed(decision.Destination))
+                    break;
                 if (Options.DestinationFollow)
                 {
                     lock (TraceManager.CommandLock)

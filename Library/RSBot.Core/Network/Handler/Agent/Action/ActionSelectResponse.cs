@@ -44,7 +44,7 @@ internal class ActionSelectResponse : IPacketHandler
         {
             var hasHealth = packet.ReadBool();
             if (hasHealth)
-                entity.Health = packet.ReadInt();
+                entity.UpdateHealth(packet.ReadInt());
 
             /*if (Game.ClientType >= GameClientType.Chinese)
                 packet.ReadUInt(); // ??*/
@@ -55,7 +55,7 @@ internal class ActionSelectResponse : IPacketHandler
         {
             var hasHealth = packet.ReadBool();
             if (hasHealth)
-                entity.Health = packet.ReadInt();
+                entity.UpdateHealth(packet.ReadInt());
 
             //entity.Talk.Deserialize(packet);
             //packet.ReadByte(); // ??

@@ -32,8 +32,7 @@ internal class AttackBundle : IBundle
             return;
         }
 
-        bool dontFollowMobs = PlayerConfig.Get<bool>("RSBot.Training.checkBoxDontFollowMobs");
-        if (dontFollowMobs && !Container.Bot.Area.IsInSight(Game.SelectedEntity))
+        if (!Container.Bot.Area.IsInSight(Game.SelectedEntity))
         {
             Log.Debug("Deselecting entity because it moved far away from training area!");
 

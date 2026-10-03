@@ -53,6 +53,18 @@ public class SpawnedBionic : SpawnedEntity
     /// </value>
     public int Health { get; set; }
 
+    /// <summary>Whether health has been received from the server rather than initialized from reference data.</summary>
+    public bool HasObservedHealth { get; private set; }
+
+    public int HealthUpdateTick { get; private set; }
+
+    public void UpdateHealth(int health)
+    {
+        Health = health;
+        HealthUpdateTick = Kernel.TickCount;
+        HasObservedHealth = true;
+    }
+
     /// <summary>
     ///     Gets or sets the bad effect.
     /// </summary>
@@ -156,7 +168,7 @@ public class SpawnedBionic : SpawnedEntity
     /// <returns></returns>
     public bool TryDeselect()
     {
-        Log.Debug($"Entity deselected: {UniqueId}");
+        Log.Debug($"Trying to deselect entity: {UniqueId}");
 
         var packet = new Packet(0x704B);
         packet.WriteUInt(UniqueId);
@@ -182,6 +194,9 @@ public class SpawnedBionic : SpawnedEntity
 
         PacketManager.SendPacket(packet, PacketDestination.Server, awaitResult);
         awaitResult.AwaitResponse();
+
+        if (awaitResult.IsCompleted)
+            Log.Debug($"Entity deselected: {UniqueId}");
 
         return awaitResult.IsCompleted;
     }

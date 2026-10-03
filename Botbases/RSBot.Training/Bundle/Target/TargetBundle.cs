@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using RSBot.Core;
 using RSBot.Core.Components;
 using RSBot.Core.Event;
@@ -21,6 +22,10 @@ internal class TargetBundle : IBundle
     #region Fields
 
     private Dictionary<uint, int> _blacklist;
+    private uint _committedAttackerId;
+    private readonly Stack<uint> _interruptedTargets = new();
+    private int _invoking;
+    private int _lifecycleVersion;
 
     #endregion Fields
 
@@ -41,6 +46,7 @@ internal class TargetBundle : IBundle
             return;
 
         var selectedEntityUniqueId = Game.SelectedEntity.UniqueId;
+        ReleaseCommittedAttacker("obstacle");
         Game.SelectedEntity?.TryDeselect();
         Game.SelectedEntity = null;
 
@@ -64,6 +70,22 @@ internal class TargetBundle : IBundle
     /// </summary>
     public void Invoke()
     {
+        // Event-driven invocations must not send another selection while a tick awaits confirmation.
+        if (Interlocked.CompareExchange(ref _invoking, 1, 0) != 0)
+            return;
+
+        try
+        {
+            InvokeTargetSelection();
+        }
+        finally
+        {
+            Volatile.Write(ref _invoking, 0);
+        }
+    }
+
+    private void InvokeTargetSelection()
+    {
         _blacklist?.RemoveAll(
             (uniqueId, tick) =>
             {
@@ -75,9 +97,23 @@ internal class TargetBundle : IBundle
             }
         );
 
-        // Counterattacks stay inside the training area, unless the player follows the party master away from it
-        var attacker = GetFromCurrentAttackers();
-        if (attacker != null && !IsFollowingPartyMaster() && !Container.Bot.Area.IsInSight(attacker))
+        if (!Kernel.Bot.Running)
+            return;
+
+        if (Game.Player.State.LifeState != LifeState.Alive)
+        {
+            ReleaseCommittedAttacker("player not alive");
+            _interruptedTargets.Clear();
+            return;
+        }
+
+        // Validate commitment now; lower-type attackers may still interrupt it below.
+        KeepCommittedAttacker();
+
+        // Type-based interruption replaces the legacy emergency rule when enabled.
+        var weakestEnabled = PlayerConfig.Get("RSBot.Training.checkBoxKillWeakestAttacker", false);
+        var attacker = weakestEnabled ? null : GetFromCurrentAttackers();
+        if (attacker != null && !Container.Bot.Area.IsInSight(attacker))
             attacker = null;
 
         if (attacker != null && Game.SelectedEntity == null)
@@ -93,7 +129,8 @@ internal class TargetBundle : IBundle
         if (
             attacker != null
             && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity.UniqueId, out var selectedMonster)
-            && (byte)attacker.Rarity < (byte)selectedMonster.Rarity
+            && GetTypePriority(attacker.Rarity) >= 0
+            && GetTypePriority(attacker.Rarity) < GetTypePriority(selectedMonster.Rarity)
         )
         {
             Log.Debug("[TargetBundle] Emergency situation: Found a weaker mob to attack first, switching target!");
@@ -112,16 +149,8 @@ internal class TargetBundle : IBundle
             Game.SelectedEntity = null;
 
         // Several monsters hit the player: kill the one that dies fastest first, so fewer keep hitting
-        var weakestAttacker = GetWeakestAttacker();
-        if (weakestAttacker != null)
-        {
-            Log.Debug($"[TargetBundle] Attacked by several monsters, killing the weakest first: {weakestAttacker.Record?.GetRealName()}");
-
-            if (weakestAttacker.TrySelect())
-                Bundles.Movement.LastEntityWasBehindObstacle = false;
-
+        if (HandleWeakestAttacker())
             return;
-        }
 
         // Defend the pet: attack the monster that is hitting it, unless the selected monster is already hitting
         // the player or the pet
@@ -199,10 +228,6 @@ internal class TargetBundle : IBundle
         // The leader's target is only known from its skill casts; after this long without one it is out of date.
         const int staleTargetMs = 10_000;
 
-        // While following the leader away from the training area, only assist close to the player,
-        // otherwise the bot would run off and trigger the walk back to the training area.
-        const float assistRange = 40f;
-
         if (!PlayerConfig.Get("RSBot.Party.AttackLeaderTarget", false) || !Game.Party.IsInParty || Game.Party.IsLeader)
             return null;
 
@@ -221,24 +246,16 @@ internal class TargetBundle : IBundle
             || (warlockModeEnabled && target.State.HasTwoDots())
             || target.IsBehindObstacle
             || (_blacklist != null && _blacklist.ContainsKey(target.UniqueId))
-            || (!target.AttackingPlayer && Bundles.Avoidance.AvoidMonster(target.Rarity))
+            || (!IsRecentPlayerAttacker(target) && Bundles.Avoidance.AvoidMonster(target.Rarity))
             || target.Record.IsPandora
             || (target.Record.IsDimensionPillar && ignorePillar)
             || target.Record.IsSummonFlower
         )
             return null;
 
-        var inRange = Container.Bot.Area.IsInSight(target)
-            || (IsFollowingPartyMaster() && target.DistanceToPlayer <= assistRange);
+        var inRange = Container.Bot.Area.IsInSight(target);
 
         return inRange ? target : null;
-    }
-
-    private static bool IsFollowingPartyMaster()
-    {
-        return PlayerConfig.Get("RSBot.Party.AlwaysFollowPartyMaster", false)
-            && Game.Party.IsInParty
-            && !Game.Party.IsLeader;
     }
 
     private SpawnedMonster GetFromCurrentAttackers()
@@ -249,19 +266,20 @@ internal class TargetBundle : IBundle
 
         if (
             !SpawnManager.TryGetEntities<SpawnedMonster>(
-                e => e.AttackingPlayer && e.State.LifeState == LifeState.Alive,
+                e => IsRecentPlayerAttacker(e) && IsDefensiveTargetEligible(e),
                 out var entities
             )
         )
             return null;
 
-        return entities.OrderBy(EstimateHealth).ThenBy(e => e.DistanceToPlayer).FirstOrDefault();
+        return entities.Where(e => GetTypePriority(e.Rarity) >= 0)
+            .OrderBy(e => GetTypePriority(e.Rarity)).ThenBy(EstimateHealth).ThenBy(e => e.DistanceToPlayer).FirstOrDefault();
     }
 
     private bool IsEmergencySituation()
     {
         return SpawnManager.Any<SpawnedMonster>(e =>
-            e.AttackingPlayer && e.State.LifeState == LifeState.Alive && Bundles.Avoidance.AvoidMonster(e.Rarity)
+            IsRecentPlayerAttacker(e) && IsDefensiveTargetEligible(e) && Bundles.Avoidance.AvoidMonster(e.Rarity)
         );
     }
 
@@ -290,7 +308,7 @@ internal class TargetBundle : IBundle
                     && //Is not behind obstacle
                     (_blacklist == null || !_blacklist.ContainsKey(m.UniqueId))
                     && //Is not blacklisted
-                    (m.AttackingPlayer || !Bundles.Avoidance.AvoidMonster(m.Rarity))
+                    (IsRecentPlayerAttacker(m) || !Bundles.Avoidance.AvoidMonster(m.Rarity))
                     && //Is attacking player or shouldn't be avoided
                     Container.Bot.Area.IsInSight(m)
                     && //Is in training area
@@ -307,7 +325,7 @@ internal class TargetBundle : IBundle
         return entities
             .OrderBy(m => m.Movement.Source.DistanceTo(Container.Bot.Area.Position))
             .OrderBy(m => Bundles.Avoidance.PreferMonster(m.Rarity))
-            .OrderByDescending(m => m.AttackingPlayer)
+            .OrderByDescending(IsRecentPlayerAttacker)
             .FirstOrDefault();
     }
 
@@ -338,7 +356,7 @@ internal class TargetBundle : IBundle
         // The monster hits the stranger
         if (
             SpawnManager.TryGetEntities<SpawnedMonster>(
-                m => !m.AttackingPlayer && IsRecent(m.TargetTick) && strangers.Contains(m.TargetId),
+                m => !IsRecentPlayerAttacker(m) && IsRecent(m.TargetTick) && strangers.Contains(m.TargetId),
                 out var monsters
             )
         )
@@ -346,7 +364,7 @@ internal class TargetBundle : IBundle
                 result.Add(monster.UniqueId);
 
         result.RemoveWhere(id =>
-            SpawnManager.TryGetEntity<SpawnedMonster>(id, out var monster) && monster.AttackingPlayer
+            SpawnManager.TryGetEntity<SpawnedMonster>(id, out var monster) && IsRecentPlayerAttacker(monster)
         );
 
         return result;
@@ -372,44 +390,176 @@ internal class TargetBundle : IBundle
     }
 
     /// <summary>
-    ///     Gets the monster to switch to when several monsters are hitting the player and the option is on: the one
-    ///     with the least health left. <c>null</c> to keep the current target.
+    ///     Handles defensive interruption and resumption. True also means deliberately keeping the current attacker,
+    ///     so lower-priority rules cannot immediately undo that decision.
     /// </summary>
-    private SpawnedMonster GetWeakestAttacker()
+    private bool HandleWeakestAttacker()
     {
-        // The selected target only loses against an attacker with clearly less health, so it isn't swapped back and forth
-        const float switchRatio = 0.7f;
+        if (!PlayerConfig.Get("RSBot.Training.checkBoxKillWeakestAttacker", false))
+        {
+            _interruptedTargets.Clear();
+            return false;
+        }
+
+        var current = Game.SelectedEntity as SpawnedMonster;
+        if (current != null && !IsDefensiveTargetEligible(current))
+            current = null;
+        var original = GetInterruptedTarget();
+        var comparisonTarget = current ?? original;
+        var comparisonPriority = comparisonTarget == null ? int.MaxValue : GetTypePriority(comparisonTarget.Rarity);
+
+        SpawnedMonster attacker = null;
+        if (SpawnManager.TryGetEntities<SpawnedMonster>(
+                m => IsRecentPlayerAttacker(m) && IsDefensiveTargetEligible(m)
+                    && GetTypePriority(m.Rarity) >= 0
+                    && GetTypePriority(m.Rarity) < comparisonPriority, out var attackers))
+            attacker = attackers.OrderBy(m => GetTypePriority(m.Rarity))
+                .ThenBy(EstimateHealth).ThenBy(m => m.DistanceToPlayer).ThenBy(m => m.UniqueId).FirstOrDefault();
+
+        if (attacker != null)
+        {
+            Log.Debug($"[TargetBundle] Interrupt: from={current?.UniqueId} type={current?.Rarity} "
+                + $"to={attacker.UniqueId} type={attacker.Rarity} hp={EstimateHealth(attacker)} "
+                + $"distance={attacker.DistanceToPlayer:F1} resume={current?.UniqueId ?? original?.UniqueId}");
+            if (!Kernel.Bot.Running)
+                return true;
+            var lifecycleVersion = Volatile.Read(ref _lifecycleVersion);
+            var selected = attacker.TrySelect();
+            if (!Kernel.Bot.Running || lifecycleVersion != Volatile.Read(ref _lifecycleVersion))
+                return true;
+
+            if (selected && Game.SelectedEntity?.UniqueId == attacker.UniqueId
+                && IsDefensiveTargetEligible(attacker))
+            {
+                // Save each interrupted fight. Strictly decreasing priorities bound nested interruptions.
+                if (current != null && !_interruptedTargets.Contains(current.UniqueId))
+                    _interruptedTargets.Push(current.UniqueId);
+                Bundles.Movement.LastEntityWasBehindObstacle = false;
+                CommitAttacker(attacker, "confirmed lower-type attacker selection");
+            }
+            else
+            {
+                _blacklist?.TryAdd(attacker.UniqueId, Kernel.TickCount);
+                Log.Debug($"[TargetBundle] Defensive selection unconfirmed: {attacker.UniqueId}; retry delayed");
+            }
+            return true;
+        }
+
+        // Equal/higher types cannot pull us away from the attacker we are finishing.
+        if (current != null && _committedAttackerId == current.UniqueId)
+            return true;
+
+        // After the interruption ends, resume the most recently interrupted valid fight.
+        if (original != null)
+        {
+            Log.Debug($"[TargetBundle] Resume original target: {original.UniqueId} type={original.Rarity}");
+            var lifecycleVersion = Volatile.Read(ref _lifecycleVersion);
+            var selected = original.TrySelect();
+            if (!Kernel.Bot.Running || lifecycleVersion != Volatile.Read(ref _lifecycleVersion))
+                return true;
+            _interruptedTargets.Pop();
+            if (selected && Game.SelectedEntity?.UniqueId == original.UniqueId
+                && IsDefensiveTargetEligible(original))
+            {
+                Bundles.Movement.LastEntityWasBehindObstacle = false;
+                CommitAttacker(original, "resumed interrupted fight");
+            }
+            else
+            {
+                _blacklist?.TryAdd(original.UniqueId, Kernel.TickCount);
+                Log.Debug($"[TargetBundle] Resume failed: {original.UniqueId}; retry delayed");
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private SpawnedMonster GetInterruptedTarget()
+    {
+        while (_interruptedTargets.Count > 0)
+        {
+            var id = _interruptedTargets.Peek();
+            if (SpawnManager.TryGetEntity<SpawnedMonster>(id, out var target) && IsDefensiveTargetEligible(target))
+                return target;
+            _interruptedTargets.Pop();
+            Log.Debug($"[TargetBundle] Abandon interrupted target: {id}; dead, missing or invalid");
+        }
+        return null;
+    }
+
+    /// <summary>
+    ///     Combat priority is explicit: protocol enum values do not represent relative difficulty.
+    ///     Unclassified/event monsters do not participate in type-based interruption.
+    /// </summary>
+    private static int GetTypePriority(MonsterRarity rarity)
+    {
+        return rarity switch
+        {
+            MonsterRarity.General => 0,
+            MonsterRarity.Champion => 1,
+            MonsterRarity.GeneralParty => 2,
+            MonsterRarity.ChampionParty => 3,
+            MonsterRarity.Giant => 4,
+            MonsterRarity.GiantParty => 5,
+            MonsterRarity.Titan => 6,
+            MonsterRarity.TitanParty => 7,
+            MonsterRarity.Elite => 8,
+            MonsterRarity.EliteStrong => 9,
+            MonsterRarity.EliteParty => 10,
+            MonsterRarity.Unique or MonsterRarity.Unique2 => 11,
+            MonsterRarity.UniqueParty or MonsterRarity.Unique2Party => 12,
+            _ => -1,
+        };
+    }
+
+    private static bool IsRecentPlayerAttacker(SpawnedMonster monster)
+    {
+        return monster.TargetId == Game.Player.UniqueId && IsRecent(monster.TargetTick);
+    }
+
+    private bool IsDefensiveTargetEligible(SpawnedMonster monster)
+    {
+        return monster.State.LifeState == LifeState.Alive
+            && monster.Health > 0
+            && !monster.IsBehindObstacle
+            && (_blacklist == null || !_blacklist.ContainsKey(monster.UniqueId))
+            && Container.Bot.Area.IsInSight(monster)
+            && !(PlayerConfig.Get("RSBot.Skills.checkWarlockMode", false) && monster.State.HasTwoDots());
+    }
+
+    private bool KeepCommittedAttacker()
+    {
+        if (_committedAttackerId == 0)
+            return false;
 
         if (!PlayerConfig.Get("RSBot.Training.checkBoxKillWeakestAttacker", false))
-            return null;
+            ReleaseCommittedAttacker("option disabled");
+        else if (!SpawnManager.TryGetEntity<SpawnedMonster>(_committedAttackerId, out var monster))
+            ReleaseCommittedAttacker("despawned");
+        else if (!IsDefensiveTargetEligible(monster))
+            ReleaseCommittedAttacker("dead, obstructed, outside area or excluded");
+        else if (Game.SelectedEntity?.UniqueId != _committedAttackerId)
+            ReleaseCommittedAttacker("selection changed or cleared");
+        else
+            return true;
 
-        if (
-            !SpawnManager.TryGetEntities<SpawnedMonster>(
-                m =>
-                    m.State.LifeState == LifeState.Alive
-                    && m.TargetId == Game.Player.UniqueId
-                    && IsRecent(m.TargetTick)
-                    && !m.IsBehindObstacle
-                    && (_blacklist == null || !_blacklist.ContainsKey(m.UniqueId)),
-                out var attackers
-            )
-        )
-            return null;
+        return false;
+    }
 
-        var list = attackers.ToList();
-        if (list.Count < 2)
-            return null;
+    private void CommitAttacker(SpawnedMonster monster, string reason)
+    {
+        _committedAttackerId = monster.UniqueId;
+        Log.Debug($"[TargetBundle] Finish attacker: {monster.UniqueId} reason={reason} "
+            + $"hp={EstimateHealth(monster)} source={(HasRecentHealth(monster) ? "server" : "estimated")} distance={monster.DistanceToPlayer:F1}");
+    }
 
-        var weakest = list.OrderBy(EstimateHealth).ThenBy(m => m.DistanceToPlayer).First();
+    private void ReleaseCommittedAttacker(string reason)
+    {
+        if (_committedAttackerId == 0)
+            return;
 
-        var current = Game.SelectedEntity == null ? null : list.Find(m => m.UniqueId == Game.SelectedEntity.UniqueId);
-        if (current == null)
-            return weakest;
-
-        if (current.UniqueId == weakest.UniqueId)
-            return null;
-
-        return EstimateHealth(weakest) < EstimateHealth(current) * switchRatio ? weakest : null;
+        Log.Debug($"[TargetBundle] Release attacker: {_committedAttackerId} reason={reason}");
+        _committedAttackerId = 0;
     }
 
     /// <summary>
@@ -421,7 +571,12 @@ internal class TargetBundle : IBundle
         if (monster.Record == null)
             return monster.Health;
 
-        return monster.Health == monster.Record.MaxHealth ? monster.MaxHealth : monster.Health;
+        return HasRecentHealth(monster) ? monster.Health : monster.MaxHealth;
+    }
+
+    private static bool HasRecentHealth(SpawnedMonster monster)
+    {
+        return monster.HasObservedHealth && IsRecent(monster.HealthUpdateTick);
     }
 
     /// <summary>
@@ -474,11 +629,17 @@ internal class TargetBundle : IBundle
     /// </summary>
     public void Refresh()
     {
+        Interlocked.Increment(ref _lifecycleVersion);
+        ReleaseCommittedAttacker("refresh");
+        _interruptedTargets.Clear();
         _blacklist = new Dictionary<uint, int>(8);
     }
 
     public void Stop()
     {
+        Interlocked.Increment(ref _lifecycleVersion);
+        ReleaseCommittedAttacker("stop");
+        _interruptedTargets.Clear();
         _blacklist = null;
     }
 

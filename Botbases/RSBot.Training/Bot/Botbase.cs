@@ -57,6 +57,10 @@ internal class Botbase
             Thread.Sleep(1000);
         }
 
+        // Recover before pickup, buffs or target decisions can keep chasing outside the area.
+        if (Bundles.Movement.EnsureInsideTrainingArea())
+            return;
+
         //Wait for the pickup manager to finish
         if (PickupManager.RunningPlayerPickup)
             return;

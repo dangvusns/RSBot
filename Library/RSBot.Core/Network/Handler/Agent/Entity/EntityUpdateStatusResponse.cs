@@ -291,7 +291,7 @@ internal class EntityUpdateStatusResponse : IPacketHandler
         if ((updateFlag & EntityUpdateStatusFlag.HP) == EntityUpdateStatusFlag.HP)
         {
             var health = packet.ReadInt();
-            bionic.Health = health;
+            bionic.UpdateHealth(health);
 
             if (health <= 0 && Game.SelectedEntity?.UniqueId == bionic.UniqueId)
                 Game.SelectedEntity = null;

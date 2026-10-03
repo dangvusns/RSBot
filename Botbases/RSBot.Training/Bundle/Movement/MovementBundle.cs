@@ -2,6 +2,7 @@
 using RSBot.Core;
 using RSBot.Core.Components;
 using RSBot.Core.Components.Tracing;
+using RSBot.Core.Objects;
 using RSBot.Core.Objects.Spawn;
 
 namespace RSBot.Training.Bundle.Movement;
@@ -29,17 +30,62 @@ internal class MovementBundle : IBundle
     ///     The trace of the party master while the player follows it.
     /// </summary>
     private TraceSession _masterTrace;
+    private bool _returningToArea;
+    private int _lastAreaReturnTick;
+
+    /// <summary>Training boundaries take precedence over attacks, pickup and party following.</summary>
+    public bool EnsureInsideTrainingArea()
+    {
+        var area = Container.Bot.Area;
+        var distance = Game.Player.Position.DistanceTo(area.Position);
+        var movement = Game.Player.Movement;
+        var leavingArea = movement.Moving && movement.HasDestination
+            && area.Position.DistanceTo(movement.Destination) > area.Radius;
+        if (distance <= area.Radius && !leavingArea && !_returningToArea)
+            return false;
+
+        if (_returningToArea && distance <= System.Math.Max(1, area.Radius - 2) && !leavingArea)
+        {
+            _returningToArea = false;
+            Log.Debug("[Training boundary] Back inside training area");
+            return false;
+        }
+
+        if (!_returningToArea)
+        {
+            _returningToArea = true;
+            _lastAreaReturnTick = Kernel.TickCount - 2000;
+            Log.Warn($"[Training boundary] Returning to center: distance={distance:F1} radius={area.Radius} "
+                + $"destinationOutside={leavingArea} selected={Game.SelectedEntity?.UniqueId}");
+            StopMasterTrace();
+            PickupManager.Stop();
+            if (Game.Player.InAction || Game.Player.Movement.Moving)
+                SkillManager.CancelAction();
+            Game.SelectedEntity = null;
+        }
+
+        // Retry bounded movement periodically; a selected target or stale threat flag cannot block recovery.
+        if (Kernel.Bot.Running && Kernel.TickCount - _lastAreaReturnTick >= 2000)
+        {
+            _lastAreaReturnTick = Kernel.TickCount;
+            Game.Player.MoveTo(area.Position, false);
+        }
+        return true;
+    }
 
     /// <summary>
     ///     Invokes this instance.
     /// </summary>
     public void Invoke()
     {
+        if (EnsureInsideTrainingArea())
+            return;
         if (Game.SelectedEntity != null && !LastEntityWasBehindObstacle)
             return;
 
         var playerUnderAttack = SpawnManager.Any<SpawnedMonster>(m =>
-            m.AttackingPlayer && Container.Bot.Area.IsInSight(m)
+            m.TargetId == Game.Player.UniqueId && Kernel.TickCount - m.TargetTick < 10_000
+                && m.State.LifeState == LifeState.Alive && Container.Bot.Area.IsInSight(m)
         );
         if (playerUnderAttack && !LastEntityWasBehindObstacle)
             return;
@@ -100,6 +146,7 @@ internal class MovementBundle : IBundle
     public void Stop()
     {
         LastEntityWasBehindObstacle = false;
+        _returningToArea = false;
 
         StopMasterTrace();
     }
@@ -129,6 +176,12 @@ internal class MovementBundle : IBundle
         if (leader == null)
             return true;
 
+        if (leader.Player == null || !Container.Bot.Area.IsInSight(leader.Player))
+        {
+            StopMasterTrace();
+            return false;
+        }
+
         if (_masterTrace == null || _masterTrace.TargetName != leader.Name)
         {
             StopMasterTrace();
@@ -139,6 +192,9 @@ internal class MovementBundle : IBundle
                 TraceOptions.PartyMaster().ApplyConfig("RSBot.Party.Trace."),
                 false
             );
+            _masterTrace.MovementAllowed = destination =>
+                Container.Bot.Area.Position.DistanceTo(new Position(destination.X, destination.Y, Game.Player.Position.Region))
+                    <= Container.Bot.Area.Radius;
             _masterTrace.Start();
         }
 

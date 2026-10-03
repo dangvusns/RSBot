@@ -43,6 +43,11 @@ Goal: port the useful features iBot has that RSBot doesn't, step by step (tier 1
       a target, old skill ids after level up, spam pause after 3 failed casts).
 - [x] Training option "Kill the weakest attacker first" (`checkBoxKillWeakestAttacker`, TargetBundle
       `GetWeakestAttacker`); also fixed the ordering of the existing "If avoided: counter attack weaker mobs first".
+      Follow-up (2026-10-03; Windows/game verification pending): strictly lower monster types
+      attacking the player interrupt higher types; equal/higher types do not. Confirmed interruptions
+      are stacked and resumed in reverse order. HP only breaks ties. Added recent threat evidence,
+      explicit server HP tracking, selection confirmation and switch/resume/release diagnostics.
+      Training boundaries take precedence over combat, pickup and party-leader following.
 
 ## Tier 1 (remaining)
 
