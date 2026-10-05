@@ -59,6 +59,7 @@ public partial class Main : DoubleBufferedControl
         cbPartySearchPurpose.SelectedIndex = 0;
         InitializeMatchingLayout();
         InitializeCommandGuide();
+        InitializeProtectTab();
 
         SubscribeEvents();
     }
@@ -402,6 +403,8 @@ public partial class Main : DoubleBufferedControl
         foreach (var item in playerList)
             listCommandPlayers.Items.Add(item);
 
+        LoadProtectSettings();
+
         _applySettings = true;
     }
 
@@ -416,6 +419,12 @@ public partial class Main : DoubleBufferedControl
             BeginInvoke(new Action(OnLoadCharacter));
             return;
         }
+
+        // The settings belong to the character; show this character's protected players
+        var applySettings = _applySettings;
+        _applySettings = false;
+        LoadProtectSettings();
+        _applySettings = applySettings;
 
         listViewGroups.Items.Clear();
 

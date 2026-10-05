@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using RSBot.Core;
@@ -28,6 +29,12 @@ internal class TargetBundle : IBundle
     private int _lifecycleVersion;
     private int _lastDecisionLogTick;
     private bool _hasLoggedDecision;
+
+    /// <summary>
+    ///     Party › Protect: the players whose attackers are attacked first.
+    /// </summary>
+    private bool _protectEnabled;
+    private HashSet<string> _protectedNames = new(StringComparer.OrdinalIgnoreCase);
 
     #endregion Fields
 
@@ -112,6 +119,26 @@ internal class TargetBundle : IBundle
 
         // Validate commitment now; lower-type attackers may still interrupt it below.
         KeepCommittedAttacker();
+
+        // Protect members: a monster attacking a protected player comes before everything else, the player's own
+        // attackers included (user choice). Keep a selected monster that already attacks a protected player.
+        var protectedAttacker = GetProtectedAttacker(out var protectedIds);
+        if (protectedAttacker != null)
+        {
+            if (IsSelectedHitting(protectedIds))
+                return;
+
+            Log.Debug(
+                $"[TargetBundle] Protecting a member against: {protectedAttacker.Record?.GetRealName()} ({protectedAttacker.UniqueId}) "
+                    + $"targeting {protectedAttacker.TargetId}"
+            );
+
+            ReleaseCommittedAttacker("protecting a member");
+            if (protectedAttacker.TrySelect())
+                Bundles.Movement.LastEntityWasBehindObstacle = false;
+
+            return;
+        }
 
         // Type-based interruption replaces the legacy emergency rule when enabled.
         var weakestEnabled = PlayerConfig.Get("RSBot.Training.checkBoxKillWeakestAttacker", false);
@@ -628,6 +655,37 @@ internal class TargetBundle : IBundle
     }
 
     /// <summary>
+    ///     Gets the nearest monster inside the training area that is attacking a protected player in sight.
+    /// </summary>
+    /// <param name="protectedIds">The unique ids of the protected players in sight.</param>
+    private SpawnedMonster GetProtectedAttacker(out uint[] protectedIds)
+    {
+        protectedIds = Array.Empty<uint>();
+        if (!_protectEnabled || _protectedNames.Count == 0)
+            return null;
+
+        SpawnManager.TryGetEntities<SpawnedPlayer>(p => p.Name != null && _protectedNames.Contains(p.Name), out var players);
+        var ids = players?.Select(p => p.UniqueId).ToArray() ?? Array.Empty<uint>();
+        protectedIds = ids;
+        if (ids.Length == 0)
+            return null;
+
+        SpawnManager.TryGetEntities<SpawnedMonster>(
+            m =>
+                m.State.LifeState == LifeState.Alive
+                && m.TargetId != 0
+                && ids.Contains(m.TargetId)
+                && IsRecent(m.TargetTick)
+                && !m.IsBehindObstacle
+                && (_blacklist == null || !_blacklist.ContainsKey(m.UniqueId))
+                && Container.Bot.Area.IsInSight(m),
+            out var attackers
+        );
+
+        return attackers?.OrderBy(m => m.DistanceToPlayer).FirstOrDefault();
+    }
+
+    /// <summary>
     ///     Gets the nearest monster that is hitting the player's attack or fellow pet, if the player defends its pet.
     /// </summary>
     private SpawnedMonster GetPetAttacker()
@@ -678,6 +736,11 @@ internal class TargetBundle : IBundle
     public void Refresh()
     {
         _hasLoggedDecision = false;
+        _protectEnabled = PlayerConfig.Get("RSBot.Party.Protect.Enabled", false);
+        _protectedNames = new HashSet<string>(
+            PlayerConfig.GetArray<string>("RSBot.Party.Protect.Players").Where(n => !string.IsNullOrWhiteSpace(n)),
+            StringComparer.OrdinalIgnoreCase
+        );
         Interlocked.Increment(ref _lifecycleVersion);
         ReleaseCommittedAttacker("refresh");
         _interruptedTargets.Clear();
