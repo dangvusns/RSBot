@@ -36,11 +36,12 @@ public partial class Main
             Padding = new Padding(ProtectPx(8)),
         };
 
+        // Buttons above the list: when the page is taller than the window (high DPI), only the list's end is cut off
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4 };
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         _checkProtectEnabled = new CheckBox
         {
@@ -80,7 +81,7 @@ public partial class Main
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.LeftToRight,
             WrapContents = true,
-            Margin = new Padding(0, ProtectPx(6), 0, 0),
+            Margin = new Padding(0, 0, 0, ProtectPx(8)),
         };
         buttons.Controls.Add(CreateProtectButton("buttonProtectAdd", ProtectText("Add", "Add"), AddProtectedPlayer));
         buttons.Controls.Add(CreateProtectButton("buttonProtectRemove", ProtectText("Remove", "Remove"), RemoveProtectedPlayers));
@@ -90,11 +91,38 @@ public partial class Main
 
         layout.Controls.Add(_checkProtectEnabled, 0, 0);
         layout.Controls.Add(info, 0, 1);
-        layout.Controls.Add(_listProtectedPlayers, 0, 2);
-        layout.Controls.Add(buttons, 0, 3);
+        layout.Controls.Add(buttons, 0, 2);
+        layout.Controls.Add(_listProtectedPlayers, 0, 3);
         page.Controls.Add(layout);
 
         tabMain.Controls.Add(page);
+
+        // Right click in the party list: next to "Add to buffing"
+        var menuAddToProtect = new ToolStripMenuItem
+        {
+            Name = "menuItemAddToProtect",
+            Text = ProtectText("ProtectMenuAdd", "Add to protect list"),
+        };
+        menuAddToProtect.Click += (s, e) => AddSelectedPartyMembersToProtected();
+        contextParty.Items.Add(menuAddToProtect);
+    }
+
+    /// <summary>
+    ///     Adds the members selected in the party list (not the player itself) to the protect list.
+    /// </summary>
+    private void AddSelectedPartyMembersToProtected()
+    {
+        var names = listParty.SelectedItems
+            .OfType<ListViewItem>()
+            .Select(i => (i.Tag as RSBot.Core.Objects.Party.PartyMember)?.Name)
+            .Where(n => !string.IsNullOrEmpty(n) && n != Game.Player?.Name)
+            .ToArray();
+
+        if (names.Length == 0)
+            return;
+
+        AddProtectedNames(names);
+        Log.Notify($"[Protect] Protected players: {string.Join(", ", GetProtectedNames())}");
     }
 
     private Button CreateProtectButton(string name, string text, Action onClick)

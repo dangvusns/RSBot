@@ -117,3 +117,4 @@ ProtectEnabled="Bảo vệ những người chơi này: đánh quái đang tấn
 ProtectInfo="Quái đang tấn công người chơi trong danh sách sẽ bị đánh ngay, kể cả khi bot đang đánh con khác. Chỉ đánh quái trong khu vực luyện cấp; người chơi phải ở trong tầm nhìn. Dùng được với tên bất kỳ."
 ProtectAddParty="Thêm thành viên nhóm"
 ProtectEnterName="Nhập tên người chơi cần bảo vệ"
+ProtectMenuAdd="Thêm vào danh sách bảo vệ"
