@@ -63,6 +63,11 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        // Configure DPI before command-line errors can create a MessageBox handle.
+        Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
+
         var parser = new Parser(with => with.HelpWriter = Console.Out);
         var parserResult = parser.ParseArguments<CommandLineOptions>(args);
 
@@ -84,10 +89,6 @@ internal static class Program
         CultureInfo.CurrentCulture = new CultureInfo("en-US");
 
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-
-        Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
-        Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
 
         using Main mainForm = new Main();
         using SplashScreen splashScreen = new(mainForm);

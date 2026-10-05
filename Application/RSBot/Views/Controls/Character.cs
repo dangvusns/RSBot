@@ -14,6 +14,7 @@ public partial class Character : DoubleBufferedControl
     public Character()
     {
         InitializeComponent();
+        InitializeResponsiveLayout();
         components ??= new Container();
         _refreshTimer = new Timer(components) { Interval = 200 };
         _refreshTimer.Tick += (s, e) => RefreshCharacter();
