@@ -131,18 +131,34 @@ public class Bootstrap : IBotbase
     /// <inheritdoc />
     public void Initialize()
     {
-        Container.Lock = new object();
-        Container.Bot = new Botbase();
+        // Runs again on every switch back to this botbase; the events and the script command are registered once
+        if (!_initialized)
+        {
+            Container.Lock = new object();
+            Container.Bot = new Botbase();
 
-        //Bundles.Reload();
+            BundleSubscriber.SubscribeEvents();
+            ConfigSubscriber.SubscribeEvents();
+            TeleportSubscriber.SubscribeEvents();
 
-        BundleSubscriber.SubscribeEvents();
-        ConfigSubscriber.SubscribeEvents();
-        TeleportSubscriber.SubscribeEvents();
+            ScriptManager.CommandHandlers.Add(new TrainingAreaScriptCommand());
+            _initialized = true;
+        }
 
-        ScriptManager.CommandHandlers.Add(new TrainingAreaScriptCommand());
+        // Selected while already in game (e.g. switched from Lure): OnEnterGame, which loads the settings, has passed
+        if (Game.Player != null)
+        {
+            lock (Container.Lock)
+            {
+                Container.Bot.Reload();
+                Bundles.Reload();
+            }
+        }
+
         Log.Debug("[Training] Botbase registered to the kernel!");
     }
+
+    private static bool _initialized;
 
     /// <inheritdoc />
     public void Enable()
