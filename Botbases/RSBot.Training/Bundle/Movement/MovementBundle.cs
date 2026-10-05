@@ -41,6 +41,10 @@ internal class MovementBundle : IBundle
     /// <summary>Training boundaries take precedence over attacks, pickup and party following.</summary>
     public bool EnsureInsideTrainingArea()
     {
+        // A dead member outside the area may be resurrected first; the check brings the player back afterwards
+        if (Bundles.Resurrect.HasPendingResurrect())
+            return false;
+
         var area = Container.Bot.Area;
         var distance = Game.Player.Position.DistanceTo(area.Position);
         var movement = Game.Player.Movement;

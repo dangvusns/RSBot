@@ -49,8 +49,8 @@ public class Bootstrap : IBotbase
         if (Game.Player.State.LifeState == LifeState.Dead)
             return;
 
-        //Begin the loopback if needed
-        if (Container.Bot.Area.Position.DistanceToPlayer() > 80)
+        //Begin the loopback if needed; not while walking out to resurrect a party member
+        if (Container.Bot.Area.Position.DistanceToPlayer() > 80 && !Bundles.Resurrect.HasPendingResurrect())
             Bundles.Loop.Start();
 
         if (Bundles.Loop.Running)

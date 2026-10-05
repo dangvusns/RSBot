@@ -24,6 +24,10 @@ internal class BuffBundle : IBundle
         if ((Game.Player.Untouchable || Game.Player.Berzerking) && _buffBetweenAttacks)
             return;
 
+        // A dead member that can be resurrected now goes first
+        if (Bundles.Resurrect.HasPendingResurrect())
+            return;
+
         try
         {
             _invoked = true;
@@ -77,6 +81,9 @@ internal class BuffBundle : IBundle
             foreach (var buff in buffs)
             {
                 if (Game.Player.State.LifeState != LifeState.Alive || Game.Player.HasActiveVehicle)
+                    break;
+
+                if (Bundles.Resurrect.HasPendingResurrect())
                     break;
 
                 if (Game.Player.State.HasActiveBuff(buff, out _) && !buff.HasCooldown)

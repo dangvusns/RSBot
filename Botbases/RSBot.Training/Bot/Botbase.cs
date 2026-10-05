@@ -76,6 +76,11 @@ internal class Botbase
         //Resurrect party members if needed
         Bundles.Resurrect.Invoke();
 
+        // Still a castable resurrect (walking into range, or retrying a refused cast): nothing else this tick,
+        // so neither buffs nor attacks get in its way
+        if (Bundles.Resurrect.HasPendingResurrect())
+            return;
+
         //Cast buffs
         Bundles.Buff.Invoke();
 

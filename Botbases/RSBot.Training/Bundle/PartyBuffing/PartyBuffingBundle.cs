@@ -64,6 +64,10 @@ internal class PartyBuffingBundle : IBundle
         if (Game.Player.HasActiveVehicle)
             return;
 
+        // A dead member that can be resurrected now goes first
+        if (Bundles.Resurrect.HasPendingResurrect())
+            return;
+
         var selectedGroup = PlayerConfig.Get("RSBot.Party.Buffing.SelectedGroup", "Default");
 
         SpawnManager.TryGetEntities<SpawnedPlayer>(p =>
@@ -166,6 +170,10 @@ internal class PartyBuffingBundle : IBundle
                     _pendingCasts.Remove(key);
                     pending = default;
                 }
+
+                // Someone died during this loop; stop buffing so the resurrect comes next
+                if (Bundles.Resurrect.HasPendingResurrect())
+                    return;
 
                 Log.Status($"Buffing {skill.Record?.GetRealName()} party member {member.Name}");
 
