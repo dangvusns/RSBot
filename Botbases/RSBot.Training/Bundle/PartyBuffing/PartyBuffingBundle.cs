@@ -137,7 +137,8 @@ internal class PartyBuffingBundle : IBundle
                     continue;
                 }
 
-                if (!skill.HasDuration && !NeedsInstantSkill(skill, member.Name))
+                string instantReason = null;
+                if (!skill.HasDuration && !NeedsInstantSkill(skill, member.Name, out instantReason))
                     continue;
 
                 if (skill.HasCooldown || Game.Player.Mana < skill.Record.Consume_MP)
@@ -170,6 +171,10 @@ internal class PartyBuffingBundle : IBundle
 
                 // A refused cast (e.g. not enough MP) did not reach the member, so it is not counted
                 var result = skill.CastBuff(member.UniqueId);
+
+                // Shows whether the "only when needed" setting picked the right moments
+                if (instantReason != null)
+                    Log.Debug($"[Party buffing] {skill.Record?.GetRealName()} -> {member.Name} ({instantReason}): {result}");
                 if (result != SkillCastResult.Accepted || !skill.HasDuration)
                     continue;
 
@@ -183,27 +188,17 @@ internal class PartyBuffingBundle : IBundle
     /// </summary>
     /// <param name="skill">The instant skill.</param>
     /// <param name="memberName">The member's name.</param>
-    private bool NeedsInstantSkill(SkillInfo skill, string memberName)
+    private bool NeedsInstantSkill(SkillInfo skill, string memberName, out string reason)
     {
-        var restores = skill.TryGetRestoredStats(out var health, out var mana);
-
         if (_loggedInstantSkills.Add(skill.Id))
+        {
+            skill.TryGetRestoredStats(out var health, out var mana);
             Log.Debug(
                 $"[Party buffing] {skill.Record?.GetRealName()} has no duration; restores HP={health} MP={mana} (params: {string.Join(",", skill.Record?.Params ?? new List<int>())})"
             );
+        }
 
-        if (!PlayerConfig.Get("RSBot.Party.Buffing.InstantSkillsWhenNeeded", true) || !restores)
-            return true;
-
-        // The server sends the members' HP and MP in steps of 10%: high nibble HP, low nibble MP
-        var partyMember = Game.Party?.Members?.Find(p => p.Name == memberName);
-        if (partyMember == null)
-            return true;
-
-        var healthSteps = partyMember.HealthMana >> 4;
-        var manaSteps = partyMember.HealthMana & 0x0F;
-
-        return (health && healthSteps < 10) || (mana && manaSteps < 10);
+        return InstantSkills.IsNeededFor(skill, memberName, out reason);
     }
 
     /// <summary>

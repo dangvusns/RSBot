@@ -66,6 +66,8 @@ internal class BuffBundle : IBundle
                 && p.CanBeCasted
                 && !(itemSpeedBuff && SpeedDrugManager.IsSpeedBuff(p))
                 && SkillManager.IsBuffAllowedNow(p)
+                // An instant heal (e.g. Group Healing) leaves no buff; cast it when someone it heals is not full
+                && (p.HasDuration || InstantSkills.IsNeededBySelfOrParty(p, out _))
             );
             if (buffs == null || buffs.Count == 0)
                 return;
@@ -82,7 +84,16 @@ internal class BuffBundle : IBundle
 
                 Log.Debug($"Trying to cast buff: {buff} {buff.Record.Basic_Code}");
 
-                buff.Cast(buff: true);
+                if (buff.HasDuration)
+                {
+                    buff.Cast(buff: true);
+                    continue;
+                }
+
+                // Shows whether the "only when needed" setting picked the right moments
+                InstantSkills.IsNeededBySelfOrParty(buff, out var reason);
+                var result = buff.CastBuff();
+                Log.Debug($"[Buff] {buff.Record?.GetRealName()} ({reason}): {result}");
             }
         }
         finally
