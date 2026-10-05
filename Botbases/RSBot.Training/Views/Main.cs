@@ -398,9 +398,11 @@ public partial class Main : DoubleBufferedControl
     {
         if (Kernel.Bot.Running || !Game.Ready)
             return;
+
+        // The config is loaded on entering the game, which can come after this timer's first tick
         if (
-            Bundles.Loot.Config.UseAbilityPet
-            && Game.Player.HasActiveAbilityPet
+            Bundles.Loot.Config?.UseAbilityPet == true
+            && Game.Player?.HasActiveAbilityPet == true
             && !PickupManager.RunningAbilityPetPickup
         )
             PickupManager.RunAbilityPet(Game.Player.Position);
