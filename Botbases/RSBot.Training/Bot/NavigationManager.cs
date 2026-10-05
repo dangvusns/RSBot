@@ -210,7 +210,7 @@ internal static class NavigationManager
     /// <summary>
     ///     Retries a file access that can collide with another bot process replacing the same file.
     /// </summary>
-    private static void WithFileRetries(Action action)
+    private static void WithFileRetries(System.Action action)
     {
         WithFileRetries(() =>
         {
