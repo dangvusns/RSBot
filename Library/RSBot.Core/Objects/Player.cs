@@ -804,6 +804,39 @@ public class Player : SpawnedBionic
     }
 
     /// <summary>
+    ///     Starts the potion cooldown after the server confirmed a potion use, also one made by the game client
+    ///     (e.g. its own auto potion); otherwise the bot keeps trying its potion while the shared cooldown runs.
+    /// </summary>
+    /// <param name="record">The potion item.</param>
+    public void OnPotionUsed(RefObjItem record)
+    {
+        if (record == null || record.TypeID1 != 3 || record.TypeID2 != 3 || record.TypeID3 != 1)
+            return;
+
+        var readyTick = Kernel.TickCount + GetPotionCooldown(record);
+
+        // No lock: this runs on the packet thread while UsePotion holds the lock waiting for this very answer.
+        // A plain int write cannot tear; UsePotion sets the same cooldown after its own successful use anyway.
+        switch (record.TypeID4)
+        {
+            case 1:
+                _hpPotionReadyTick = Later(_hpPotionReadyTick, readyTick);
+                break;
+            case 2:
+                _mpPotionReadyTick = Later(_mpPotionReadyTick, readyTick);
+                break;
+            case 3:
+                // A vigor potion also puts hp and mp potions on cooldown
+                _vigorPotionReadyTick = Later(_vigorPotionReadyTick, readyTick);
+                _hpPotionReadyTick = Later(_hpPotionReadyTick, readyTick);
+                _mpPotionReadyTick = Later(_mpPotionReadyTick, readyTick);
+                break;
+        }
+    }
+
+    private static int Later(int tick, int other) => other - tick > 0 ? other : tick;
+
+    /// <summary>
     ///     Applies a potion cooldown the server reported (after a teleport or login).
     /// </summary>
     /// <param name="record">The potion item.</param>

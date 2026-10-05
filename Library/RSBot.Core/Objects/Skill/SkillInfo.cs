@@ -25,6 +25,16 @@ public class SkillInfo
     private int _testTick;
 
     /// <summary>
+    ///     The tick of the last cast the server confirmed; not moved by refusal holds like the cooldown tick.
+    /// </summary>
+    private int _lastConfirmedCastTick;
+
+    /// <summary>
+    ///     Gets the milliseconds since the server last confirmed a cast of this skill, -1 if it was not cast yet.
+    /// </summary>
+    public int MillisecondsSinceLastCast => _lastConfirmedCastTick == 0 ? -1 : Kernel.TickCount - _lastConfirmedCastTick;
+
+    /// <summary>
     ///     Gets or sets the enabled.
     /// </summary>
     public bool Enabled;
@@ -286,6 +296,7 @@ public class SkillInfo
     /// </summary>
     public void Update()
     {
+        _lastConfirmedCastTick = Kernel.TickCount;
         _cooldownTick = Kernel.TickCount;
         _lastCastTick = Kernel.TickCount;
         _testTick = Kernel.TickCount;

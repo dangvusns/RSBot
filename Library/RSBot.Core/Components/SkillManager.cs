@@ -162,10 +162,18 @@ public static class SkillManager
     internal static void OnCastRefusedByCooldown()
     {
         var skill = _lastRequestedSkill;
+
+        // With our cooldown running, it was a second request sent before the first cast was answered, not a mismatch
         if (skill == null || Kernel.TickCount - _lastRequestTick > 2000 || skill.HasCooldown)
             return;
 
-        Log.Debug($"Server refused [{skill.Record?.GetRealName()}]: still on cooldown. Retrying in 3 s.");
+        // Our timer said ready: the cooldown in the game data is shorter than the server's for this skill
+        var sinceLastCast = skill.MillisecondsSinceLastCast;
+        Log.Debug(
+            $"[Cooldown] Server refused [{skill.Record?.GetRealName()}] ({skill.Record?.Basic_Code}): still on cooldown "
+                + $"{(sinceLastCast < 0 ? "with no cast seen yet" : $"{sinceLastCast} ms after its last cast")}, "
+                + $"the game data says {skill.Record?.Action_ReuseDelay} ms. Retrying in 3 s."
+        );
         skill.SetRemainingCooldown(3000);
     }
 

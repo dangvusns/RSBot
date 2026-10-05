@@ -32,7 +32,11 @@ internal class InventoryItemUseResponse : IPacketHandler
         var sourceSlot = packet.ReadByte();
         var newAmount = packet.ReadUShort();
 
+        // Read before the amount update, the item is gone when the last one was used
+        var usedItem = Game.Player.Inventory.GetItemAt(sourceSlot)?.Record;
+
         Game.Player.Inventory.UpdateItemAmount(sourceSlot, newAmount);
+        Game.Player.OnPotionUsed(usedItem);
 
         EventManager.FireEvent("OnUseItem", sourceSlot);
     }

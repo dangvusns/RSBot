@@ -8,8 +8,8 @@ using RSBot.Core.Network;
 namespace RSBot.PacketAnalyzer.Components;
 
 /// <summary>
-///     Resolves opcode names from the registered packet handlers / hooks and the optional user file
-///     <c>Data/PacketAnalyzer/opcodes.txt</c> (one <c>0xB021=Name</c> per line).
+///     Resolves opcode names from the optional user file <c>Data/PacketAnalyzer/opcodes.txt</c>
+///     (one <c>0xB021=Name</c> per line), the registered packet handlers / hooks and the wiki's packet index.
 /// </summary>
 internal static class OpcodeNames
 {
@@ -32,6 +32,11 @@ internal static class OpcodeNames
             return name;
 
         if (_byDestination.TryGetValue((opcode, destination), out name))
+            return name;
+
+        // Requests have no handler in the bot; the wiki names most of them
+        var wikiNames = destination == PacketDestination.Server ? WikiOpcodeNames.ToServer : WikiOpcodeNames.ToClient;
+        if (wikiNames.TryGetValue(opcode, out name))
             return name;
 
         return _byOpcode.TryGetValue(opcode, out name) ? name : Unknown;
