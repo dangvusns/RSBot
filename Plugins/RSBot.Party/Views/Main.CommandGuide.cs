@@ -48,7 +48,7 @@ public partial class Main
         }
 
         AddGuideLabel("CommandGuideTitle", "Available chat commands", true);
-        AddGuideLabel("CommandGuideIntro", "Send commands through in-game chat. Only enabled commanders in your list or the party leader are obeyed. [player] is optional; omit it to follow the sender. Party leaders also apply start, stop, radius and area/setarea locally.");
+        AddGuideLabel("CommandGuideIntro", "Send commands through in-game chat. Only enabled commanders in your list or the party leader are obeyed. [player] is optional; omit it to follow the sender. Party leaders also apply start, stop, radius, area/setarea and getpost locally.");
         AddGuideLabel("CommandGuideTrace", "• trace / traceme — Follow and stand at the player's destination.\n   Examples: traceme · trace LilQuanVu1");
         AddGuideLabel("CommandGuideNoTrace", "• notrace — Stop following.\n   Example: notrace");
         AddGuideLabel("CommandGuideSit", "• sitdown — Toggle sitting or standing.\n   Example: sitdown");
@@ -58,6 +58,7 @@ public partial class Main
         AddGuideLabel("CommandGuideTeleport", "• teleport from,to — Use a nearby teleporter to reach a matching destination.\n   Example: teleport ferry,donwhang");
         AddGuideLabel("CommandGuideRadius", "• radius value — Set the training radius.\n   Example: radius 50");
         AddGuideLabel("CommandGuideArea", "• area / setarea x,y,radius — Set the training position and radius.\n   Examples: area 100,200,50 · setarea 100,200,50");
+        AddGuideLabel("CommandGuideGetPost", "• getpost [radius] — Set the training position to where each bot stands now; the radius is optional.\n   Examples: getpost · getpost 30");
         AddGuideLabel("CommandGuideInvite", "• invite / inviteme — Invite the sender to the party (the sender must be near).\n   Example: inviteme");
         AddGuideLabel("CommandGuideLeave", "• leave / leavept — Leave the party.\n   Example: leave");
         AddGuideLabel("CommandGuideStatus", "• status — Reply with level, HP, MP, bot state and location.\n   Example: status");

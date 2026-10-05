@@ -42,7 +42,7 @@ internal class CommandsBundle
     /// </summary>
     /// <remarks>Commands are case-insensitive: "trace [name]" / "traceme [name]" (walks to the spots the
     /// commander clicks), "notrace", "sitdown", "start", "stop", "town"/"return", "teleport from,to", "radius r" and
-    /// "area"/"setarea x,y,r". Failures are answered with a private message to the commander.</remarks>
+    /// "area"/"setarea x,y,r" and "getpost [r]". Failures are answered with a private message to the commander.</remarks>
     internal CommandsBundle()
     {
         _commands = new(StringComparer.InvariantCultureIgnoreCase);
@@ -58,6 +58,7 @@ internal class CommandsBundle
         _commands["radius"] = SetBotRadius;
         _commands["area"] = SetBotArea;
         _commands["setarea"] = SetBotArea;
+        _commands["getpost"] = SetBotAreaHere;
         _commands["invite"] = InviteCommander;
         _commands["inviteme"] = InviteCommander;
         _commands["leave"] = LeaveParty;
@@ -86,7 +87,8 @@ internal class CommandsBundle
             || name.Equals("stop", StringComparison.OrdinalIgnoreCase)
             || name.Equals("radius", StringComparison.OrdinalIgnoreCase)
             || name.Equals("area", StringComparison.OrdinalIgnoreCase)
-            || name.Equals("setarea", StringComparison.OrdinalIgnoreCase)))
+            || name.Equals("setarea", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("getpost", StringComparison.OrdinalIgnoreCase)))
             return;
 
         var character = Game.Player;
@@ -178,6 +180,44 @@ internal class CommandsBundle
             // The botbase reads the radius as an integer; a stored "10.5" would fail to parse and fall back to 50.
             PlayerConfig.Set("RSBot.Area.Radius", (int)MathF.Round(radius));
             EventManager.FireEvent("OnSetTrainingArea");
+        }
+        catch (Exception e)
+        {
+            Log.Fatal(e);
+        }
+    }
+
+    /// <summary>
+    /// Sets the training area to where this character stands now; each bot uses its own position.
+    /// </summary>
+    /// <param name="player">The commander.</param>
+    /// <param name="radius">An optional radius; the current radius is kept without one. Usage: getpost [r]</param>
+    private void SetBotAreaHere(Commander player, string radius)
+    {
+        try
+        {
+            var newRadius = 0f;
+            if (!string.IsNullOrWhiteSpace(radius) && (!TryParseNumber(radius, out newRadius) || newRadius <= 0))
+            {
+                Reply(player, "Usage: getpost [radius] (radius must be positive)");
+                return;
+            }
+
+            var pos = Game.Player.Position;
+            PlayerConfig.Set("RSBot.Area.Region", pos.Region);
+            PlayerConfig.Set("RSBot.Area.X", pos.XOffset);
+            PlayerConfig.Set("RSBot.Area.Y", pos.YOffset);
+            PlayerConfig.Set("RSBot.Area.Z", pos.ZOffset);
+
+            if (newRadius > 0)
+                PlayerConfig.Set("RSBot.Area.Radius", (int)MathF.Round(newRadius));
+
+            PlayerConfig.Save();
+            EventManager.FireEvent("OnSetTrainingArea");
+
+            Log.Notify(
+                $"[Commands] Training area set here: X={pos.X:0} Y={pos.Y:0} R={PlayerConfig.Get("RSBot.Area.Radius", 50)}"
+            );
         }
         catch (Exception e)
         {
@@ -498,7 +538,7 @@ internal class CommandsBundle
     /// </summary>
     private void SendHelp(Commander player, string args)
     {
-        Reply(player, "Commands: start, stop, town, trace [name], notrace, sitdown, teleport from,to, radius r, area x,y,r");
+        Reply(player, "Commands: start, stop, town, trace [name], notrace, sitdown, teleport from,to, radius r, area x,y,r, getpost [r]");
         Reply(player, "Commands: invite, leave, status, logout, help");
     }
 
