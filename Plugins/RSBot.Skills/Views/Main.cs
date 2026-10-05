@@ -113,14 +113,68 @@ public partial class Main : DoubleBufferedControl
 
         // Active-buff list mutations are marshalled to the UI thread: events fire on the network
         // thread, and BuffTimer_Tick enumerating the list concurrently throws inside ListView.
-        SubscribeViewEvent("OnAddBuff", new Action<SkillInfo>(b => RunOnUiThread(() => OnAddBuff(b))));
-        SubscribeViewEvent("OnRemoveBuff", new Action<SkillInfo>(b => RunOnUiThread(() => OnRemoveBuff(b))));
+        // Without a window handle they are skipped, the list is rebuilt from the state once the handle exists:
+        // changing it from the network thread while the handle is created leaves the native list out of sync.
+        SubscribeViewEvent("OnAddBuff", new Action<SkillInfo>(b => RunOnActiveBuffList(() => OnAddBuff(b))));
+        SubscribeViewEvent("OnRemoveBuff", new Action<SkillInfo>(b => RunOnActiveBuffList(() => OnRemoveBuff(b))));
         SubscribeViewEvent("OnResurrectionRequest", OnResurrectionRequest);
         SubscribeViewEvent("OnExpSpUpdate", OnSpUpdated);
         SubscribeViewEvent("OnAddItemPerk",
-            new Action<uint, uint>((t, k) => RunOnUiThread(() => OnAddItemPerk(t, k))));
+            new Action<uint, uint>((t, k) => RunOnActiveBuffList(() => OnAddItemPerk(t, k))));
         SubscribeViewEvent("OnRemoveItemPerk",
-            new Action<uint, ItemPerk>((t, p) => RunOnUiThread(() => OnRemoveItemPerk(t, p))));
+            new Action<uint, ItemPerk>((t, p) => RunOnActiveBuffList(() => OnRemoveItemPerk(t, p))));
+
+        listActiveBuffs.HandleCreated += (s, e) => RebuildActiveBuffs();
+    }
+
+    /// <summary>
+    ///     Runs a change of the active-buff list on the UI thread, or skips it while the list has no window handle.
+    /// </summary>
+    private void RunOnActiveBuffList(System.Action action)
+    {
+        if (!listActiveBuffs.IsHandleCreated)
+            return;
+
+        RunOnUiThread(action);
+    }
+
+    /// <summary>
+    ///     Fills the active-buff list from the player's current buffs and item perks.
+    /// </summary>
+    private void RebuildActiveBuffs()
+    {
+        if (listActiveBuffs.IsDisposed)
+            return;
+
+        try
+        {
+            listActiveBuffs.BeginUpdate();
+            listActiveBuffs.Items.Clear();
+
+            var state = Game.Player?.State;
+            if (state == null)
+                return;
+
+            foreach (var buff in state.ActiveBuffs.ToArray())
+                if (buff?.Record != null)
+                    OnAddBuff(buff);
+
+            foreach (var perk in state.ActiveItemPerks.Values.ToArray())
+            {
+                var item = new ListViewItem { Text = perk.Item?.GetRealName(), Tag = perk };
+                listActiveBuffs.Items.Add(item);
+                item.LoadSkillImage();
+            }
+        }
+        catch (Exception e)
+        {
+            // The buff state is changed by the network thread meanwhile; the next buff event updates the list again
+            Log.Debug($"[Skills] Could not rebuild the active buff list: {e.Message}");
+        }
+        finally
+        {
+            listActiveBuffs.EndUpdate();
+        }
     }
 
     private void RunOnUiThread(System.Action action)
@@ -1018,7 +1072,7 @@ public partial class Main : DoubleBufferedControl
         ApplyAttackSkills();
         ApplyBuffSkills();
 
-        RunOnUiThread(listActiveBuffs.Items.Clear);
+        RunOnActiveBuffList(RebuildActiveBuffs);
     }
 
     /// <summary>
