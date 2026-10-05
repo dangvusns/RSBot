@@ -51,6 +51,15 @@ For each combination:
 8. Move the open window between monitors at 100%, 125%, and 175%, then back. Check
    that text, controls, scrolling, and dropdown item heights rescale without growing
    progressively. Repeat with maximized and restored windows.
+9. Summon a growth pet, a horse/transport, and a fellow pet. The pet panel and the
+   small pet icons above it must match the size of their text at each scale.
+10. Open the Plugin Manager. Plugin cards, their buttons, and badges must not clip.
+11. In the Script Recorder, add a command with arguments. Its fields and descriptions
+    must fit the dialog.
+12. Open the Social plugin. List columns, buttons, and the exchange options must
+    scale with the text.
+13. With debug enabled, open Item properties and Skill properties. The dialog must
+    fit inside the screen at 175% on a 1080p display.
 
 Compilation and interactive rendering require Windows. Linux source review and
 `git diff --check` do not establish that all plugin layouts render correctly.

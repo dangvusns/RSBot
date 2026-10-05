@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Windows.Forms;
 using RSBot.Core.Client.ReferenceObjects;
 using RSBot.Core.Objects;
 using SDUI.Controls;
@@ -17,7 +19,12 @@ public partial class SkillProperties : UIWindowBase
 
         Skill = skill;
         Text = $"Skill properties - {Skill.GetRealName()} [Id: {Skill.ID}, GroupId: {Skill.GroupID}]";
-        Size = new Size(620, 800);
+        // Scale with the display, but stay inside the screen the dialog opens on.
+        var area = Screen.FromPoint(Cursor.Position).WorkingArea;
+        Size = new Size(
+            Math.Min(LogicalToDeviceUnits(620), area.Width),
+            Math.Min(LogicalToDeviceUnits(800), area.Height)
+        );
 
         try
         {

@@ -333,6 +333,10 @@ public partial class PluginCard : SDUI.Controls.Panel
         Controls.Add(btnDownload);
         Name = "PluginCard";
         Size = new Size(862, 150);
+        // The layout above is in 96 DPI pixels; cards are added at runtime, so nothing else scales them.
+        var factor = DeviceDpi / 96f;
+        if (factor != 1f)
+            Scale(new SizeF(factor, factor));
         ResumeLayout(false);
         PerformLayout();
     }

@@ -13,6 +13,7 @@ public partial class Transport : CosControlBase
     public Transport()
     {
         InitializeComponent();
+        ScaleFrom96Dpi();
         CheckForIllegalCrossThreadCalls = false;
 
         SubscribeEvents();

@@ -14,6 +14,7 @@ public partial class Growth : CosControlBase
     public Growth()
     {
         InitializeComponent();
+        ScaleFrom96Dpi();
         SubscribeEvents();
         MiniCosControl.Satiety.Visible = false;
     }

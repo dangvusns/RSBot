@@ -28,6 +28,17 @@ public class CosControlBase : DoubleBufferedControl
 
     public virtual void Initialize() { }
 
+    /// <summary>
+    ///     Scales a pet view laid out in 96 DPI pixels without an AutoScaleMode. Pet views are
+    ///     created at runtime, so WinForms does not scale them when they are added.
+    /// </summary>
+    protected void ScaleFrom96Dpi()
+    {
+        var factor = DeviceDpi / 96f;
+        if (factor != 1f)
+            Scale(new SizeF(factor, factor));
+    }
+
     public virtual void Reset()
     {
         progressHP.Value = 0;

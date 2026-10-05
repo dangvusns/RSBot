@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Windows.Forms;
 using RSBot.Core;
 using RSBot.Core.Client.ReferenceObjects;
 using RSBot.Core.Objects;
@@ -20,7 +22,12 @@ public partial class ItemProperties : UIWindowBase
         InventoryItem = inventoryItem;
         Text =
             $"Item properties - {InventoryItem.Record.GetRealName()} [Id: {InventoryItem.Record.ID}, TID2: {InventoryItem.Record.TypeID2}, TID3: {InventoryItem.Record.TypeID3}, TID4: {InventoryItem.Record.TypeID4}]";
-        Size = new Size(620, 800);
+        // Scale with the display, but stay inside the screen the dialog opens on.
+        var area = Screen.FromPoint(Cursor.Position).WorkingArea;
+        Size = new Size(
+            Math.Min(LogicalToDeviceUnits(620), area.Width),
+            Math.Min(LogicalToDeviceUnits(800), area.Height)
+        );
 
         try
         {

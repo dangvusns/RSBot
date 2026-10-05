@@ -37,13 +37,13 @@ public partial class CommandDialog : UIWindowBase
                 Dock = DockStyle.Top,
                 BackColor = ColorScheme.BackColor,
                 ForeColor = ColorScheme.ForeColor,
-                Size = new Size(250, 85),
+                Size = LogicalToDeviceUnits(new Size(250, 85)),
             };
 
             var input = new TextBox
             {
-                Location = new Point(16, 26),
-                Size = new Size(200, 28),
+                Location = new Point(LogicalToDeviceUnits(16), LogicalToDeviceUnits(26)),
+                Size = LogicalToDeviceUnits(new Size(200, 28)),
                 Name = arg.Key,
             };
 
@@ -54,18 +54,18 @@ public partial class CommandDialog : UIWindowBase
                 {
                     new Label
                     {
-                        Location = new Point(13, 2),
+                        Location = new Point(LogicalToDeviceUnits(13), LogicalToDeviceUnits(2)),
                         Text = arg.Key,
                         BackColor = Color.Transparent,
                     },
                     input,
                     new Label
                     {
-                        Location = new Point(13, 50),
+                        Location = new Point(LogicalToDeviceUnits(13), LogicalToDeviceUnits(50)),
                         Text = arg.Value,
-                        Size = new Size(250, 16),
+                        Size = LogicalToDeviceUnits(new Size(230, 20)),
                     },
-                    new Separator { Location = new Point(0, 75), Dock = DockStyle.Bottom },
+                    new Separator { Dock = DockStyle.Bottom },
                 }
             );
 
@@ -74,7 +74,7 @@ public partial class CommandDialog : UIWindowBase
 
         var count = command.Arguments.Count == 1 ? 1 : command.Arguments.Count;
 
-        Size = new Size(268, 85 + 85 * count);
+        Size = LogicalToDeviceUnits(new Size(268, 85 + 85 * count));
     }
 
     #endregion Constructor

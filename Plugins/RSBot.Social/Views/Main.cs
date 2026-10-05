@@ -105,7 +105,7 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
     {
         var top = CreateLayout(2);
         top.Dock = DockStyle.Top;
-        top.Padding = new Padding(8);
+        top.Padding = new Padding(Px(8));
         top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         top.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         _lblPlayers = new SDUI.Controls.Label
@@ -115,7 +115,7 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
         };
         var refresh = new SDUI.Controls.Button
         {
-            AutoSize = true, MinimumSize = new Size(90, 30), Text = "Refresh", Radius = 6,
+            AutoSize = true, MinimumSize = new Size(Px(90), Px(30)), Text = "Refresh", Radius = 6,
         };
         refresh.Click += (s, e) => RefreshPlayers();
         Localize(refresh, "Refresh", "Refresh");
@@ -136,11 +136,11 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
         _listEquipment = CreateList(("Equipment of the selected player", 360), ("Plus", 60));
         _listEquipment.Name = "EquipmentList";
         _listEquipment.Dock = DockStyle.Bottom;
-        _listEquipment.Height = 150;
+        _listEquipment.Height = Px(150);
 
         var whisper = CreateLayout(2);
         whisper.Dock = DockStyle.Bottom;
-        whisper.Padding = new Padding(8);
+        whisper.Padding = new Padding(Px(8));
         whisper.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         whisper.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         whisper.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -151,7 +151,7 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
         };
         _sendWhisper = new SDUI.Controls.Button
         {
-            AutoSize = true, MinimumSize = new Size(110, 30), Text = "Whisper", Radius = 6,
+            AutoSize = true, MinimumSize = new Size(Px(110), Px(30)), Text = "Whisper", Radius = 6,
         };
         _sendWhisper.Click += (s, e) => SendWhisper();
         Localize(_sendWhisper, "Whisper", "Whisper");
@@ -364,7 +364,7 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
     {
         var top = CreateLayout(1);
         top.Dock = DockStyle.Top;
-        top.Padding = new Padding(8);
+        top.Padding = new Padding(Px(8));
         top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         _lblGuild = CreateWrappingLabel("GuildSummary", "No guild data yet");
         _lblNotice = CreateWrappingLabel("GuildNotice");
@@ -434,14 +434,14 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
             Name = "ExchangeInvitations",
             Text = "Exchange invitations",
             Dock = DockStyle.Top,
-            Padding = new Padding(16, 32, 16, 16),
+            Padding = new Padding(Px(16), Px(32), Px(16), Px(16)),
             Radius = 10,
             ShadowDepth = 4,
         };
 
         var label = CreateWrappingLabel("ExchangePrompt", "When a player invites me to an exchange:");
 
-        _comboExchangeMode = new SDUI.Controls.ComboBox { Name = "ExchangeMode", DrawMode = DrawMode.OwnerDrawFixed, Location = new Point(16, 56), Size = new Size(480, 23), DropDownStyle = ComboBoxStyle.DropDownList };
+        _comboExchangeMode = new SDUI.Controls.ComboBox { Name = "ExchangeMode", DrawMode = DrawMode.OwnerDrawFixed, Location = new Point(Px(16), Px(56)), Size = new Size(Px(480), Px(23)), DropDownStyle = ComboBoxStyle.DropDownList };
         _comboExchangeMode.Items.AddRange(
             new object[]
             {
@@ -469,7 +469,7 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
         foreach (var control in new Control[] { label, _comboExchangeMode, modeDescription,
             _checkAutoConfirm, _checkAutoApprove, hint, _lblSaved })
         {
-            control.Margin = new Padding(0, 0, 0, 8);
+            control.Margin = new Padding(0, 0, 0, Px(8));
             content.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             content.Controls.Add(control, 0, row++);
         }
@@ -480,11 +480,11 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
             modeDescription.Text = _comboExchangeMode.SelectedItem?.ToString() ?? string.Empty;
         Action sizeCombo = () =>
         {
-            _comboExchangeMode.ItemHeight = Math.Max(22, _comboExchangeMode.Font.Height + 8);
+            _comboExchangeMode.ItemHeight = Math.Max(Px(22), _comboExchangeMode.Font.Height + Px(8));
             var widest = _comboExchangeMode.Items.Cast<object>()
                 .Select(item => TextRenderer.MeasureText(item.ToString(), _comboExchangeMode.Font).Width)
                 .DefaultIfEmpty(0).Max();
-            _comboExchangeMode.DropDownWidth = Math.Max(_comboExchangeMode.Width, widest + 32);
+            _comboExchangeMode.DropDownWidth = Math.Max(_comboExchangeMode.Width, widest + Px(32));
         };
         _comboExchangeMode.FontChanged += (s, e) => sizeCombo();
         _comboExchangeMode.SizeChanged += (s, e) => sizeCombo();
@@ -513,7 +513,7 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
             finally { _loadingSettings = loading; }
         });
         tabExchange.AutoScroll = true;
-        tabExchange.Padding = new Padding(8);
+        tabExchange.Padding = new Padding(Px(8));
         // Checkboxes are single-line controls: allow horizontal scrolling at very narrow widths.
         Action layout = () =>
         {
@@ -709,6 +709,11 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
             : string.Format(TextFor("Recipient", "Whisper to: {0} | Right-click the player for trace and invite actions."), selected);
     }
 
+    /// <summary>
+    ///     Converts 96 DPI pixels to the current display: this view is built in code and is not auto-scaled.
+    /// </summary>
+    private int Px(int value) => LogicalToDeviceUnits(value);
+
     private SDUI.Controls.ListView CreateList(params (string Text, int Width)[] columns)
     {
         var list = new SDUI.Controls.ListView
@@ -725,7 +730,7 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
 
         foreach (var column in columns)
         {
-            var header = list.Columns.Add(column.Text, column.Width);
+            var header = list.Columns.Add(column.Text, Px(column.Width));
             var key = "Column" + new string(column.Text.Where(char.IsLetterOrDigit).ToArray());
             _translations.Add(() => header.Text = TextFor(key, column.Text));
         }

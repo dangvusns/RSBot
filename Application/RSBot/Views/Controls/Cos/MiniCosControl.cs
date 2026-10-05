@@ -13,6 +13,11 @@ public partial class MiniCosControl : DoubleBufferedControl
     public MiniCosControl()
     {
         InitializeComponent();
+
+        // Laid out in 96 DPI pixels without an AutoScaleMode and added at runtime.
+        var factor = DeviceDpi / 96f;
+        if (factor != 1f)
+            Scale(new SizeF(factor, factor));
     }
 
     public bool Selected
