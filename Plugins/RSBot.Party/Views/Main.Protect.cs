@@ -74,7 +74,7 @@ public partial class Main
         };
         _listProtectedPlayers.Columns.Add(ProtectText("CharName", "Name"), ProtectPx(260));
 
-        var buttons = new FlowLayoutPanel
+        var buttons = new System.Windows.Forms.FlowLayoutPanel
         {
             AutoSize = true,
             Dock = DockStyle.Fill,
