@@ -137,11 +137,25 @@ public class PacketManager
     /// <param name="destination">The destination.</param>
     public static void SendPacket(Packet packet, PacketDestination destination)
     {
+        SendPacket(packet, destination, false);
+    }
+
+    /// <summary>
+    ///     Sends the packet.
+    /// </summary>
+    /// <param name="packet">The packet.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="forwarded">Whether the packet was received by the proxy and is only being forwarded.</param>
+    internal static void SendPacket(Packet packet, PacketDestination destination, bool forwarded)
+    {
         if (Kernel.Proxy == null)
             return;
 
         if (!packet.Locked)
             packet.Lock();
+
+        if (!forwarded && PacketMonitor.IsActive && !(destination == PacketDestination.Client && Game.Clientless))
+            PacketMonitor.Capture(packet, destination, PacketOrigin.BotInjected);
 
         try
         {

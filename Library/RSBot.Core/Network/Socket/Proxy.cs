@@ -191,12 +191,20 @@ public class Proxy
     /// <param name="packet">The packet</param>
     private void HandleReceivedPacket(Packet packet, PacketDestination destination)
     {
-        //if(packet.Opcode != 0x2002)
-        //   Log.Notify(packet.ToString());
+        var received = packet;
+        if (PacketMonitor.IsActive)
+            PacketMonitor.Capture(received, destination, PacketOrigin.Received);
 
         try
         {
             packet = PacketManager.CallHook(packet, destination);
+
+            if (PacketMonitor.IsActive && packet != received)
+                PacketMonitor.Capture(
+                    packet ?? received,
+                    destination,
+                    packet == null ? PacketOrigin.Dropped : PacketOrigin.Replaced
+                );
         }
         catch (Exception e)
         {
@@ -207,7 +215,7 @@ public class Proxy
             if (packet != null)
                 try
                 {
-                    PacketManager.SendPacket(packet, destination);
+                    PacketManager.SendPacket(packet, destination, true);
 
                     packet.SeekRead(0, SeekOrigin.Begin);
 
