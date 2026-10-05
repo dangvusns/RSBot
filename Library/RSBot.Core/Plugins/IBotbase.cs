@@ -18,6 +18,12 @@ public interface IBotbase : IExtension
     void Tick();
 
     /// <summary>
+    ///     Checks whether the botbase can start, before anything is changed for the start (e.g. party following stopped).
+    /// </summary>
+    /// <returns><c>true</c> if the botbase can start; otherwise, <c>false</c>.</returns>
+    bool CanStart() => true;
+
+    /// <summary>
     ///     Starts this instance.
     /// </summary>
     void Start();

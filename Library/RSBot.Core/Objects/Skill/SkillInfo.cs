@@ -85,6 +85,38 @@ public class SkillInfo
     public bool IsAttack => Record.Params.Contains(6386804);
 
     /// <summary>
+    ///     Gets a value indicating whether the skill leaves a buff with a duration on its target.
+    ///     Instant skills such as heals or MP transfers have none.
+    /// </summary>
+    public bool HasDuration => _duration > 0;
+
+    /// <summary>
+    ///     Gets what the skill restores, read from its "heal" param (HP, HP%, MP, MP%).
+    /// </summary>
+    /// <param name="health"><c>true</c> if the skill restores HP.</param>
+    /// <param name="mana"><c>true</c> if the skill restores MP.</param>
+    /// <returns><c>true</c> if the skill has a "heal" param; otherwise, <c>false</c>.</returns>
+    public bool TryGetRestoredStats(out bool health, out bool mana)
+    {
+        health = false;
+        mana = false;
+
+        var parameters = Record?.Params;
+        if (parameters == null)
+            return false;
+
+        // skill heal param: heal
+        var index = parameters.IndexOf(1751474540);
+        if (index == -1 || index + 4 >= parameters.Count)
+            return false;
+
+        health = parameters[index + 1] > 0 || parameters[index + 2] > 0;
+        mana = parameters[index + 3] > 0 || parameters[index + 4] > 0;
+
+        return health || mana;
+    }
+
+    /// <summary>
     ///     Gets a value indicating whether this <see cref="SkillInfo" /> is a DoT.
     /// </summary>
     /// <value>
@@ -305,6 +337,16 @@ public class SkillInfo
             SkillManager.CastBuff(this, target);
         else
             SkillManager.CastSkill(this, target);
+    }
+
+    /// <summary>
+    ///     Casts the skill as a buff and waits for the server's answer.
+    /// </summary>
+    /// <param name="target">The target, 0 for the player.</param>
+    /// <returns>Whether the server accepted the cast.</returns>
+    public SkillCastResult CastBuff(uint target = 0)
+    {
+        return SkillManager.CastBuff(this, target);
     }
 
     /// <summary>

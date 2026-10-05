@@ -5,6 +5,7 @@ using RSBot.Core;
 using RSBot.Core.Event;
 using RSBot.Core.Objects;
 using RSBot.Core.Objects.Party;
+using RSBot.Core.Objects.Skill;
 using RSBot.Core.Components;
 using RSBot.Core.Objects.Spawn;
 
@@ -30,9 +31,19 @@ internal class PartyBuffingBundle : IBundle
     private const int FAILED_CAST_PAUSE_MS = 60_000;
 
     /// <summary>
-    ///     The casts per member and buff that did not show up on the member yet: count, tick of the last cast.
+    ///     The time a buff gets to show up on the member after the server accepted the cast.
+    /// </summary>
+    private const int SHOW_UP_GRACE_MS = 2_000;
+
+    /// <summary>
+    ///     The accepted casts per member and buff that did not show up on the member yet: count, tick of the last cast.
     /// </summary>
     private readonly Dictionary<(string Member, uint Skill), (int Count, int Tick)> _pendingCasts = new();
+
+    /// <summary>
+    ///     The instant skills whose params were already logged.
+    /// </summary>
+    private readonly HashSet<uint> _loggedInstantSkills = new();
 
     /// <summary>
     ///     Initialize the instance of <seealso cref="PartyBuffingBundle" />
@@ -82,8 +93,7 @@ internal class PartyBuffingBundle : IBundle
             {
                 // The saved id is of the level the buff had when it was added; use the level learned now
                 var skill = Game.Player.Skills.FindLearnedSkill(buff);
-
-                if (skill == null || skill.HasCooldown)
+                if (skill == null)
                     continue;
 
                 // Check if the skill can target this player:
@@ -97,25 +107,59 @@ internal class PartyBuffingBundle : IBundle
                     }
                 }
 
+                // Out of range the caster walks to the member; skip members it could only reach by leaving the training area
+                var area = Container.Bot.Area;
+                var range = skill.Record.Action_Range / 10f;
+                if (
+                    member.Position.DistanceToPlayer() > range
+                    && member.Position.DistanceTo(area.Position) > area.Radius + range
+                )
+                    continue;
+
+                var key = (member.Name, skill.Id);
+
+                // Checked before the cooldown: a buff whose cooldown outlasts it is only seen while on cooldown.
+                // Also for skills without a duration param, some (e.g. bard buffs) still leave a buff.
                 var isActive = member.State.HasActiveBuff(skill, out var info);
                 if (isActive && skill.Isbugged && info.Isbugged)
                 {
-                    Log.Notify($"The buff on {member.Name} [{skill.Token}-{skill.Record?.GetRealName()}] expired");
+                    Log.Notify($"The buff on {member.Name} [{info.Token}-{skill.Record?.GetRealName()}] expired");
 
+                    // Drop the stale entry, otherwise it is found again on every tick and the buff is never recast
+                    member.State.TryRemoveActiveBuff(info.Token, out _);
                     skill?.Reset();
                     continue;
                 }
 
-                var key = (member.Name, skill.Id);
                 if (isActive)
                 {
                     _pendingCasts.Remove(key);
                     continue;
                 }
 
+                if (!skill.HasDuration && !NeedsInstantSkill(skill, member.Name))
+                    continue;
+
+                if (skill.HasCooldown || Game.Player.Mana < skill.Record.Consume_MP)
+                    continue;
+
                 if (_pendingCasts.TryGetValue(key, out var pending) && pending.Count >= MAX_FAILED_CASTS)
                 {
-                    if (Kernel.TickCount - pending.Tick < FAILED_CAST_PAUSE_MS)
+                    var elapsed = Kernel.TickCount - pending.Tick;
+
+                    // The last accepted cast may still show up
+                    if (elapsed < SHOW_UP_GRACE_MS)
+                        continue;
+
+                    if (pending.Count == MAX_FAILED_CASTS)
+                    {
+                        Log.Warn(
+                            $"[Party buffing] {skill.Record?.GetRealName()} did not show up on {member.Name} after {MAX_FAILED_CASTS} casts, pausing it for {FAILED_CAST_PAUSE_MS / 1000}s"
+                        );
+                        _pendingCasts[key] = (pending.Count + 1, pending.Tick);
+                    }
+
+                    if (elapsed < FAILED_CAST_PAUSE_MS)
                         continue;
 
                     _pendingCasts.Remove(key);
@@ -123,15 +167,43 @@ internal class PartyBuffingBundle : IBundle
                 }
 
                 Log.Status($"Buffing {skill.Record?.GetRealName()} party member {member.Name}");
-                skill.Cast(member.UniqueId, true);
+
+                // A refused cast (e.g. not enough MP) did not reach the member, so it is not counted
+                var result = skill.CastBuff(member.UniqueId);
+                if (result != SkillCastResult.Accepted || !skill.HasDuration)
+                    continue;
 
                 _pendingCasts[key] = (pending.Count + 1, Kernel.TickCount);
-                if (pending.Count + 1 == MAX_FAILED_CASTS)
-                    Log.Warn(
-                        $"[Party buffing] {skill.Record?.GetRealName()} did not show up on {member.Name} after {MAX_FAILED_CASTS} casts, pausing it for {FAILED_CAST_PAUSE_MS / 1000}s"
-                    );
             }
         }
+    }
+
+    /// <summary>
+    ///     Gets a value indicating whether an instant skill (no duration, e.g. a heal or MP transfer) should be cast on the member.
+    /// </summary>
+    /// <param name="skill">The instant skill.</param>
+    /// <param name="memberName">The member's name.</param>
+    private bool NeedsInstantSkill(SkillInfo skill, string memberName)
+    {
+        var restores = skill.TryGetRestoredStats(out var health, out var mana);
+
+        if (_loggedInstantSkills.Add(skill.Id))
+            Log.Debug(
+                $"[Party buffing] {skill.Record?.GetRealName()} has no duration; restores HP={health} MP={mana} (params: {string.Join(",", skill.Record?.Params ?? new List<int>())})"
+            );
+
+        if (!PlayerConfig.Get("RSBot.Party.Buffing.InstantSkillsWhenNeeded", true) || !restores)
+            return true;
+
+        // The server sends the members' HP and MP in steps of 10%: high nibble HP, low nibble MP
+        var partyMember = Game.Party?.Members?.Find(p => p.Name == memberName);
+        if (partyMember == null)
+            return true;
+
+        var healthSteps = partyMember.HealthMana >> 4;
+        var manaSteps = partyMember.HealthMana & 0x0F;
+
+        return (health && healthSteps < 10) || (mana && manaSteps < 10);
     }
 
     /// <summary>
@@ -160,6 +232,7 @@ internal class PartyBuffingBundle : IBundle
         }
 
         _pendingCasts.Clear();
+        _loggedInstantSkills.Clear();
         _refreshing = false;
     }
 

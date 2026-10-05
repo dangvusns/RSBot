@@ -44,10 +44,11 @@ internal class TargetBundle : IBundle
 
     private void OnTargetBehindObstacle()
     {
-        if (Game.SelectedEntity == null)
+        var selected = Game.SelectedEntity;
+        if (selected == null)
             return;
 
-        var selectedEntityUniqueId = Game.SelectedEntity.UniqueId;
+        var selectedEntityUniqueId = selected.UniqueId;
         ReleaseCommittedAttacker("obstacle");
         Game.SelectedEntity?.TryDeselect();
         Game.SelectedEntity = null;
@@ -131,7 +132,7 @@ internal class TargetBundle : IBundle
 
         if (
             attacker != null
-            && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity.UniqueId, out var selectedMonster)
+            && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity?.UniqueId ?? 0, out var selectedMonster)
             && GetTypePriority(attacker.Rarity) >= 0
             && GetTypePriority(attacker.Rarity) < GetTypePriority(selectedMonster.Rarity)
         )
@@ -179,7 +180,7 @@ internal class TargetBundle : IBundle
         if (
             PlayerConfig.Get("RSBot.Training.checkBoxSwitchTargetIfStolen", false)
             && Game.SelectedEntity != null
-            && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity.UniqueId, out var currentMonster)
+            && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity?.UniqueId ?? 0, out var currentMonster)
             && currentMonster.State.LifeState == LifeState.Alive
             && GetMonstersFoughtByOthers().Contains(currentMonster.UniqueId)
         )
@@ -664,7 +665,7 @@ internal class TargetBundle : IBundle
     private static bool IsSelectedHitting(params uint[] uniqueIds)
     {
         return Game.SelectedEntity != null
-            && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity.UniqueId, out var monster)
+            && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity?.UniqueId ?? 0, out var monster)
             && monster.State.LifeState == LifeState.Alive
             && monster.TargetId != 0
             && uniqueIds.Contains(monster.TargetId)

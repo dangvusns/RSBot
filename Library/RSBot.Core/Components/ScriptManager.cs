@@ -148,8 +148,13 @@ public class ScriptManager
             return;
 
         var error = false;
-        foreach (var scriptLine in Commands?.Skip(CurrentLineIndex))
+        // Every line advances CurrentLineIndex, so the logged line and a resume after a pause stay correct
+        // Stop() can clear Commands from another thread
+        var commands = Commands;
+        for (; CurrentLineIndex < (commands?.Length ?? 0); CurrentLineIndex++)
         {
+            var scriptLine = commands[CurrentLineIndex];
+
             if (!Running || Paused || (!Kernel.Bot.Running && !ignoreBotRunning))
             {
                 error = true;
@@ -204,13 +209,24 @@ public class ScriptManager
                     commandName
                 );
 
-                continue;
+                if (commandName != "move")
+                    continue;
+
+                // The next steps assume the player reached this point; carry on from a reachable later point instead
+                var nearestLine = FindNearestMoveCommandLine(CurrentLineIndex + 1, commands);
+                if (nearestLine <= CurrentLineIndex)
+                {
+                    error = true;
+                    LogScriptMessage("No reachable walk position ahead, stopping the script.", CurrentLineIndex, LogLevel.Warning);
+
+                    break;
+                }
+
+                Log.Debug($"[Script] Continuing at the nearby walk position at line #{nearestLine}");
+
+                // The loop increment moves onto the found line
+                CurrentLineIndex = nearestLine - 1;
             }
-
-            CurrentLineIndex++;
-
-            if (CurrentLineIndex > Commands?.Length - 1)
-                break;
         }
 
         if (!Paused)
@@ -292,16 +308,21 @@ public class ScriptManager
     ///     Finds the nearest walk command line.
     /// </summary>
     /// <returns></returns>
-    private static int FindNearestMoveCommandLine()
+    /// <param name="startLine">The first line to consider.</param>
+    /// <param name="commands">The script lines, the loaded script if not given.</param>
+    private static int FindNearestMoveCommandLine(int startLine = 0, string[] commands = null)
     {
         var playerPos = Game.Player.Movement.Source;
 
         var line = -1;
         var moveCommands = new Dictionary<int, Position>();
 
-        foreach (var command in Commands)
+        foreach (var command in commands ?? Commands ?? Array.Empty<string>())
         {
             line++;
+
+            if (line < startLine)
+                continue;
 
             if (
                 command.Trim().StartsWith("//")

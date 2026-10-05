@@ -26,15 +26,17 @@ internal class ActionBuffRemoveResponse : IPacketHandler
 
                 EventManager.FireEvent("OnRemoveBuff", buff);
 
-                var playerSkill = Game.Player.Skills.GetSkillInfoById(buff.Id);
-                playerSkill?.Reset();
+                // A recast can still be active under a newer token; only then is the skill really off
+                if (!Game.Player.State.ActiveBuffs.Exists(p => p.Id == buff.Id))
+                    Game.Player.Skills.GetSkillInfoById(buff.Id)?.Reset();
 
                 continue;
             }
 
             if (!SpawnManager.TryGetEntity<SpawnedBionic>(p => p.State.TryGetActiveBuff(token, out _), out var bionic))
             {
-                Log.Warn($"{token} not found while trying remove buff with token!");
+                // Usually a buff of an entity that left the view before its buff ended; nothing to remove
+                Log.Debug($"{token} not found while trying remove buff with token!");
                 continue;
             }
 

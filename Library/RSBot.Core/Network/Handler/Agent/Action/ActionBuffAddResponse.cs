@@ -22,18 +22,18 @@ internal class ActionBuffAddResponse : IPacketHandler
         var buff = new SkillInfo(skillId, token);
         if (targetId == Game.Player.UniqueId)
         {
-            var playerBuff = Game.Player.Skills.GetSkillInfoById(buff.Id);
-            if (playerBuff != null)
-            {
-                buff = playerBuff;
-                playerBuff.Token = token;
-            }
-
-            Game.Player.State.ActiveBuffs.Add(buff);
+            // Each active buff keeps its own token. Sharing the learned skill object here made a recast
+            // overwrite the token of the buff that was still active, so its removal was never matched.
+            var activeBuffs = Game.Player.State.ActiveBuffs;
+            var existingIndex = activeBuffs.FindIndex(p => p.Token == token);
+            if (existingIndex >= 0)
+                activeBuffs[existingIndex] = buff;
+            else
+                activeBuffs.Add(buff);
 
             EventManager.FireEvent("OnAddBuff", buff);
 
-            Log.Notify($"Buff [{buff.Record.GetRealName()}] added.");
+            Log.Notify($"Buff [{buff.Record?.GetRealName()}] added.");
 
             return;
         }

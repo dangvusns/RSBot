@@ -10,15 +10,16 @@ internal static class AttackBundle
 
     public static void Tick()
     {
+        var selected = Game.SelectedEntity;
         if (
-            Game.SelectedEntity == null
+            selected == null
             || Game.Player.InAction
             || !Game.Player.CanAttack
-            || Game.SelectedEntity.IsBehindObstacle
+            || selected.IsBehindObstacle
         )
             return;
 
-        if (_lastTargetId == Game.SelectedEntity.UniqueId)
+        if (_lastTargetId == selected.UniqueId)
         {
             if (Game.Player.InAction)
                 SkillManager.CancelAction();

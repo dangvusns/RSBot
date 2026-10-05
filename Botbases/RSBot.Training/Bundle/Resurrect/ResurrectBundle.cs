@@ -43,7 +43,8 @@ internal class ResurrectBundle : IBundle
             )
                 continue;
 
-            if (member.Player?.State.LifeState != LifeState.Dead && (member.HealthMana & 0x0F) != 0)
+            // HealthMana: high nibble HP, low nibble MP (steps of 10%)
+            if (member.Player?.State.LifeState != LifeState.Dead && (member.HealthMana >> 4) != 0)
                 continue;
 
             if (!_lastResurrectedPlayers.ContainsKey(member.Name))

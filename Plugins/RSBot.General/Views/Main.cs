@@ -590,14 +590,17 @@ internal partial class Main : DoubleBufferedControl
         )
             return;
 
-        GoClientless();
+        GoClientless("button");
     }
 
     /// <summary>
     ///     Switches the running game to clientless and closes the client.
     /// </summary>
-    private void GoClientless()
+    /// <param name="requestedBy">Who asked for it; logged so the client exit that follows does not look like a crash.</param>
+    private void GoClientless(string requestedBy)
     {
+        Log.Notify($"Switching to clientless and closing the client (requested by {requestedBy}).");
+
         ClientlessManager.GoClientless();
         ClientManager.Kill();
 
@@ -747,7 +750,7 @@ internal partial class Main : DoubleBufferedControl
         RunOnUi(() =>
         {
             if (!Game.Clientless)
-                GoClientless();
+                GoClientless("RSBot.Manager");
         });
     }
 

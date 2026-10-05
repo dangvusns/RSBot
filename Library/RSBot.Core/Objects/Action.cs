@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using RSBot.Core.Components;
 using RSBot.Core.Event;
@@ -9,6 +10,14 @@ namespace RSBot.Core.Objects;
 
 public class Action
 {
+    /// <summary>
+    ///     The executor of recent casts by skill instance id. The skill end packet (0xB071) names only the instance.
+    /// </summary>
+    private static readonly Dictionary<uint, (uint ExecutorId, int Tick)> _recentCasts = new();
+
+    private const int RecentCastLifetimeMs = 30_000;
+    private const int RecentCastPruneCount = 512;
+
     /// <summary>
     ///     Gets or sets the action identifier.
     /// </summary>
@@ -92,13 +101,18 @@ public class Action
             for (var i = 0; i < affectedObjectCount; i++)
             {
                 var uniqueId = packet.ReadUInt();
-                if (!SpawnManager.TryGetEntity<SpawnedBionic>(uniqueId, out var entity))
-                    continue;
+
+                // The hit data of every target is read even if the target is unknown (e.g. the player),
+                // otherwise the next target would be read from the middle of this one's data.
+                SpawnManager.TryGetEntity<SpawnedBionic>(uniqueId, out var entity);
+                SpawnManager.TryGetEntityIncludingMe(uniqueId, out var positionedEntity);
 
                 for (var j = 0; j < hitCount; j++)
                 {
                     var state = (ActionHitStateFlag)packet.ReadByte();
-                    if (state == ActionHitStateFlag.Abort)
+
+                    // Flags combine (e.g. with Dead), so test the bits
+                    if (state.HasFlag(ActionHitStateFlag.Abort))
                         break;
 
                     if (entity != null)
@@ -108,7 +122,7 @@ public class Action
                             entity.State.LifeState = LifeState.Dead;
                     }
 
-                    if (state != ActionHitStateFlag.Block)
+                    if (!state.HasFlag(ActionHitStateFlag.Block))
                     {
                         var critStatus = packet.ReadByte(); // 0x01: normal 0x02 critical
 
@@ -133,10 +147,7 @@ public class Action
                     if (state.HasFlag(ActionHitStateFlag.KnockBack))
                     {
                         var position = Position.FromPacketInt(packet);
-                        if (entity == null)
-                            continue;
-
-                        entity.SetSource(position);
+                        positionedEntity?.SetSource(position);
                     }
                 }
             }
@@ -157,6 +168,44 @@ public class Action
                 executor.SetSource(position);
             }
         }
+    }
+
+    /// <summary>
+    ///     Remembers the executor of a started cast (0xB070) for its end packet.
+    /// </summary>
+    internal static void RememberCast(Action action)
+    {
+        if (action.Id == 0 || action.ExecutorId == 0)
+            return;
+
+        lock (_recentCasts)
+        {
+            if (_recentCasts.Count >= RecentCastPruneCount)
+            {
+                var expired = new List<uint>();
+                foreach (var cast in _recentCasts)
+                    if (Kernel.TickCount - cast.Value.Tick > RecentCastLifetimeMs)
+                        expired.Add(cast.Key);
+
+                foreach (var id in expired)
+                    _recentCasts.Remove(id);
+
+                // Nothing old enough: start over rather than grow without limit
+                if (_recentCasts.Count >= RecentCastPruneCount)
+                    _recentCasts.Clear();
+            }
+
+            _recentCasts[action.Id] = (action.ExecutorId, Kernel.TickCount);
+        }
+    }
+
+    /// <summary>
+    ///     Gets the executor of the cast with the given skill instance id, 0 if unknown.
+    /// </summary>
+    internal static uint GetCastExecutor(uint actionId)
+    {
+        lock (_recentCasts)
+            return _recentCasts.TryGetValue(actionId, out var cast) ? cast.ExecutorId : 0;
     }
 
     /// <summary>

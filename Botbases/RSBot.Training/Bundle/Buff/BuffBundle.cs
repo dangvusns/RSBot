@@ -49,7 +49,7 @@ internal class BuffBundle : IBundle
                 if (isActive && buff.Isbugged && info.Isbugged)
                 {
                     //#377 bug detected!
-                    Log.Notify($"[#377] The buff [{buff.Token}-{buff.Record?.GetRealName()}] expired");
+                    Log.Notify($"[#377] The buff [{info.Token}-{buff.Record?.GetRealName()}] expired");
 
                     EventManager.FireEvent("OnRemoveBuff", info);
 

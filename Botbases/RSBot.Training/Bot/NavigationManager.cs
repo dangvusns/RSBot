@@ -4,6 +4,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,6 +38,13 @@ internal static class NavigationManager
 
     private static readonly object _lock = new();
     private static readonly SemaphoreSlim _downloadLock = new(1, 1);
+
+    // Several bot processes can share one Data folder; the file swap is guarded across processes.
+    private static readonly string FileMutexName =
+        @"Local\RSBot.NavLink." + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(DataDirectory.ToLowerInvariant())))[..16];
+
+    private const int FileRetries = 5;
+    private const int FileRetryDelayMs = 200;
     private static Graph _graph;
 
     private static string LinkageUrl => GlobalConfig.Get("RSBot.Navigation.LinkageUrl", DefaultLinkageUrl);
@@ -55,8 +64,10 @@ internal static class NavigationManager
             if (graph == null && !File.Exists(CustomPath))
             {
                 Log.Notify(Lang("AutoPathDownloading", "Downloading navigation data..."));
-                if (UpdateLinkageAsync().GetAwaiter().GetResult())
-                    graph = GetGraph();
+                UpdateLinkageAsync(onlyIfMissing: true).GetAwaiter().GetResult();
+
+                // Another bot process may have written the file meanwhile
+                graph = GetGraph();
             }
 
             if (graph == null)
@@ -84,13 +95,17 @@ internal static class NavigationManager
     /// <summary>
     ///     Downloads the latest graph and replaces the local copy. The custom graph is never touched.
     /// </summary>
-    public static async Task<bool> UpdateLinkageAsync()
+    /// <param name="onlyIfMissing">Skip the update if a valid local copy exists, e.g. written by another bot process.</param>
+    public static async Task<bool> UpdateLinkageAsync(bool onlyIfMissing = false)
     {
         if (!await _downloadLock.WaitAsync(0).ConfigureAwait(false))
             return false;
 
         try
         {
+            if (onlyIfMissing && HasValidDownloadedCopy())
+                return true;
+
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
             using var response = await client.GetAsync(LinkageUrl).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
@@ -106,10 +121,8 @@ internal static class NavigationManager
                 return false;
             }
 
-            Directory.CreateDirectory(DataDirectory);
-            var tempPath = DownloadedPath + ".tmp";
-            await File.WriteAllTextAsync(tempPath, json).ConfigureAwait(false);
-            File.Move(tempPath, DownloadedPath, true);
+            if (!ReplaceDownloadedCopy(json, onlyIfMissing))
+                return true;
 
             lock (_lock)
                 _graph = null;
@@ -132,6 +145,92 @@ internal static class NavigationManager
         finally
         {
             _downloadLock.Release();
+        }
+    }
+
+    /// <summary>
+    ///     Writes the graph to the local copy. Runs synchronously, the mutex belongs to the calling thread.
+    /// </summary>
+    /// <returns><c>false</c> if another bot process wrote a valid copy meanwhile and <paramref name="onlyIfMissing" /> is set.</returns>
+    private static bool ReplaceDownloadedCopy(string json, bool onlyIfMissing)
+    {
+        Directory.CreateDirectory(DataDirectory);
+
+        using var mutex = new Mutex(false, FileMutexName);
+        var owned = false;
+        try
+        {
+            try
+            {
+                owned = mutex.WaitOne(TimeSpan.FromSeconds(30));
+            }
+            catch (AbandonedMutexException)
+            {
+                // The other process died while holding it; the file swap below is still safe
+                owned = true;
+            }
+
+            if (onlyIfMissing && HasValidDownloadedCopy())
+                return false;
+
+            // A unique name, another process may be writing its own temp file
+            var tempPath = $"{DownloadedPath}.{Environment.ProcessId}.{Guid.NewGuid():N}.tmp";
+            try
+            {
+                File.WriteAllText(tempPath, json);
+                WithFileRetries(() => File.Move(tempPath, DownloadedPath, true));
+            }
+            finally
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+
+            return true;
+        }
+        finally
+        {
+            if (owned)
+                mutex.ReleaseMutex();
+        }
+    }
+
+    private static bool HasValidDownloadedCopy()
+    {
+        try
+        {
+            return File.Exists(DownloadedPath) && Parse(WithFileRetries(() => File.ReadAllText(DownloadedPath))) != null;
+        }
+        catch (Exception e) when (e is IOException or JsonException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    ///     Retries a file access that can collide with another bot process replacing the same file.
+    /// </summary>
+    private static void WithFileRetries(Action action)
+    {
+        WithFileRetries(() =>
+        {
+            action();
+            return true;
+        });
+    }
+
+    private static T WithFileRetries<T>(Func<T> func)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return func();
+            }
+            catch (IOException) when (attempt < FileRetries)
+            {
+                Thread.Sleep(FileRetryDelayMs * attempt);
+            }
         }
     }
 
@@ -174,7 +273,7 @@ internal static class NavigationManager
             if (!File.Exists(path))
                 return null;
 
-            var linkage = Parse(File.ReadAllText(path));
+            var linkage = Parse(WithFileRetries(() => File.ReadAllText(path)));
             if (linkage == null)
             {
                 Log.Warn($"[Navigation] {Path.GetFileName(path)} is malformed.");

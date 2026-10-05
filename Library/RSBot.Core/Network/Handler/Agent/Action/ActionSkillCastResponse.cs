@@ -57,8 +57,9 @@ internal class ActionSkillCastResponse : IPacketHandler
                     EventManager.FireEvent("OnTargetBehindObstacle");
                     break;
 
+                // 0x04: not enough MP (seen right before MP potions); others are not known yet
                 default:
-                    Log.Error($"Invalid skill error code: 0x{errorCode:X2}");
+                    SkillManager.OnCastRefused(errorCode);
                     break;
             }
 
@@ -110,6 +111,7 @@ internal class ActionSkillCastResponse : IPacketHandler
             packet.ReadByte();
 
         action.Flag = (ActionStateFlag)packet.ReadByte();*/
+        Objects.Action.RememberCast(action);
         action.ReadPacket(packet);
 
         if (action.PlayerIsExecutor)
@@ -121,6 +123,8 @@ internal class ActionSkillCastResponse : IPacketHandler
                 skillInfo = SkillManager.Buffs.Find(p => p.Id == action.SkillId);
 
             skillInfo?.Update();
+            if (skillInfo != null)
+                SkillManager.OnCastSucceeded(skillInfo);
 
             EventManager.FireEvent("OnCastSkill", action.SkillId);
 

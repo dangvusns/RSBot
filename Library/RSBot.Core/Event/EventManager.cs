@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -67,13 +68,36 @@ public class EventManager
 
             foreach (var target in targets)
                 if (Thread.CurrentThread.Name == "Network.PacketProcessor")
-                    Task.Run(() => target.DynamicInvoke(parameters));
+                    Task.Run(() => InvokeHandler(name, target, parameters));
                 else
-                    target.DynamicInvoke(parameters);
+                    InvokeHandler(name, target, parameters);
         }
         catch (Exception e)
         {
             Log.Fatal(e);
+        }
+    }
+
+    /// <summary>
+    ///     Invokes one handler; a failing handler must not keep the other handlers of the event from running.
+    /// </summary>
+    private static void InvokeHandler(string name, Delegate target, object[] parameters)
+    {
+        try
+        {
+            target.DynamicInvoke(parameters);
+        }
+        catch (Exception e)
+        {
+            // Logging fires OnAddLog itself; a failing log handler would otherwise fail again forever
+            if (name == "OnAddLog")
+            {
+                System.Diagnostics.Debug.WriteLine(e);
+                return;
+            }
+
+            Log.Warn($"[Event] A handler of {name} failed: {target.Method.DeclaringType?.FullName}.{target.Method.Name}");
+            Log.Fatal(e is TargetInvocationException { InnerException: not null } ? e.InnerException : e);
         }
     }
 }

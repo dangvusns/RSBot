@@ -33,6 +33,11 @@ internal class MovementBundle : IBundle
     private bool _returningToArea;
     private int _lastAreaReturnTick;
 
+    /// <summary>
+    ///     How far the player may step over the radius before being brought back, so a step just outside does not trigger it.
+    /// </summary>
+    private const float BoundaryTolerance = 2f;
+
     /// <summary>Training boundaries take precedence over attacks, pickup and party following.</summary>
     public bool EnsureInsideTrainingArea()
     {
@@ -41,7 +46,7 @@ internal class MovementBundle : IBundle
         var movement = Game.Player.Movement;
         var leavingArea = movement.Moving && movement.HasDestination
             && area.Position.DistanceTo(movement.Destination) > area.Radius;
-        if (distance <= area.Radius && !leavingArea && !_returningToArea)
+        if (distance <= area.Radius + BoundaryTolerance && !leavingArea && !_returningToArea)
             return false;
 
         if (_returningToArea && distance <= System.Math.Max(1, area.Radius - 2) && !leavingArea)

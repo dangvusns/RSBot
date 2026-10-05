@@ -51,7 +51,7 @@ internal class AreaSwapBundle : IBundle
 
         if (
             Game.SelectedEntity != null
-            && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity.UniqueId, out var target)
+            && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity?.UniqueId ?? 0, out var target)
             && target.State.LifeState == LifeState.Alive
         )
         {

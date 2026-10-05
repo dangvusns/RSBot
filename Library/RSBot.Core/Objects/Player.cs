@@ -661,6 +661,11 @@ public class Player : SpawnedBionic
     }
 
     /// <summary>
+    ///     The time the server gets to answer a movement request.
+    /// </summary>
+    private const int MoveResponseTimeout = 2000;
+
+    /// <summary>
     ///     Moves the specified destination.
     /// </summary>
     /// <param name="destination">The destination.</param>
@@ -712,7 +717,9 @@ public class Player : SpawnedBionic
         );
 
         PacketManager.SendPacket(packet, PacketDestination.Server, awaitCallback);
-        awaitCallback.AwaitResponse();
+
+        // The server answers within a few hundred ms, or not at all (e.g. while casting); don't block the bot for the default 5 s
+        awaitCallback.AwaitResponse(MoveResponseTimeout);
 
         if (awaitCallback.IsCompleted)
         {

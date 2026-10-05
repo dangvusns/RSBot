@@ -55,6 +55,10 @@ public class Bot
     /// </summary>
     public void Start()
     {
+        // A start that is refused must leave the player as it is, e.g. still following the party master
+        if (Botbase != null && !Botbase.CanStart())
+            return;
+
         // Stop self-driven Party/Social following before bot ticks can issue movement or attacks.
         // This also applies to the Start button and repeated start commands while already running.
         TraceManager.Stop();

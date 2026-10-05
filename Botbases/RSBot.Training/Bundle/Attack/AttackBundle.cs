@@ -16,10 +16,12 @@ internal class AttackBundle : IBundle
     /// </summary>
     public void Invoke()
     {
-        if (Game.SelectedEntity == null || !Game.Player.CanAttack)
+        // The network thread clears the selection when the target dies; work on one reference
+        var selected = Game.SelectedEntity;
+        if (selected == null || !Game.Player.CanAttack)
             return;
 
-        if (Game.SelectedEntity.IsBehindObstacle)
+        if (selected.IsBehindObstacle)
         {
             Log.Debug("Deselecting entity because it moved behind an obstacle!");
 
@@ -32,7 +34,7 @@ internal class AttackBundle : IBundle
             return;
         }
 
-        if (!Container.Bot.Area.IsInSight(Game.SelectedEntity))
+        if (!Container.Bot.Area.IsInSight(selected))
         {
             Log.Debug("Deselecting entity because it moved far away from training area!");
 
@@ -123,10 +125,11 @@ internal class AttackBundle : IBundle
     /// <returns></returns>
     private bool CastTeleportation()
     {
-        if (SkillManager.TeleportSkill?.CanBeCasted != true || Game.SelectedEntity?.State.LifeState != LifeState.Alive)
+        var target = Game.SelectedEntity;
+        if (SkillManager.TeleportSkill?.CanBeCasted != true || target?.State.LifeState != LifeState.Alive)
             return false;
 
-        var distanceToMonster = Game.SelectedEntity?.DistanceToPlayer;
+        var distanceToMonster = target.DistanceToPlayer;
         var availableDistance = SkillManager.TeleportSkill.Record.Params[3] / 10;
 
         if (availableDistance <= 0)
@@ -141,7 +144,7 @@ internal class AttackBundle : IBundle
 
             if (distanceAfterCasting < distanceToMonster)
             {
-                SkillManager.TeleportSkill.CastAt(Game.SelectedEntity.Position);
+                SkillManager.TeleportSkill.CastAt(target.Position);
 
                 Log.Debug(
                     $"Used teleportation skill [{SkillManager.TeleportSkill.Record.GetRealName()}] (before: {distanceToMonster}m, after: {distanceAfterCasting}m, traveled: {availableDistance}m)"

@@ -77,9 +77,31 @@ public class Bootstrap : IBotbase
     public Control View => Container.View;
 
     /// <inheritdoc />
+    public bool CanStart()
+    {
+        if (IsAreaConfigured)
+            return true;
+
+        Log.WarnLang("ConfigureTrainingAreaBeforeStartBot");
+        return false;
+    }
+
+    /// <summary>
+    ///     An unset area has no region; its X is also 0 at a real position near the world's X origin.
+    /// </summary>
+    private bool IsAreaConfigured
+    {
+        get
+        {
+            var position = Area.Position;
+            return position.Region.Id != 0 || position.XOffset != 0 || position.YOffset != 0;
+        }
+    }
+
+    /// <inheritdoc />
     public void Start()
     {
-        if (Kernel.Bot.Botbase.Area.Position.X == 0)
+        if (!IsAreaConfigured)
         {
             Log.WarnLang("ConfigureTrainingAreaBeforeStartBot");
             Kernel.Bot.Stop();

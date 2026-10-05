@@ -111,15 +111,29 @@ public class Log
     /// <param name="obj">The message</param>
     public static void Fatal(Exception obj)
     {
-        Warn(obj.Message);
+        // A handler called through reflection is wrapped; its own exception tells what went wrong
+        var cause = obj is System.Reflection.TargetInvocationException { InnerException: not null } ? obj.InnerException : obj;
+        Warn($"{cause.GetType().Name}: {cause.Message}");
 
         var filePath = Path.Combine(Kernel.BasePath, "Data", "Logs", "Exceptions", $"{DateTime.Now:dd-MM-yyyy}.txt");
-        if (!Directory.Exists(filePath))
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath));
 
-        using (var stream = File.AppendText(filePath))
+        // Several bot processes append to the same file
+        for (var attempt = 1; attempt <= 3; attempt++)
         {
-            stream.WriteLine(obj.ToString());
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+
+                using var stream = new FileStream(filePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                using var writer = new StreamWriter(stream);
+                writer.WriteLine($"[{DateTime.Now:HH:mm:ss}] [{Game.Player?.Name ?? "-"}] {obj}");
+
+                return;
+            }
+            catch (IOException)
+            {
+                System.Threading.Thread.Sleep(50 * attempt);
+            }
         }
     }
 }

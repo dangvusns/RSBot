@@ -35,9 +35,10 @@ internal class InventoryOperationResponse : IPacketHandler
         var result = packet.ReadByte();
         if (result != 0x01)
         {
-            var code = packet.ReadByte();
+            // Error codes are two bytes; older handling read only the low byte
+            var code = packet.Remaining >= 2 ? packet.ReadUShort() : packet.ReadByte();
 
-            Log.Debug($"ItemOperation error received:  [{result:X}] ({code:X})");
+            Log.Debug($"ItemOperation error received:  [{result:X}] (0x{code:X4})");
             return;
         }
 
@@ -227,6 +228,12 @@ internal class InventoryOperationResponse : IPacketHandler
                 var sourceSlot = packet.ReadByte();
                 Game.Player.Job2SpecialtyBag.RemoveAt(sourceSlot);
 
+                break;
+
+            // The exchange window's contents come with the exchange packets and are applied when the exchange completes
+            case InventoryOperation.SP_ADD_EXCHANGE:
+            case InventoryOperation.SP_DEL_EXCHANGE:
+            case InventoryOperation.SP_UPDATE_EXCHANGE_GOLD:
                 break;
 
             default:

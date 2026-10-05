@@ -170,6 +170,65 @@ public static class SkillManager
     }
 
     /// <summary>
+    ///     The refusals in a row per skill, reset by a successful cast.
+    /// </summary>
+    private static readonly Dictionary<uint, int> _consecutiveRefusals = new();
+
+    private const int RefusalsBeforePause = 5;
+
+    /// <summary>
+    ///     Called when the server refuses a cast for another reason than the cooldown (e.g. not enough MP or an unknown code).
+    ///     Like <see cref="OnCastRefusedByCooldown" /> the refusal is attributed to the last cast request; the skill is held back
+    ///     longer with every refusal in a row so it is not retried every tick.
+    /// </summary>
+    /// <param name="errorCode">The error code of the refusal.</param>
+    internal static void OnCastRefused(byte errorCode)
+    {
+        var skill = _lastRequestedSkill;
+        if (skill == null || Kernel.TickCount - _lastRequestTick > 2000 || skill.HasCooldown)
+        {
+            Log.Debug($"Server refused a skill cast (code 0x{errorCode:X2}).");
+            return;
+        }
+
+        int refusals;
+        lock (_consecutiveRefusals)
+        {
+            _consecutiveRefusals.TryGetValue(skill.Id, out refusals);
+            _consecutiveRefusals[skill.Id] = ++refusals;
+        }
+
+        var holdMs = refusals switch
+        {
+            1 => 3_000,
+            2 => 10_000,
+            < RefusalsBeforePause => 30_000,
+            _ => 180_000,
+        };
+
+        // Attack skills keep the fight going; a refusal is often only the target (dead, out of reach)
+        if (skill.IsAttack)
+            holdMs = Math.Min(holdMs, 3_000);
+
+        var name = skill.Record?.GetRealName();
+        if (refusals == RefusalsBeforePause && !skill.IsAttack)
+            Log.Warn($"[Skills] The server refused [{name}] {refusals} times in a row (code 0x{errorCode:X2}), pausing it for {holdMs / 1000}s.");
+        else
+            Log.Debug($"Server refused [{name}] (code 0x{errorCode:X2}, {refusals} in a row). Retrying in {holdMs / 1000} s.");
+
+        skill.SetRemainingCooldown(holdMs);
+    }
+
+    /// <summary>
+    ///     Called when a cast of the player started.
+    /// </summary>
+    internal static void OnCastSucceeded(SkillInfo skill)
+    {
+        lock (_consecutiveRefusals)
+            _consecutiveRefusals.Remove(skill.Id);
+    }
+
+    /// <summary>
     ///     Gets the monster type whose skill list is used: the own one, otherwise the closest weaker type that has
     ///     skills (a party giant uses the giant skills, a giant the champion skills, ... down to general).
     /// </summary>
@@ -331,7 +390,7 @@ public static class SkillManager
             return true;
 
         return Game.SelectedEntity != null
-            && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity.UniqueId, out var monster)
+            && SpawnManager.TryGetEntity<SpawnedMonster>(Game.SelectedEntity?.UniqueId ?? 0, out var monster)
             && monster.State.LifeState == LifeState.Alive
             && monster.Rarity is not (MonsterRarity.General or MonsterRarity.Champion or MonsterRarity.Event);
     }
@@ -552,17 +611,18 @@ public static class SkillManager
     ///     Casts the buff skill.
     /// </summary>
     /// <param name="skillId">The skill identifier.</param>
-    public static void CastBuff(SkillInfo skill, uint target = 0, bool awaitBuffResponse = true)
+    /// <returns>Whether the server accepted the cast.</returns>
+    public static SkillCastResult CastBuff(SkillInfo skill, uint target = 0, bool awaitBuffResponse = true)
     {
         if (skill.Id == 0)
-            return;
+            return SkillCastResult.NotSent;
 
         /*
         if (!Game.Player.Skills.HasSkill(skill.Id))
             return;
         */
         if (!CheckSkillRequired(skill.Record))
-            return;
+            return SkillCastResult.NotSent;
 
         RememberCastRequest(skill);
 
@@ -595,8 +655,10 @@ public static class SkillManager
         if (!awaitBuffResponse)
         {
             PacketManager.SendPacket(packet, PacketDestination.Server);
-            return;
+            return SkillCastResult.Unconfirmed;
         }
+
+        var refused = false;
 
         // Wait for the skill cast response of this buff instead of a buff info packet,
         // so a casted or refused buff does not block until the timeout runs out.
@@ -604,7 +666,10 @@ public static class SkillManager
             response =>
             {
                 if (response.ReadByte() != 0x01)
+                {
+                    refused = true;
                     return AwaitCallbackResult.Fail;
+                }
 
                 response.ReadByte(); // action code
 
@@ -652,11 +717,19 @@ public static class SkillManager
 
         castCallback.AwaitResponse(timeout);
 
+        var result = castCallback.IsCompleted
+            ? SkillCastResult.Accepted
+            : refused
+                ? SkillCastResult.Refused
+                : SkillCastResult.Timeout;
+
         if (!awaitActionState)
-            return;
+            return result;
 
         // Close the action state callback right away when the cast failed, so it does not linger in the callback list
         actionStateCallback.AwaitResponse(castCallback.IsCompleted ? timeout : 1);
+
+        return result;
     }
 
     /// <summary>

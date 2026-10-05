@@ -119,14 +119,13 @@ public class ExchangeInstance
     /// </summary>
     public void Complete()
     {
-        if (ReceivingItems == null)
-            return;
-
-        foreach (var item in ReceivingItems)
-        {
-            item.Item.Slot = Game.Player.Inventory.GetFreeSlot();
-            Game.Player.Inventory.Add(item.Item);
-        }
+        // A one-way exchange receives nothing, but the items given away still leave the inventory
+        if (ReceivingItems != null)
+            foreach (var item in ReceivingItems)
+            {
+                item.Item.Slot = Game.Player.Inventory.GetFreeSlot();
+                Game.Player.Inventory.Add(item.Item);
+            }
 
         if (SendingItems != null)
             foreach (var item in SendingItems)

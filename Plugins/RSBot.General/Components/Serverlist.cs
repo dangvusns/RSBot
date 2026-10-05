@@ -29,7 +29,18 @@ public static class Serverlist
     /// <returns></returns>
     public static Server GetServerByName(string name)
     {
-        return Servers.FirstOrDefault(s => s.Name.ToLower() == name.ToLower());
+        if (Servers == null || string.IsNullOrWhiteSpace(name))
+            return null;
+
+        // Spaces and case are ignored: the Manager stores "SROVOZ" for the server "SRO VOZ"
+        var normalizedName = NormalizeName(name);
+        return Servers.FirstOrDefault(s => s.Name.ToLower() == name.ToLower())
+            ?? Servers.FirstOrDefault(s => NormalizeName(s.Name) == normalizedName);
+    }
+
+    private static string NormalizeName(string name)
+    {
+        return new string(name.Where(c => !char.IsWhiteSpace(c)).ToArray()).ToLowerInvariant();
     }
 
     /// <summary>

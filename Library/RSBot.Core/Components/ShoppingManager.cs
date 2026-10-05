@@ -713,9 +713,38 @@ public static class ShoppingManager
 
         if (!SpawnManager.TryGetEntity<SpawnedNpcNpc>(p => p.Record.CodeName == npcCodeName, out var entity))
         {
-            Log.Warn("Cannot access the NPC [" + npcCodeName + "] because it does not exist nearby.");
+            // Some servers name the storage keeper differently; any storage keeper close by does the same job
+            SpawnedNpcNpc storageKeeper = null;
+            if (
+                npcCodeName.Contains("WAREHOUSE")
+                && SpawnManager.TryGetEntities<SpawnedNpcNpc>(
+                    p => p.Record?.CodeName.Contains("WAREHOUSE") == true && p.DistanceToPlayer < 50,
+                    out var storageKeepers
+                )
+            )
+                storageKeeper = storageKeepers.MinBy(p => p.DistanceToPlayer);
 
-            return;
+            if (storageKeeper != null)
+            {
+                entity = storageKeeper;
+                Log.Debug($"[{npcCodeName}] not found, using the storage keeper [{entity.Record.CodeName}] nearby.");
+            }
+            else
+            {
+                Log.Warn("Cannot access the NPC [" + npcCodeName + "] because it does not exist nearby.");
+
+                // Shows the code name to put into the town script
+                if (
+                    SpawnManager.TryGetEntities<SpawnedNpcNpc>(p => p.Record != null && p.DistanceToPlayer < 50, out var nearby)
+                    && nearby.Any()
+                )
+                    Log.Debug(
+                        "NPCs nearby: "
+                            + string.Join(", ", nearby.OrderBy(p => p.DistanceToPlayer).Select(p => $"{p.Record.CodeName} ({p.DistanceToPlayer:F0}m)"))
+                    );
+
+                return;
+            }
         }
 
         entity.TrySelect();

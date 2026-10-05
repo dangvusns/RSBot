@@ -61,7 +61,7 @@ internal static class AutoLogin
         }
 
         var server = Serverlist.GetServerByName(selectedAccount.Servername);
-        if (server == null && Serverlist.Servers != null)
+        if (server == null && Serverlist.Servers?.Count > 0)
         {
             Log.NotifyLang("ServerNotFound", selectedAccount.Servername);
 
@@ -71,7 +71,7 @@ internal static class AutoLogin
         }
 
         // is server check [Lazy :)]
-        if (!server.Status)
+        if (server == null || !server.Status)
         {
             _busy = false;
 

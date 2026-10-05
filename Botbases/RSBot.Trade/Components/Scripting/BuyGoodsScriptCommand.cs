@@ -170,7 +170,6 @@ internal class BuyGoodsScriptCommand : IScriptCommand
             return;
         }
 
-        var bought = 0;
         var maxSteps = Game.Player.JobTransport.Inventory.Capacity;
         var existingItemsCount = Game.Player.JobTransport.Inventory.GetSumAmount(packageItem.RefItemCodeName);
         while (
@@ -186,13 +185,20 @@ internal class BuyGoodsScriptCommand : IScriptCommand
             if (buyNextQty == 0)
                 break;
 
-            if (TradeConfig.BuyGoodsQuantity > 0 && bought + buyNextQty > TradeConfig.BuyGoodsQuantity)
-                buyNextQty = TradeConfig.BuyGoodsQuantity - bought;
+            // The quantity counts the goods already carried, too
+            if (TradeConfig.BuyGoodsQuantity > 0 && existingItemsCount + buyNextQty > TradeConfig.BuyGoodsQuantity)
+                buyNextQty = TradeConfig.BuyGoodsQuantity - existingItemsCount;
 
             ShoppingManager.PurchaseItem(Game.Player.JobTransport, tabIndex, item.SlotIndex, (ushort)buyNextQty);
 
-            bought += buyNextQty;
+            // Count what actually arrived; a refused purchase (e.g. not enough gold) ends the buying
+            var previousCount = existingItemsCount;
             existingItemsCount = Game.Player.JobTransport.Inventory.GetSumAmount(packageItem.RefItemCodeName);
+            if (existingItemsCount <= previousCount)
+            {
+                Log.Warn($"[Script] The purchase of [{packageItem.RefItem.GetRealName()}] was not completed, stopping the purchase.");
+                break;
+            }
         }
     }
 

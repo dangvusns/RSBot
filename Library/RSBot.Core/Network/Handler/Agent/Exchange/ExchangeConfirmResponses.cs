@@ -34,7 +34,17 @@ internal class ExchangeConfirmResponse : IPacketHandler
     /// <inheritdoc />
     public void Invoke(Packet packet)
     {
-        if (packet.ReadByte() == 1)
+        var result = packet.ReadByte();
+        if (result == 1)
+        {
             EventManager.FireEvent("OnExchangeConfirmed");
+            return;
+        }
+
+        // The wiki (AGENT_EXCHANGE_CONFIRM) documents a two-byte error code for result 2
+        var errorCode = result == 2 && packet.Remaining >= 2 ? packet.ReadUShort() : (ushort)0;
+        Log.Warn($"The exchange could not be confirmed (result {result}, code 0x{errorCode:X4}).");
+
+        EventManager.FireEvent("OnExchangeConfirmFailed", errorCode);
     }
 }
