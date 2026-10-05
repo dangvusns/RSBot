@@ -55,6 +55,7 @@ public partial class Main : UIWindow
     {
         InitializeComponent();
         InitializeStatusUi();
+        InitializeResponsiveLayout();
         CheckForIllegalCrossThreadCalls = false;
         SystemEvents.UserPreferenceChanged += SystemEvents_UserPreferenceChanged;
         RegisterEvents();
@@ -382,7 +383,7 @@ public partial class Main : UIWindow
     /// </summary>
     private void ConfigureSidebar()
     {
-        pSidebar.Visible = menuSidebar.Checked;
+        UpdateResponsiveLayout();
     }
 
     /// <summary>
