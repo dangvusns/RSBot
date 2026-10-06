@@ -32,12 +32,28 @@ public class NetBase(bool isClient = false)
     private bool _isClient { get; set; } = isClient;
 
     /// <summary>
+    ///     Wakes the dispatcher thread when there is something to do, instead of polling.
+    /// </summary>
+    private readonly AutoResetEvent _packetSignal = new(false);
+
+    private volatile bool _enablePacketDispatcher;
+    private volatile bool _isClosing;
+
+    /// <summary>
     ///     Gets or sets a value indicating whether this instance is closing.
     /// </summary>
     /// <value>
     ///     <c>true</c> if this instance is closing; otherwise, <c>false</c>.
     /// </value>
-    public bool IsClosing { get; set; }
+    public bool IsClosing
+    {
+        get => _isClosing;
+        set
+        {
+            _isClosing = value;
+            _packetSignal.Set();
+        }
+    }
 
     /// <summary>
     ///     Gets or sets a value indicating whether [enable packet processor].
@@ -45,7 +61,15 @@ public class NetBase(bool isClient = false)
     /// <value>
     ///     <c>true</c> if [enable packet processor]; otherwise, <c>false</c>.
     /// </value>
-    public bool EnablePacketDispatcher { get; set; }
+    public bool EnablePacketDispatcher
+    {
+        get => _enablePacketDispatcher;
+        set
+        {
+            _enablePacketDispatcher = value;
+            _packetSignal.Set();
+        }
+    }
 
     /// <summary>
     ///     Gets or sets the security protocol.
@@ -108,15 +132,36 @@ public class NetBase(bool isClient = false)
 
     protected void StartNetWorker()
     {
-        if (_dispatcherThread == null)
+        if (_dispatcherThread != null && _dispatcherThread.IsAlive)
+            return;
+
+        _dispatcherThread = new Thread(ProcessPacketsThreaded)
         {
-            _dispatcherThread = new Thread(ProcessPacketsThreaded)
-            {
-                Name = "Network.PacketProcessor",
-                IsBackground = true,
-            };
-            _dispatcherThread.Start();
-        }
+            Name = "Network.PacketProcessor",
+            IsBackground = true,
+        };
+        _dispatcherThread.Start();
+    }
+
+    /// <summary>
+    ///     Stops the dispatcher thread, waiting at most <paramref name="joinTimeout" /> ms for it to finish.
+    /// </summary>
+    protected void StopNetWorker(int joinTimeout = 1000)
+    {
+        EnablePacketDispatcher = false;
+        IsClosing = true;
+
+        var dispatcherThread = _dispatcherThread;
+        if (dispatcherThread == null)
+            return;
+
+        // The dispatcher can stop itself (e.g. a handler disconnecting). It must not wait for itself, and the
+        // thread is kept: if the caller resets IsClosing right away, it keeps running and must not be started twice
+        if (dispatcherThread == Thread.CurrentThread)
+            return;
+
+        if (!dispatcherThread.IsAlive || dispatcherThread.Join(joinTimeout))
+            _dispatcherThread = null;
     }
 
     /// <summary>
@@ -126,38 +171,46 @@ public class NetBase(bool isClient = false)
     {
         try
         {
-            while (!EnablePacketDispatcher && !IsClosing)
-                Thread.Sleep(1);
-
-            while (EnablePacketDispatcher && !IsClosing)
+            while (!IsClosing)
             {
-                ProcessQueuedPackets();
-                Thread.Sleep(1);
+                if (!EnablePacketDispatcher)
+                {
+                    _packetSignal.WaitOne(100);
+                    continue;
+                }
+
+                // Sleep until data arrives or is queued for sending; the timeout is a safety net
+                if (!ProcessQueuedPackets())
+                    _packetSignal.WaitOne(15);
             }
-
-            if (IsClosing)
-                return;
-
-            ProcessPacketsThreaded();
         }
-        catch { }
+        catch (Exception e)
+        {
+            // Without this thread no packets flow any more, so make it visible
+            Log.Error($"The packet dispatcher stopped: {e.Message}");
+        }
     }
 
     /// <summary>
     ///     Processes the packets.
     /// </summary>
-    private void ProcessQueuedPackets()
+    /// <returns><c>true</c> if any packet was received or sent.</returns>
+    private bool ProcessQueuedPackets()
     {
         try
         {
             if (IsClosing || !EnablePacketDispatcher)
-                return;
+                return false;
+
+            var processed = false;
 
             var packets = _protocol?.TransferIncoming();
             if (packets != null)
             {
                 foreach (var packet in packets)
                 {
+                    processed = true;
+
                     if (packet.Opcode == 0x5000 || packet.Opcode == 0x9000)
                         continue;
 
@@ -174,17 +227,23 @@ public class NetBase(bool isClient = false)
 
             var buffers = _protocol?.TransferOutgoing();
             if (buffers == null)
-                return;
+                return processed;
 
             foreach (var buffer in buffers)
             {
                 if (_socket == null || IsClosing || !EnablePacketDispatcher || !_socket.Connected)
-                    return;
+                    return processed;
 
                 _socket.Send(buffer);
+                processed = true;
             }
+
+            return processed;
         }
-        catch { }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>
@@ -196,5 +255,14 @@ public class NetBase(bool isClient = false)
         OnPacketSent(packet);
 
         _protocol?.Send(packet);
+        SignalPacketDispatcher();
+    }
+
+    /// <summary>
+    ///     Wakes the dispatcher thread, e.g. after data was received.
+    /// </summary>
+    protected void SignalPacketDispatcher()
+    {
+        _packetSignal.Set();
     }
 }

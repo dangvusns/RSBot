@@ -11,6 +11,7 @@ public class PacketManager
     ///     <inheritdoc />
     /// </summary>
     private static readonly object _lock = new();
+    private static readonly object _hookLock = new();
 
     /// <summary>
     ///     Gets the handlers.
@@ -57,10 +58,9 @@ public class PacketManager
     /// <param name="hook">The hook.</param>
     public static void RegisterHook(IPacketHook hook)
     {
-        if (Hooks == null)
-            Hooks = new List<IPacketHook>();
-
-        Hooks.Add(hook);
+        // Copy on write: hooks can be added while packets are being dispatched on other threads
+        lock (_hookLock)
+            Hooks = new List<IPacketHook>(Hooks ?? new List<IPacketHook>()) { hook };
     }
 
     /// <summary>
@@ -69,7 +69,15 @@ public class PacketManager
     /// <param name="hook">The hook.</param>
     public static void RemoveHook(IPacketHook hook)
     {
-        Hooks?.Remove(hook);
+        lock (_hookLock)
+        {
+            if (Hooks == null || !Hooks.Contains(hook))
+                return;
+
+            var hooks = new List<IPacketHook>(Hooks);
+            hooks.Remove(hook);
+            Hooks = hooks;
+        }
     }
 
     /// <summary>
@@ -216,6 +224,10 @@ public class PacketManager
     /// <returns></returns>
     public static List<IPacketHook> GetHooks(ushort? opcode = null)
     {
-        return opcode == null ? Hooks : Hooks.Where(h => h.Opcode == opcode).ToList();
+        var hooks = Hooks;
+        if (hooks == null)
+            return new List<IPacketHook>();
+
+        return opcode == null ? new List<IPacketHook>(hooks) : hooks.Where(h => h.Opcode == opcode).ToList();
     }
 }
