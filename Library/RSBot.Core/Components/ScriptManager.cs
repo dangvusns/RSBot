@@ -32,6 +32,13 @@ public class ScriptManager
     public static string[] Commands { get; set; }
 
     /// <summary>
+    ///     Handles script lines whose command has no built-in handler (e.g. functions of Python plugins).
+    ///     Gets the command name and its arguments; returns <c>null</c> if it doesn't handle the command,
+    ///     otherwise whether the command succeeded.
+    /// </summary>
+    public static Func<string, string[], bool?> UnknownCommandHandler { get; set; }
+
+    /// <summary>
     ///     Gets or sets a value indicating whether this <see cref="ScriptManager" /> is running.
     /// </summary>
     /// <value>
@@ -178,6 +185,28 @@ public class ScriptManager
             var handler = CommandHandlers.FirstOrDefault(h => h.Name == commandName);
             if (handler == null)
             {
+                bool? customResult = null;
+                try
+                {
+                    customResult = UnknownCommandHandler?.Invoke(commandName, arguments.Skip(1).ToArray());
+                }
+                catch (Exception e)
+                {
+                    Log.Error($"[Script] Custom command '{commandName}' failed: {e.Message}");
+                    customResult = false;
+                }
+
+                if (customResult == false)
+                    LogScriptMessage(
+                        "The custom script command failed.",
+                        CurrentLineIndex,
+                        LogLevel.Warning,
+                        commandName
+                    );
+
+                if (customResult != null)
+                    continue;
+
                 LogScriptMessage("No script command handler found.", CurrentLineIndex, LogLevel.Warning);
 
                 continue; //No matching handler found for this command

@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>disable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <OutputPath>.\..\..\Build\Data\Plugins</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Description>A open source bot for Silkroad Online</Description>
+    <Copyright>Copyright ©  2018 - 2026, RSBot Team</Copyright>
+    <PackageProjectUrl>https://github.com/SDClowen/RSBot</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/SDClowen/RSBot</RepositoryUrl>
+    <OutputType>Library</OutputType>
+    <PlatformTarget>x86</PlatformTarget>
+    <!-- Python.Runtime.dll must sit next to the plugin, the plugin loader resolves dependencies from there -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <PythonVersion>3.13.11</PythonVersion>
+    <PythonDataDir>$(MSBuildProjectDirectory)\..\..\Build\Data\Python</PythonDataDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="pythonnet" Version="3.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Library\RSBot.Core\RSBot.Core.csproj" />
+    <ProjectReference Include="..\..\SDUI\SDUI\SDUI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The API module plugins import ("from RSBot import *") -->
+    <EmbeddedResource Include="Python\RSBot.py" />
+  </ItemGroup>
+
+  <!-- Downloads the embeddable Python (win32) into Build\Data\Python\PyRuntime once -->
+  <Target Name="DownloadPythonRuntime" BeforeTargets="Build">
+    <PropertyGroup>
+      <PythonRuntimeDirFull>$([System.IO.Path]::GetFullPath('$(PythonDataDir)\PyRuntime'))</PythonRuntimeDirFull>
+    </PropertyGroup>
+    <Message Importance="high" Text="[Python-Build] Python runtime: $(PythonRuntimeDirFull)" />
+    <Exec Condition="!Exists('$(PythonRuntimeDirFull)\python.exe')" Command="powershell -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\..\scripts\download_python.ps1&quot; -PythonVersion &quot;$(PythonVersion)&quot; -DestinationPath &quot;$(PythonRuntimeDirFull)&quot;" />
+  </Target>
+
+  <!-- Example plugins are copied only if missing, so user changes are kept -->
+  <Target Name="CopyExamplePlugins" AfterTargets="Build">
+    <ItemGroup>
+      <ExamplePlugin Include="Examples\*.py" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ExamplePlugin)" DestinationFolder="$(PythonDataDir)\Plugins" Condition="!Exists('$(PythonDataDir)\Plugins\%(ExamplePlugin.Filename)%(ExamplePlugin.Extension)')" />
+  </Target>
+</Project>

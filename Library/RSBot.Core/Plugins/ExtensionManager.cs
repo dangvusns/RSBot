@@ -101,6 +101,14 @@ public class ExtensionManager
     }
 
     /// <summary>
+    ///     Whether the loader can create the type itself (types needing arguments are registered by their plugin).
+    /// </summary>
+    private static bool IsCreatable(Type type)
+    {
+        return !type.IsInterface && !type.IsAbstract && type.GetConstructor(Type.EmptyTypes) != null;
+    }
+
+    /// <summary>
     ///     Gets the extensions from assembly.
     /// </summary>
     /// <param name="file">The file.</param>
@@ -134,7 +142,7 @@ public class ExtensionManager
             var hookType = typeof(IPacketHook);
 
             var types = assemblyTypes
-                .Where(p => handlerType.IsAssignableFrom(p) && !p.IsInterface);
+                .Where(p => handlerType.IsAssignableFrom(p) && IsCreatable(p));
 
             var handlers = new List<IPacketHandler>();
             foreach (var handler in types)
@@ -145,7 +153,7 @@ public class ExtensionManager
             }
 
             types = assemblyTypes
-                .Where(p => hookType.IsAssignableFrom(p) && !p.IsInterface);
+                .Where(p => hookType.IsAssignableFrom(p) && IsCreatable(p));
 
             var hooks = new List<IPacketHook>();
             foreach (var hook in types)

@@ -151,7 +151,8 @@ public static class Kernel
         var types = AppDomain
             .CurrentDomain.GetAssemblies()
             .SelectMany(s => s.GetTypes())
-            .Where(p => type.IsAssignableFrom(p) && !p.IsInterface)
+            // Only types with a parameterless constructor; others (e.g. DelegatePacketHook) are registered at runtime
+            .Where(p => type.IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract && p.GetConstructor(Type.EmptyTypes) != null)
             .ToArray();
 
         foreach (var handler in types)
@@ -171,7 +172,8 @@ public static class Kernel
         var types = AppDomain
             .CurrentDomain.GetAssemblies()
             .SelectMany(s => s.GetTypes())
-            .Where(p => type.IsAssignableFrom(p) && !p.IsInterface)
+            // Only types with a parameterless constructor; others (e.g. DelegatePacketHook) are registered at runtime
+            .Where(p => type.IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract && p.GetConstructor(Type.EmptyTypes) != null)
             .ToArray();
 
         foreach (var hook in types)
