@@ -53,6 +53,9 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     private byte _currentYSec;
 
+    private ushort? _currentRegion;
+    private string _currentFloorName;
+
     /// <summary>
     ///     The map points
     /// </summary>
@@ -78,7 +81,7 @@ public partial class Main : DoubleBufferedControl
     /// <summary>
     /// The region name
     /// </summary>
-    private string _regionName;
+    private string _regionName = string.Empty;
 
     /// <summary>
     ///     Auxiliary variable to auto select unique
@@ -125,7 +128,12 @@ public partial class Main : DoubleBufferedControl
 
     private void OnEnterGame()
     {
-        _cachedImages.Clear();
+        ClearCachedImages();
+        _currentSectorGraphic?.Dispose();
+        _currentSectorGraphic = null;
+        _currentRegion = null;
+        _currentFloorName = null;
+        _regionName = string.Empty;
         if (_mapEntityImages == null)
             _mapEntityImages = new[]
             {
@@ -396,18 +404,38 @@ public partial class Main : DoubleBufferedControl
 
     private Image LoadSectorImage(string sectorImgName)
     {
-        if (_cachedImages.ContainsKey(sectorImgName))
-            return (Image)_cachedImages[sectorImgName].Clone();
+        if (_cachedImages.TryGetValue(sectorImgName, out var cachedImage))
+            return (Image)cachedImage.Clone();
 
-        if (Game.MediaPk2.FileExists(sectorImgName) && Game.MediaPk2.TryGetFile(sectorImgName, out var file))
+        Image image;
+        try
         {
-            var img = file.ToImage();
-            _cachedImages.Add(sectorImgName, img);
+            if (!Game.MediaPk2.FileExists(sectorImgName))
+                throw new System.IO.FileNotFoundException("Tile is missing from Media.pk2.");
 
-            return (Image)img.Clone();
+            image = Game.MediaPk2.GetFile(sectorImgName).ToImage(throwOnError: true);
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"[Map] Cannot load '{sectorImgName}': {ex.Message}");
+            image = new Bitmap(SectorSize, SectorSize);
+            using var graphics = Graphics.FromImage(image);
+            graphics.Clear(Color.FromArgb(32, 32, 32));
+            graphics.DrawRectangle(Pens.DimGray, 0, 0, SectorSize - 1, SectorSize - 1);
+            graphics.DrawString("Map tile unavailable", Font, Brushes.LightGray, 8, 8);
         }
 
-        return new Bitmap(SectorSize, SectorSize);
+        // Cache failed tiles as well so the timer does not repeat warnings every frame.
+        _cachedImages.Add(sectorImgName, image);
+        return (Image)image.Clone();
+    }
+
+    private void ClearCachedImages()
+    {
+        foreach (var image in _cachedImages.Values)
+            image.Dispose();
+
+        _cachedImages.Clear();
     }
 
     /// <summary>
@@ -447,22 +475,8 @@ public partial class Main : DoubleBufferedControl
             tempY = p.GetSectorFromOffset(p.YOffset);
         }
 
-        if (tempX == _currentXSec && tempY == _currentYSec)
-            return;
-
-        _currentXSec = tempX;
-        _currentYSec = tempY;
-
-        if (_cachedImages.Count >= 25)
-            _cachedImages.Clear();
-
         try
         {
-            _currentSectorGraphic = new Bitmap(SectorSize * 3, SectorSize * 3, PixelFormat.Format32bppArgb);
-
-            using var gfx = Graphics.FromImage(_currentSectorGraphic);
-            gfx.InterpolationMode = InterpolationMode.Bicubic;
-
             var floorName = string.Empty;
             var dungeonName = string.Empty;
             if (p.Region.IsDungeon)
@@ -480,24 +494,40 @@ public partial class Main : DoubleBufferedControl
                 var roomName = dungeon.RoomStringIDs[dungeonBlock.RoomIndex];
                 var roomNameTranslated = Game.ReferenceManager.GetTranslation(roomName);
 
-                _regionName = roomNameTranslated;
+                _regionName = roomNameTranslated ?? string.Empty;
                 dungeonName = RegionInfoManager.GetDungeonName(p.Region);
             }
             else
-                _regionName = Game.ReferenceManager.GetTranslation(Game.Player.Position.Region.ToString());
+                _regionName = Game.ReferenceManager.GetTranslation(Game.Player.Position.Region.ToString()) ?? string.Empty;
+
+            if (
+                _currentSectorGraphic != null
+                && _currentRegion == p.Region.Id
+                && tempX == _currentXSec
+                && tempY == _currentYSec
+                && floorName == _currentFloorName
+            )
+                return;
+
+            if (_cachedImages.Count >= 25)
+                ClearCachedImages();
+
+            using var sectorGraphic = new Bitmap(SectorSize * GridSize, SectorSize * GridSize, PixelFormat.Format32bppArgb);
+            using var gfx = Graphics.FromImage(sectorGraphic);
+            gfx.InterpolationMode = InterpolationMode.Bicubic;
 
             for (byte x = 0; x < GridSize; x++)
             {
                 for (byte z = 0; z < GridSize; z++)
                 {
-                    var xSector = (byte)(_currentXSec + x - 1);
-                    var ySector = (byte)(_currentYSec + z - 1);
+                    var xSector = (byte)(tempX + x - 1);
+                    var ySector = (byte)(tempY + z - 1);
 
                     var sectorImgName = GetMinimapFileName(new Region(xSector, ySector), dungeonName, floorName);
                     using var bitmap = LoadSectorImage(sectorImgName);
-                    var pos = new Point(bitmap.Width * x, bitmap.Height * (GridSize - 1 - z));
+                    var pos = new Point(SectorSize * x, SectorSize * (GridSize - 1 - z));
 
-                    gfx.DrawImage(bitmap, pos);
+                    gfx.DrawImage(bitmap, new Rectangle(pos, new Size(SectorSize, SectorSize)));
 
                     if (Kernel.Debug)
                     {
@@ -507,6 +537,14 @@ public partial class Main : DoubleBufferedControl
                     }
                 }
             }
+
+            var previousGraphic = _currentSectorGraphic;
+            _currentSectorGraphic = (Image)sectorGraphic.Clone();
+            previousGraphic?.Dispose();
+            _currentXSec = tempX;
+            _currentYSec = tempY;
+            _currentRegion = p.Region.Id;
+            _currentFloorName = floorName;
         }
         catch (Exception e)
         {
@@ -590,8 +628,8 @@ public partial class Main : DoubleBufferedControl
         if (!mapCanvas.Visible)
             return;
 
-        bufferedGraphics.Graphics.Clear(Color.Black);
         RedrawMap();
+        bufferedGraphics.Graphics.Clear(Color.Black);
         DrawObjects(bufferedGraphics.Graphics);
 
         using var font = new Font(Font, FontStyle.Bold);
@@ -629,6 +667,21 @@ public partial class Main : DoubleBufferedControl
         position.XOffset =
             Game.Player.Movement.Source.XOffset + (mapCanvas.Width / 2f - e.X) / SectorSize * 192f * 10 * -1f;
         position.YOffset = Game.Player.Movement.Source.YOffset + (mapCanvas.Height / 2f - e.Y) / SectorSize * 192f * 10;
+
+        if (!position.Region.IsDungeon)
+        {
+            // Outdoor offsets must stay within a sector; movement packets carry the target region.
+            var xSectors = (int)Math.Floor(position.XOffset / 1920f);
+            var ySectors = (int)Math.Floor(position.YOffset / 1920f);
+            var targetX = position.Region.X + xSectors;
+            var targetY = position.Region.Y + ySectors;
+            if (targetX < 0 || targetX > byte.MaxValue || targetY < 0 || targetY >= 128)
+                return;
+
+            position.Region = new Region((byte)targetX, (byte)targetY);
+            position.XOffset -= xSectors * 1920f;
+            position.YOffset -= ySectors * 1920f;
+        }
 
         Game.Player.MoveTo(position, false);
     }

@@ -274,12 +274,21 @@ public class DDSImage
 
     public static Bitmap ToBitmap(byte[] ddsBytes)
     {
+        return ToBitmap(ddsBytes, throwOnUnsupported: false);
+    }
+
+    public static Bitmap ToBitmap(byte[] ddsBytes, bool throwOnUnsupported)
+    {
         var Width = GetWidth(ddsBytes);
         var Height = GetHeight(ddsBytes);
         var PixelsData = Read(ddsBytes, Colour.ARGB, 0);
 
         if (PixelsData == null)
+        {
+            if (throwOnUnsupported)
+                throw new System.NotSupportedException("Unsupported DDS pixel format.");
             return new Bitmap(256, 256);
+        }
         var BMP = new Bitmap(Width, Height, PixelFormat.Format32bppArgb);
         var BMPData = BMP.LockBits(new Rectangle(0, 0, Width, Height), ImageLockMode.WriteOnly, BMP.PixelFormat);
         Marshal.Copy(PixelsData, 0, BMPData.Scan0, PixelsData.Length);

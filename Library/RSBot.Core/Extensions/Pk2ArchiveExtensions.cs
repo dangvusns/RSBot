@@ -14,15 +14,20 @@ public static class Pk2Extensions
     /// <returns></returns>
     public static Image ToImage(this IFile file)
     {
+        return file.ToImage(throwOnError: false);
+    }
+
+    public static Image ToImage(this IFile file, bool throwOnError)
+    {
         var ddjBuffer = file.OpenRead().ReadAllBytes();
 
         try
         {
             var ddsBuffer = new byte[ddjBuffer.Length - 20];
             Array.ConstrainedCopy(ddjBuffer, 20, ddsBuffer, 0, ddjBuffer.Length - 20); //Cuts the first 20 bytes.
-            return DDSImage.ToBitmap(ddsBuffer);
+            return DDSImage.ToBitmap(ddsBuffer, throwOnError);
         }
-        catch
+        catch when (!throwOnError)
         {
             return new Bitmap(16, 16);
         }
