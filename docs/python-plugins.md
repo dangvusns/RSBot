@@ -19,7 +19,7 @@ def on_player_died():
 
 Save it in the plugins folder, press **Refresh list** in the Python tab, and tick it. After editing a running plugin, press **Reload enabled**.
 
-`RSBot.py` (the API) is copied into the plugins folder so that editors can autocomplete it. The bot always uses its own built-in copy.
+The API is copied into the plugins folder as `RSBot.pyi` so that editors can autocomplete it. The bot always uses its own built-in copy. Don't name a plugin `RSBot.py`.
 
 ## Functions plugins can define
 

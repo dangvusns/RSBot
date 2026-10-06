@@ -48,6 +48,7 @@ internal static class PythonPluginManager
         try
         {
             Directory.CreateDirectory(PluginsDirectory);
+            RemoveOldApiCopy();
 
             var pythonDll = Directory.Exists(RuntimeDirectory)
                 ? Directory
@@ -142,17 +143,36 @@ sys.modules['RSBot'] = module
     }
 
     /// <summary>
-    ///     Saves RSBot.py next to the plugins so editors can autocomplete it (the bot uses its built-in copy).
+    ///     Saves the API next to the plugins as RSBot.pyi so editors can autocomplete it (the bot uses its
+    ///     built-in copy). It must not be a .py file: the plugins folder is on Python's import path, and a
+    ///     file named RSBot.py would be imported instead of RSBot's .NET namespace.
     /// </summary>
     private static void WriteApiCopy()
     {
         try
         {
-            File.WriteAllText(Path.Combine(PluginsDirectory, "RSBot.py"), ReadApiSource());
+            File.WriteAllText(Path.Combine(PluginsDirectory, "RSBot.pyi"), ReadApiSource());
         }
         catch
         {
             // Another bot process may be writing it at the same time; it is only for editors
+        }
+    }
+
+    /// <summary>
+    ///     Removes the RSBot.py copy written by earlier versions, which shadows the .NET namespace.
+    /// </summary>
+    private static void RemoveOldApiCopy()
+    {
+        try
+        {
+            var oldCopy = Path.Combine(PluginsDirectory, "RSBot.py");
+            if (File.Exists(oldCopy))
+                File.Delete(oldCopy);
+        }
+        catch (Exception e)
+        {
+            PythonBridge.Log(null, $"Please delete {Path.Combine(PluginsDirectory, "RSBot.py")}: {e.Message}", 1);
         }
     }
 
@@ -214,7 +234,10 @@ sys.modules['RSBot'] = module
 
         return Directory
             .GetFiles(PluginsDirectory, "*.py", SearchOption.TopDirectoryOnly)
-            .Where(f => !Path.GetFileName(f).Equals("RSBot.py", StringComparison.OrdinalIgnoreCase))
+            .Where(f =>
+                f.EndsWith(".py", StringComparison.OrdinalIgnoreCase)
+                && !Path.GetFileName(f).Equals("RSBot.py", StringComparison.OrdinalIgnoreCase)
+            )
             .Select(PythonPluginInfo.Read)
             .OrderBy(p => p.Name)
             .ToList();
