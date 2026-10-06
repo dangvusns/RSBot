@@ -43,9 +43,9 @@ Events, the event loop and GUI handlers run one at a time on the bot's Python th
 
 | Area | Functions |
 |---|---|
-| Core | `log(*args)`, `get_version()`, `is_ingame()`, `start_bot()`, `stop_bot()`, `is_bot_running()` |
+| Core | `log(*args)`, `get_version()`, `get_client_type()` (configured client name, e.g. `Vietnam`, `Vietnam193`, `Vietnam274`, `Global`), `is_ingame()`, `start_bot()`, `stop_bot()`, `is_bot_running()` |
 | Packets | `send_server(opcode, data=b"", encrypted=False)`, `send_client(...)`, `register_packet(opcode, "server" or "client")`, `unregister_packet(...)` |
-| Character | `get_character()`: name, level, hp, max_hp, mp, max_mp, gold, exp, sp, x, y, region, dead, race. `get_position()`: x, y, z, region |
+| Character | `get_character()`: uid, name, level, hp, max_hp, mp, max_mp, gold, exp, sp, x, y, region, dead, race. `get_position()`: x, y, z, region |
 | Around you | `get_monsters()`, `get_players()`, `get_npcs()`: `{uid: {...}}` with name, servername, model, x, y, region, distance. Monsters also have type (rarity, `RARITY_*`), level, hp, max_hp, target, attacking_me. Players have guild |
 | Party | `get_party()`: list of member_id, uid, name, level, guild, hp_percent, mp_percent, x, y, region. HP/MP come in steps of 10% |
 | Items and skills | `get_inventory()`: slot, model, servername, name, quantity, plus, durability. `get_skills()`: id, servername, name, cooldown_ms. `get_active_buffs()`: id, servername, name, remaining_ms |
@@ -83,6 +83,21 @@ phBot plugins use a different API (`phBot`, `QtBind`, `phBotChat`), so they have
 | `handle_joymax(opcode, data)` (every packet) | `register_packet(opcode, "server")` + `on_packet_from_server(opcode, data)` |
 | `phBotChat.Party(text)` | `chat(text, CHAT_PARTY)` |
 | `joined_game()` | `on_enter_game()` |
+
+### Target Support
+
+`Plugins/RSBot.Python/Examples/TargetSupport.py` ports [JellyBitz's xTargetSupport v1.2.3](https://github.com/JellyBitz/phBot-xPlugins/blob/master/xTargetSupport.py). The build copies it to `Build\Data\Python\Plugins` if that file is missing. It requires the RSBot Python API with `get_client_type()`; rebuild RSBot after updating the source.
+
+1. Press **Refresh list** in the Python tab and tick **Target Support**.
+2. Enter a party leader's character name and press **Add**. Names match without regard to case.
+3. Tick **Enabled** to select the enemy a listed party leader attacks. **Defensive mode** also selects an enemy attacking a listed leader. This selects targets; it does not start the bot or cast attacks.
+4. Listed leaders can send the exact chat commands `TARGET ON` and `TARGET OFF` to enable or disable support. Leaders issuing chat commands do not have to be party members; attack support uses party members and your own character.
+
+The leader list and defensive setting are saved in `TargetSupport.json` inside this character's `get_config_dir()` folder. **Enabled** resets on login, disconnect and plugin reload, matching the original plugin's login/reload behavior. Teleporting clears pending attacks and keeps the current enabled setting.
+
+The `0xB070` hook only validates and queues attack notices. The 500 ms event loop requests the latest relevant target with `send_server(0x7045, ...)`, without waiting on the network thread. Packet offsets follow RSBot's configured client type, including the vSRO variants. Malformed and unsupported packets pass through without triggering selection.
+
+Run the plugin's tests without starting the game: `python -m unittest discover -s Tests/Python -v`. Windows build and in-game testing are still needed to check the GUI, actual server packets and interaction with other target-selection plugins or botbases.
 
 ## Notes
 

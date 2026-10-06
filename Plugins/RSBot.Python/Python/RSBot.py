@@ -105,6 +105,11 @@ def get_version():
     return _b.GetVersion()
 
 
+def get_client_type():
+    """Configured game client type, e.g. Vietnam, Vietnam193, Vietnam274 or Global."""
+    return str(_b.GetClientType())
+
+
 def start_bot():
     return bool(_b.StartBot())
 

@@ -52,6 +52,11 @@ public static class PythonBridge
         return Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "0.0.0";
     }
 
+    public static string GetClientType()
+    {
+        return Game.ClientType.ToString();
+    }
+
     public static bool IsIngame()
     {
         return Game.Player != null && Kernel.Proxy != null && Kernel.Proxy.IsConnectedToAgentserver;
