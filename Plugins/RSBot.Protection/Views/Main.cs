@@ -17,6 +17,7 @@ public partial class Main : DoubleBufferedControl
     public Main()
     {
         InitializeComponent();
+        InitializeResponsiveLayout();
         SubscribeEvents();
     }
 

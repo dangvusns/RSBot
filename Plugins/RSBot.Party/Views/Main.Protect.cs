@@ -74,6 +74,7 @@ public partial class Main
             MultiSelect = true,
         };
         _listProtectedPlayers.Columns.Add(ProtectText("CharName", "Name"), ProtectPx(260));
+        _listProtectedPlayers.ClientSizeChanged += (s, e) => FitProtectListColumn();
 
         var buttons = new System.Windows.Forms.FlowLayoutPanel
         {
@@ -96,6 +97,11 @@ public partial class Main
         page.Controls.Add(layout);
 
         tabMain.Controls.Add(page);
+
+        // Sized only now: the buttons get the page font once they are on it
+        FitProtectButtons(buttons);
+        page.FontChanged += (s, e) => FitProtectButtons(buttons);
+        page.DpiChangedAfterParent += (s, e) => FitProtectButtons(buttons);
 
         // Right click in the party list: next to "Add to buffing"
         var menuAddToProtect = new ToolStripMenuItem
@@ -131,8 +137,8 @@ public partial class Main
         {
             Name = name,
             Text = text,
-            AutoSize = true,
-            MinimumSize = new Size(ProtectPx(100), ProtectPx(30)),
+            // SDUI buttons report a fixed 23 px preferred height, so they are sized by FitProtectButtons
+            AutoSize = false,
             Color = Color.Transparent,
             Radius = 6,
             Margin = new Padding(0, 0, ProtectPx(8), 0),
@@ -140,6 +146,32 @@ public partial class Main
         button.Click += (s, e) => onClick();
 
         return button;
+    }
+
+    /// <summary>
+    ///     Makes each button as large as its caption, at least 100 x 32 at 96 DPI.
+    /// </summary>
+    private void FitProtectButtons(Control buttons)
+    {
+        foreach (Control button in buttons.Controls)
+        {
+            var text = TextRenderer.MeasureText(button.Text, button.Font);
+            button.Size = new Size(
+                Math.Max(ProtectPx(100), text.Width + ProtectPx(28)),
+                Math.Max(ProtectPx(32), text.Height + ProtectPx(12))
+            );
+        }
+    }
+
+    /// <summary>
+    ///     The only column spans the whole list.
+    /// </summary>
+    private void FitProtectListColumn()
+    {
+        if (_listProtectedPlayers.Columns.Count == 0)
+            return;
+
+        _listProtectedPlayers.Columns[0].Width = Math.Max(ProtectPx(120), _listProtectedPlayers.ClientSize.Width - ProtectPx(4));
     }
 
     /// <summary>

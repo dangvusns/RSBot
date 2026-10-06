@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -34,6 +35,7 @@ public partial class Main : DoubleBufferedControl
     public Main()
     {
         InitializeComponent();
+        ScaleForDpi();
 
         PacketHub.Initialize();
         LoadSettings();
@@ -111,6 +113,43 @@ public partial class Main : DoubleBufferedControl
             page.UseVisualStyleBackColor = false;
             page.BackColor = ColorScheme.BackColor;
             page.ForeColor = ColorScheme.ForeColor;
+        }
+    }
+
+    /// <summary>
+    ///     The designer sizes are 96 DPI and nothing auto-scales this view, so scale it once to the display.
+    /// </summary>
+    private void ScaleForDpi()
+    {
+        var factor = DeviceDpi / 96f;
+        if (factor > 1.01f)
+        {
+            Scale(new SizeF(factor, factor));
+
+            // Column widths are not part of the control bounds
+            foreach (ColumnHeader column in listPackets.Columns)
+                column.Width = (int)Math.Ceiling(column.Width * factor);
+        }
+
+        FitButtons(this);
+    }
+
+    /// <summary>
+    ///     Widens the buttons whose caption does not fit, e.g. after a translation or at a high DPI.
+    /// </summary>
+    private void FitButtons(Control parent)
+    {
+        foreach (Control control in parent.Controls)
+        {
+            if (control is SDUI.Controls.Button button)
+            {
+                var text = TextRenderer.MeasureText(button.Text, button.Font);
+                var width = text.Width + LogicalToDeviceUnits(20);
+                var height = Math.Max(button.Height, text.Height + LogicalToDeviceUnits(8));
+                button.Size = new Size(Math.Max(button.Width, width), height);
+            }
+
+            FitButtons(control);
         }
     }
 

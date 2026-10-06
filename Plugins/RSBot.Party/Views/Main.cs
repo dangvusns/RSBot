@@ -60,6 +60,7 @@ public partial class Main : DoubleBufferedControl
         InitializeMatchingLayout();
         InitializeCommandGuide();
         InitializeProtectTab();
+        InitializeBuffingLayout();
 
         SubscribeEvents();
     }
