@@ -27,6 +27,17 @@ public class ManagerData
     ///     When the daily hours start again, "HH:mm" in local time.
     /// </summary>
     public string ResetTime { get; set; } = "00:00";
+
+    /// <summary>
+    ///     Seconds between two bot starts. Never less than <see cref="MinimumLaunchDelaySeconds" />.
+    /// </summary>
+    public int LaunchDelaySeconds { get; set; } = MinimumLaunchDelaySeconds;
+
+    /// <summary>
+    ///     RSBot writes the selected profile into the shared Profiles.rs on start, so two bots
+    ///     must not start at the same moment.
+    /// </summary>
+    public const int MinimumLaunchDelaySeconds = 3;
 }
 
 public class ManagerAccount
@@ -43,6 +54,21 @@ public class ManagerAccount
     public string Server { get; set; }
 
     public string TemplateProfile { get; set; }
+
+    /// <summary>
+    ///     Starts RSBot with --launch-clientless instead of --launch-client.
+    /// </summary>
+    public bool Clientless { get; set; }
+
+    /// <summary>
+    ///     An optional group name, used to filter the list.
+    /// </summary>
+    public string Group { get; set; }
+
+    /// <summary>
+    ///     Starts the bot again when RSBot closes or stops answering while it was botting.
+    /// </summary>
+    public bool AutoRestart { get; set; }
 
     /// <summary>
     ///     The RSBot profile of this account. One profile per account, named after the login id.

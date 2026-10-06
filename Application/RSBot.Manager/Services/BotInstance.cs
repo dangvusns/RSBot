@@ -1,7 +1,9 @@
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -22,7 +24,29 @@ public sealed class BotInstance : IDisposable
     /// </summary>
     private static readonly SemaphoreSlim _launchLock = new(1, 1);
 
-    private static readonly TimeSpan _launchSpacing = TimeSpan.FromSeconds(3);
+    /// <summary>
+    ///     How long to wait before each auto restart, by the number of restarts in a row.
+    /// </summary>
+    private static readonly TimeSpan[] _restartDelays =
+    {
+        TimeSpan.FromSeconds(10),
+        TimeSpan.FromSeconds(30),
+        TimeSpan.FromMinutes(1),
+        TimeSpan.FromMinutes(2),
+        TimeSpan.FromMinutes(5),
+    };
+
+    /// <summary>
+    ///     A running RSBot that does not answer for this long is treated as hung and killed by the auto restart.
+    /// </summary>
+    private static readonly TimeSpan _hungTimeout = TimeSpan.FromMinutes(2);
+
+    /// <summary>
+    ///     Botting this long without a crash resets the restart delay to the shortest one.
+    /// </summary>
+    private static readonly TimeSpan _stableTime = TimeSpan.FromMinutes(10);
+
+    private static int _queuedLaunches;
 
     private readonly SemaphoreSlim _requestLock = new(1, 1);
 
@@ -32,6 +56,19 @@ public sealed class BotInstance : IDisposable
     private long _nextId;
     private DateTime _startedAt;
     private volatile bool _disposed;
+
+    private Process _process;
+    private int _lastProcessId;
+
+    /// <summary>
+    ///     Set while the bot was botting, cleared when it is stopped or closed from the manager.
+    /// </summary>
+    private bool _restartArmed;
+
+    private bool _resumeAfterRestart;
+    private int _restartCount;
+    private DateTime _runningSince;
+    private DateTime? _unreachableSince;
 
     public BotInstance(ManagerAccount account)
     {
@@ -51,23 +88,53 @@ public sealed class BotInstance : IDisposable
 
     public string LastError { get; private set; }
 
+    /// <summary>
+    ///     When the auto restart opens the bot again, null when no restart is waiting.
+    /// </summary>
+    public DateTime? RestartAt { get; private set; }
+
+    /// <summary>
+    ///     The last auto restart, for the tooltip of the state column.
+    /// </summary>
+    public string RestartInfo { get; private set; }
+
+    /// <summary>
+    ///     Bots waiting for their turn to start.
+    /// </summary>
+    public static int QueuedLaunches => Volatile.Read(ref _queuedLaunches);
+
+    /// <summary>
+    ///     When the next queued bot may start.
+    /// </summary>
+    public static DateTime NextLaunchAt { get; private set; }
+
     private string PipeName => "RSBot.Manager." + Account.ProfileName;
 
     /// <summary>
-    ///     Starts RSBot with the profile and character of this account and lets it open the client.
+    ///     Starts RSBot with the profile and character of this account. Does nothing when this bot is
+    ///     already running, starting or waiting in the launch queue.
     /// </summary>
     public async Task LaunchAsync()
     {
-        if (IsConnected || IsStarting)
+        if (IsConnected || IsStarting || IsRunning())
             return;
 
         IsStarting = true;
         LastError = null;
-        _startedAt = DateTime.Now;
+        // Set again when the bot leaves the queue, so the connect timeout never ends while it waits
+        _startedAt = DateTime.MaxValue;
 
+        Interlocked.Increment(ref _queuedLaunches);
         await _launchLock.WaitAsync();
+        Interlocked.Decrement(ref _queuedLaunches);
         try
         {
+            if (_disposed)
+            {
+                IsStarting = false;
+                return;
+            }
+
             var startInfo = new ProcessStartInfo(ManagerStore.BotExecutable)
             {
                 WorkingDirectory = ManagerStore.BotFolder,
@@ -77,11 +144,20 @@ public sealed class BotInstance : IDisposable
             startInfo.ArgumentList.Add(Account.ProfileName);
             startInfo.ArgumentList.Add("--character");
             startInfo.ArgumentList.Add(Account.Character);
-            startInfo.ArgumentList.Add("--launch-client");
+            startInfo.ArgumentList.Add(Account.Clientless ? "--launch-clientless" : "--launch-client");
 
-            Process.Start(startInfo);
+            _process?.Dispose();
+            _process = Process.Start(startInfo);
 
-            await Task.Delay(_launchSpacing);
+            // The connect timeout counts from the real start, not from the time in the queue
+            _startedAt = DateTime.Now;
+
+            var spacing = TimeSpan.FromSeconds(
+                Math.Max(ManagerData.MinimumLaunchDelaySeconds, ManagerStore.Data.LaunchDelaySeconds)
+            );
+            NextLaunchAt = DateTime.Now + spacing;
+
+            await Task.Delay(spacing);
         }
         catch (Exception ex)
         {
@@ -91,6 +167,42 @@ public sealed class BotInstance : IDisposable
         finally
         {
             _launchLock.Release();
+        }
+    }
+
+    /// <summary>
+    ///     True when an RSBot of this account runs without being connected to this manager: started by this
+    ///     manager and still loading, or already serving the pipe (another manager, or a bot opened by hand).
+    /// </summary>
+    private bool IsRunning()
+    {
+        try
+        {
+            if (_process != null && !_process.HasExited)
+                return true;
+        }
+        catch (InvalidOperationException)
+        {
+            // the process object is not associated with a process
+        }
+
+        return PipeExists();
+    }
+
+    /// <summary>
+    ///     Lists the pipes instead of opening this one, which would take the one connection the bot accepts.
+    /// </summary>
+    private bool PipeExists()
+    {
+        try
+        {
+            return Directory
+                .EnumerateFiles(@"\\.\pipe\")
+                .Any(p => Path.GetFileName(p).Equals(PipeName, StringComparison.OrdinalIgnoreCase));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            return false;
         }
     }
 
@@ -112,6 +224,7 @@ public sealed class BotInstance : IDisposable
                 LastError = "Không kết nối được bot, plugin RSBot.ManagerLink đã bật chưa?";
             }
 
+            WatchForRestart();
             return;
         }
 
@@ -120,11 +233,129 @@ public sealed class BotInstance : IDisposable
             var data = await SendAsync("status", new { resetTime = ManagerStore.Data.ResetTime });
             Status = data.Deserialize<BotStatus>(_jsonOptions);
             IsStarting = false;
+
+            await TrackRunningAsync(Status);
         }
         catch (Exception ex)
         {
             LastError = ex.Message;
             Disconnect();
+        }
+    }
+
+    /// <summary>
+    ///     Remembers whether the bot was botting, so the auto restart knows a lost bot has to come back.
+    /// </summary>
+    private async Task TrackRunningAsync(BotStatus status)
+    {
+        _lastProcessId = status.ProcessId;
+        _unreachableSince = null;
+
+        switch (status.State)
+        {
+            case "Running":
+                if (!_restartArmed)
+                    _runningSince = DateTime.Now;
+
+                _restartArmed = true;
+                _resumeAfterRestart = false;
+
+                if (DateTime.Now - _runningSince > _stableTime)
+                    _restartCount = 0;
+                break;
+
+            case "InGame" when _resumeAfterRestart:
+                // Back in game after an auto restart: continue botting
+                _resumeAfterRestart = false;
+                try
+                {
+                    await SendAsync("start");
+                }
+                catch (InvalidOperationException ex)
+                {
+                    LastError = ex.Message;
+                }
+                break;
+
+            case "InGame":
+                // Stopped while in game, by the user or the bot itself
+                _restartArmed = false;
+                break;
+        }
+    }
+
+    /// <summary>
+    ///     Auto restart: when a bot that was botting is gone (or alive but not answering for
+    ///     <see cref="_hungTimeout" />), waits a growing delay and starts it again.
+    /// </summary>
+    private void WatchForRestart()
+    {
+        if (!Account.AutoRestart || !_restartArmed || IsStarting)
+        {
+            RestartAt = null;
+            return;
+        }
+
+        if (RestartAt == null)
+        {
+            if (IsRSBotProcess(_lastProcessId))
+            {
+                _unreachableSince ??= DateTime.Now;
+                if (DateTime.Now - _unreachableSince < _hungTimeout)
+                    return;
+
+                KillProcess(_lastProcessId);
+            }
+
+            var delay = _restartDelays[Math.Min(_restartCount, _restartDelays.Length - 1)];
+            RestartAt = DateTime.Now + delay;
+            RestartInfo = $"Bot bị tắt lúc {DateTime.Now:HH:mm:ss}, tự mở lại sau {delay.TotalSeconds:0} giây";
+            return;
+        }
+
+        if (DateTime.Now < RestartAt)
+            return;
+
+        RestartAt = null;
+        _unreachableSince = null;
+        _restartCount++;
+        _resumeAfterRestart = true;
+        RestartInfo = $"Tự mở lại lần {_restartCount} lúc {DateTime.Now:HH:mm:ss}";
+
+        // Not awaited: the launch queue would hold up the polling of all bots
+        _ = LaunchAsync();
+    }
+
+    /// <summary>
+    ///     The name check keeps a reused process id of another program from counting as the bot.
+    /// </summary>
+    private static bool IsRSBotProcess(int processId)
+    {
+        if (processId == 0)
+            return false;
+
+        try
+        {
+            using var process = Process.GetProcessById(processId);
+
+            return !process.HasExited && process.ProcessName.Equals("RSBot", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or Win32Exception)
+        {
+            return false;
+        }
+    }
+
+    private static void KillProcess(int processId)
+    {
+        try
+        {
+            using var process = Process.GetProcessById(processId);
+            process.Kill();
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or Win32Exception)
+        {
+            // already exited
         }
     }
 
@@ -177,7 +408,12 @@ public sealed class BotInstance : IDisposable
     /// </summary>
     public async Task CloseAsync()
     {
-        var processId = Status?.ProcessId ?? 0;
+        var processId = Status?.ProcessId ?? _lastProcessId;
+
+        // Closed on purpose: the auto restart must not open it again
+        _restartArmed = false;
+        _resumeAfterRestart = false;
+        RestartAt = null;
 
         try
         {
@@ -192,7 +428,8 @@ public sealed class BotInstance : IDisposable
         Status = null;
         IsStarting = false;
 
-        if (processId == 0)
+        // The saved id may be old: never wait for or kill another program that got it
+        if (!IsRSBotProcess(processId))
             return;
 
         await Task.Run(() =>
@@ -261,6 +498,7 @@ public sealed class BotInstance : IDisposable
             return;
 
         _disposed = true;
+        _process?.Dispose();
 
         // Without waiting: blocking the UI thread here would stop the running request from finishing
         if (!_requestLock.Wait(0))

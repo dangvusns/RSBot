@@ -172,6 +172,17 @@ internal abstract class DialogBase : Form
         };
     }
 
+    protected static CheckBox CreateCheckBox(string text)
+    {
+        return new CheckBox
+        {
+            Text = text,
+            AutoSize = true,
+            ForeColor = Theme.Text,
+            FlatStyle = FlatStyle.Flat,
+        };
+    }
+
     protected static NumericUpDown CreateNumber(decimal min, decimal max, decimal value)
     {
         return new NumericUpDown
@@ -195,11 +206,13 @@ internal abstract class DialogBase : Form
 }
 
 /// <summary>
-///     "Thêm" and "Sửa": login id, password, character, server and the template profile.
+///     "Thêm" and "Sửa": login id, password, character, server, the template profile and how the bot starts.
 /// </summary>
 internal sealed class AccountDialog : DialogBase
 {
     private const string NoTemplate = "(Không dùng)";
+    private const string LaunchWithClient = "Có client";
+    private const string LaunchClientless = "Clientless";
 
     private readonly ManagerAccount _account;
     private readonly bool _isNew;
@@ -210,6 +223,9 @@ internal sealed class AccountDialog : DialogBase
     private readonly TextBox _character;
     private readonly ComboBox _server;
     private readonly ComboBox _template;
+    private readonly ComboBox _group;
+    private readonly ComboBox _launchMode;
+    private readonly CheckBox _autoRestart;
 
     public AccountDialog(ManagerAccount account, IReadOnlyCollection<ManagerAccount> existing)
         : base(account == null ? "Thêm tài khoản" : "Sửa tài khoản")
@@ -223,8 +239,24 @@ internal sealed class AccountDialog : DialogBase
         _character = AddField("Nhân vật", Theme.CreateTextBox());
         _server = AddField("Server", CreateComboBox(ComboBoxStyle.DropDown));
         _template = AddField("Profile mẫu", CreateComboBox(ComboBoxStyle.DropDownList));
+        _group = AddField("Nhóm", CreateComboBox(ComboBoxStyle.DropDown));
+        _launchMode = AddField("Cách mở", CreateComboBox(ComboBoxStyle.DropDownList));
+        _autoRestart = AddField(string.Empty, CreateCheckBox("Tự mở lại khi bot bị tắt lúc đang chạy"));
 
         _server.Items.AddRange(ProfileWriter.GetKnownServers());
+
+        _group.Items.AddRange(
+            existing
+                .Select(a => a.Group)
+                .Where(g => !string.IsNullOrWhiteSpace(g))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(g => g, StringComparer.OrdinalIgnoreCase)
+                .ToArray<object>()
+        );
+
+        _launchMode.Items.AddRange(new object[] { LaunchWithClient, LaunchClientless });
+        _launchMode.SelectedIndex = _account.Clientless ? 1 : 0;
+        _autoRestart.Checked = _account.AutoRestart;
 
         _template.Items.Add(NoTemplate);
         _template.Items.AddRange(ProfileWriter.GetProfiles());
@@ -238,6 +270,7 @@ internal sealed class AccountDialog : DialogBase
         _loginId.ReadOnly = true;
         _character.Text = _account.Character;
         _server.Text = _account.Server;
+        _group.Text = _account.Group ?? string.Empty;
         if (_account.CanReadPassword)
             _password.Text = _account.Password;
         else
@@ -287,6 +320,9 @@ internal sealed class AccountDialog : DialogBase
         _account.LoginId = _loginId.Text.Trim();
         _account.Character = _character.Text.Trim();
         _account.Server = _server.Text.Trim();
+        _account.Group = string.IsNullOrWhiteSpace(_group.Text) ? null : _group.Text.Trim();
+        _account.Clientless = _launchMode.SelectedIndex == 1;
+        _account.AutoRestart = _autoRestart.Checked;
 
         _account.Password = _password.Text;
 
@@ -331,7 +367,8 @@ internal sealed class AreaDialog : DialogBase
 }
 
 /// <summary>
-///     The daily green and orange hours used for "Giờ Xanh" when the server sends no fatigue time.
+///     The daily green and orange hours used for "Giờ Xanh" when the server sends no fatigue time,
+///     and the time between two bot starts.
 /// </summary>
 internal sealed class SettingsDialog : DialogBase
 {
@@ -339,6 +376,7 @@ internal sealed class SettingsDialog : DialogBase
     private readonly NumericUpDown _greenHours;
     private readonly NumericUpDown _orangeHours;
     private readonly TextBox _resetTime;
+    private readonly NumericUpDown _launchDelay;
 
     public SettingsDialog(ManagerData data)
         : base("Cài đặt")
@@ -357,6 +395,11 @@ internal sealed class SettingsDialog : DialogBase
             MaximumSize = new Size(FieldWidth, 0),
             ForeColor = Theme.Muted,
         });
+
+        _launchDelay = AddField(
+            "Giãn cách mở bot (giây)",
+            CreateNumber(ManagerData.MinimumLaunchDelaySeconds, 600, data.LaunchDelaySeconds)
+        );
     }
 
     protected override string ValidateInput()
@@ -372,5 +415,6 @@ internal sealed class SettingsDialog : DialogBase
         _data.GreenHours = (int)_greenHours.Value;
         _data.OrangeHours = (int)_orangeHours.Value;
         _data.ResetTime = _resetTime.Text.Trim();
+        _data.LaunchDelaySeconds = (int)_launchDelay.Value;
     }
 }

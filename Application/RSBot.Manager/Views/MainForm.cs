@@ -13,15 +13,20 @@ namespace RSBot.Manager.Views;
 internal sealed class MainForm : Form
 {
     private const string Empty = "—";
+    private const string AllGroups = "(Tất cả nhóm)";
 
     private readonly List<BotInstance> _instances = new();
     private readonly Label _folderLabel;
     private readonly Label _totalsLabel;
+    private readonly Label _launchLabel;
+    private readonly ComboBox _groupFilter;
     private readonly DataGridView _grid;
     private readonly ContextMenuStrip _menu;
     private readonly Timer _timer;
 
     private bool _polling;
+    private string _appliedGroup;
+    private bool _refreshingGroups;
 
     /// <summary>
     ///     The bots the right-click menu acts on.
@@ -62,8 +67,30 @@ internal sealed class MainForm : Form
         var stopButton = Theme.CreateButton("Dừng");
         stopButton.Click += (_, _) => RunOn(CheckedOrSelected(), b => b.SendAsync("stop"));
 
+        var hideButton = Theme.CreateButton("Ẩn");
+        hideButton.Click += (_, _) => RunOn(CheckedOrSelected(), b => SetWindowsVisibleAsync(b, false));
+
+        var showButton = Theme.CreateButton("Hiện");
+        showButton.Click += (_, _) => RunOn(CheckedOrSelected(), b => SetWindowsVisibleAsync(b, true));
+
+        _groupFilter = new ComboBox
+        {
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            BackColor = Theme.Panel,
+            ForeColor = Theme.Text,
+            FlatStyle = FlatStyle.Flat,
+            Width = Theme.Scale(this, 170),
+            Anchor = AnchorStyles.Left,
+            Margin = new Padding(Theme.Scale(this, 10), 0, 0, 0),
+        };
+        _groupFilter.SelectedIndexChanged += (_, _) =>
+        {
+            if (!_refreshingGroups)
+                ApplyGroupFilter();
+        };
+
         var actions = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
-        actions.Controls.AddRange(new Control[] { openButton, startButton, stopButton });
+        actions.Controls.AddRange(new Control[] { openButton, startButton, stopButton, hideButton, showButton, _groupFilter });
 
         var left = new FlowLayoutPanel
         {
@@ -122,9 +149,21 @@ internal sealed class MainForm : Form
         };
         footerButtons.Controls.AddRange(new Control[] { addButton, editButton, deleteButton });
 
+        // Launch queue progress, between the totals and the buttons
+        _launchLabel = new Label
+        {
+            AutoSize = false,
+            Dock = DockStyle.Fill,
+            ForeColor = Theme.Muted,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Padding = new Padding(Theme.Scale(this, 16), 0, 0, 0),
+        };
+
         var footer = new Panel { Dock = DockStyle.Bottom, Height = Theme.Scale(this, 64), BackColor = Theme.Panel };
         footer.Controls.Add(_totalsLabel);
         footer.Controls.Add(footerButtons);
+        footer.Controls.Add(_launchLabel);
+        _launchLabel.BringToFront(); // docked last, so it fills the space left by the others
 
         _grid = new DataGridView { Dock = DockStyle.Fill };
         Theme.ApplyGrid(_grid);
@@ -181,6 +220,7 @@ internal sealed class MainForm : Form
         });
 
         AddTextColumn("account", "Tài khoản", 140, 130);
+        AddTextColumn("group", "Nhóm", 100, 80);
         AddTextColumn("character", "Nhân vật", 140, 130);
         AddTextColumn("state", "Trạng thái", 150, 140);
         AddTextColumn("hpmp", "HP / MP", 170, 160);
@@ -229,7 +269,77 @@ internal sealed class MainForm : Form
         foreach (var account in ManagerStore.Data.Accounts)
             AddRow(new BotInstance(account));
 
+        RefreshGroups();
         RefreshGrid();
+    }
+
+    /// <summary>
+    ///     Fills the group filter with the groups of the accounts and keeps the selected one when it still exists.
+    /// </summary>
+    private void RefreshGroups()
+    {
+        var selected = _groupFilter.SelectedItem as string;
+        var groups = ManagerStore.Data.Accounts
+            .Select(a => a.Group)
+            .Where(g => !string.IsNullOrWhiteSpace(g))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(g => g, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        // Refilling the list changes the selection twice; filter once at the end
+        _refreshingGroups = true;
+        try
+        {
+            _groupFilter.BeginUpdate();
+            _groupFilter.Items.Clear();
+            _groupFilter.Items.Add(AllGroups);
+            foreach (var group in groups)
+                _groupFilter.Items.Add(group);
+            _groupFilter.EndUpdate();
+
+            _groupFilter.Visible = groups.Count > 0;
+            _groupFilter.SelectedItem = selected != null && _groupFilter.Items.Contains(selected) ? selected : AllGroups;
+        }
+        finally
+        {
+            _refreshingGroups = false;
+        }
+
+        ApplyGroupFilter();
+    }
+
+    /// <summary>
+    ///     Shows only the accounts of the selected group. Hidden rows are left out of every action.
+    /// </summary>
+    private void ApplyGroupFilter()
+    {
+        if (_grid.Columns.Count == 0)
+            return;
+
+        var group = _groupFilter.SelectedItem as string;
+        var all = group == null || group == AllGroups;
+        var changed = group != _appliedGroup;
+        _appliedGroup = group;
+
+        bool Shows(DataGridViewRow row) =>
+            all || string.Equals(((BotInstance)row.Tag).Account.Group, group, StringComparison.OrdinalIgnoreCase);
+
+        // The current row cannot be hidden
+        if (_grid.CurrentRow != null && !Shows(_grid.CurrentRow))
+            _grid.CurrentCell = null;
+
+        _grid.EndEdit();
+        foreach (DataGridViewRow row in _grid.Rows)
+        {
+            row.Visible = Shows(row);
+
+            // Another group starts with nothing checked, and a hidden row never stays checked
+            if (changed || !row.Visible)
+                row.Cells["check"].Value = false;
+        }
+
+        if (changed)
+            _grid.Columns[0].HeaderText = "☐";
     }
 
     private void AddRow(BotInstance instance)
@@ -270,6 +380,7 @@ internal sealed class MainForm : Form
             var inGame = status?.State is "InGame" or "Running";
 
             Set(row, "account", instance.Account.LoginId);
+            Set(row, "group", instance.Account.Group ?? string.Empty);
             Set(row, "character", status?.CharName ?? instance.Account.Character);
 
             var state = row.Cells["state"];
@@ -277,7 +388,10 @@ internal sealed class MainForm : Form
             state.Style.ForeColor = status == null ? Theme.Muted
                 : status.State == "Running" ? Theme.Good
                 : Theme.Text;
-            state.ToolTipText = instance.LastError ?? string.Empty;
+            state.ToolTipText = string.Join(
+                Environment.NewLine,
+                new[] { instance.LastError, instance.RestartInfo }.Where(t => t != null)
+            );
 
             if (status == null && !instance.Account.CanReadPassword)
             {
@@ -300,15 +414,18 @@ internal sealed class MainForm : Form
         }
 
         RefreshTotals();
+        RefreshLaunchQueue();
     }
 
     private void RefreshTotals()
     {
         var statuses = _instances.Select(i => i.Status).Where(s => s != null).ToList();
         var online = statuses.Count(s => s.State is "InGame" or "Running");
+        var running = statuses.Count(s => s.State == "Running");
 
         var parts = new[]
         {
+            $"Đang chạy: {running}/{_instances.Count}",
             $"Online: {online}",
             $"Gold hiện có: {statuses.Aggregate(0UL, (sum, s) => sum + s.Gold):N0}",
             $"Gold nhặt: {statuses.Sum(s => s.GoldPicked):N0}",
@@ -318,6 +435,16 @@ internal sealed class MainForm : Form
         };
 
         _totalsLabel.Text = string.Join("    ", parts);
+    }
+
+    private void RefreshLaunchQueue()
+    {
+        var queued = BotInstance.QueuedLaunches;
+        var wait = (int)Math.Ceiling((BotInstance.NextLaunchAt - DateTime.Now).TotalSeconds);
+
+        _launchLabel.Text = queued > 0
+            ? $"Đang chờ mở {queued} bot · bot tiếp theo sau {Math.Max(wait, 0)} giây"
+            : string.Empty;
     }
 
     private static void Set(DataGridViewRow row, string column, string value)
@@ -330,6 +457,9 @@ internal sealed class MainForm : Form
     private static string DescribeState(BotInstance instance)
     {
         var status = instance.Status;
+        if (status == null && instance.RestartAt is { } restartAt)
+            return $"Tự mở lại sau {Math.Max(0, (int)Math.Ceiling((restartAt - DateTime.Now).TotalSeconds))} giây";
+
         if (status == null)
             return instance.IsStarting ? "Đang mở..."
                 : instance.LastError != null ? "Lỗi (xem chú thích)"
@@ -443,8 +573,9 @@ internal sealed class MainForm : Form
         _grid.EndEdit();
 
         // Header checkbox: check all, or uncheck all when everything is checked
-        var checkAll = _grid.Rows.Cast<DataGridViewRow>().Any(r => !IsChecked(r));
-        foreach (DataGridViewRow row in _grid.Rows)
+        var visible = _grid.Rows.Cast<DataGridViewRow>().Where(r => r.Visible).ToList();
+        var checkAll = visible.Any(r => !IsChecked(r));
+        foreach (var row in visible)
             row.Cells["check"].Value = checkAll;
 
         _grid.Columns[0].HeaderText = checkAll ? "☑" : "☐";
@@ -469,12 +600,12 @@ internal sealed class MainForm : Form
     private static bool IsChecked(DataGridViewRow row) => row.Cells["check"].Value is true;
 
     private List<BotInstance> CheckedInstances() =>
-        _grid.Rows.Cast<DataGridViewRow>().Where(IsChecked).Select(r => (BotInstance)r.Tag).ToList();
+        _grid.Rows.Cast<DataGridViewRow>().Where(r => r.Visible && IsChecked(r)).Select(r => (BotInstance)r.Tag).ToList();
 
     private List<BotInstance> CheckedOrSelected()
     {
         var targets = CheckedInstances();
-        if (targets.Count == 0 && _grid.CurrentRow?.Tag is BotInstance selected)
+        if (targets.Count == 0 && _grid.CurrentRow is { Visible: true, Tag: BotInstance selected })
             targets.Add(selected);
 
         return targets;
@@ -512,6 +643,17 @@ internal sealed class MainForm : Form
         menu.Items.Add("Tắt Bot", null, (_, _) => CloseBots(_menuTargets));
 
         return menu;
+    }
+
+    /// <summary>
+    ///     Hides or shows the bot window and, when it runs, the game client.
+    /// </summary>
+    private static async Task SetWindowsVisibleAsync(BotInstance instance, bool visible)
+    {
+        await instance.SendAsync(visible ? "showBot" : "hideBot");
+
+        if (instance.Status?.ClientRunning == true)
+            await instance.SendAsync(visible ? "showClient" : "hideClient");
     }
 
     private Task LaunchAsync(BotInstance instance)
@@ -639,6 +781,7 @@ internal sealed class MainForm : Form
         ManagerStore.SaveData();
 
         AddRow(new BotInstance(dialog.Account));
+        RefreshGroups();
         RefreshGrid();
     }
 
@@ -657,6 +800,9 @@ internal sealed class MainForm : Form
             Character = account.Character,
             Server = account.Server,
             TemplateProfile = account.TemplateProfile,
+            Clientless = account.Clientless,
+            Group = account.Group,
+            AutoRestart = account.AutoRestart,
         };
 
         using var dialog = new AccountDialog(copy, ManagerStore.Data.Accounts);
@@ -676,8 +822,12 @@ internal sealed class MainForm : Form
         account.PasswordProtected = copy.PasswordProtected;
         account.Character = copy.Character;
         account.Server = copy.Server;
+        account.Clientless = copy.Clientless;
+        account.Group = copy.Group;
+        account.AutoRestart = copy.AutoRestart;
 
         ManagerStore.SaveData();
+        RefreshGroups();
         RefreshGrid();
 
         if (instance.IsConnected)
@@ -724,6 +874,7 @@ internal sealed class MainForm : Form
         _instances.Remove(instance);
         instance.Dispose();
 
+        RefreshGroups();
         RefreshGrid();
     }
 
