@@ -79,33 +79,41 @@ internal static class PythonPluginManager
 
             using (Py.GIL())
             {
-                // The bridge is imported before the RSBot module exists; afterwards "RSBot" means our module
-                PythonEngine.Exec(
-                    $@"
-import clr, sys, types
-clr.AddReference('{typeof(PythonBridge).Assembly.GetName().Name}')
-from RSBot.Python.Components import PythonBridge
-_bridge = types.ModuleType('_rsbot_bridge')
-_bridge.bridge = PythonBridge
-sys.modules['_rsbot_bridge'] = _bridge
-"
-                );
-
+                // One step, no imports by name: the bridge is handed to the API module directly, and
+                // "import RSBot" is answered by a finder (pythonnet also creates a namespace called RSBot)
                 using var scope = Py.CreateScope();
                 using (var source = new PyString(ReadApiSource()))
                     scope.Set("source", source);
 
                 scope.Exec(
-                    @"
-import sys, types
+                    $@"
+import clr, sys, types, importlib.abc, importlib.util
+clr.AddReference('{typeof(PythonBridge).Assembly.GetName().Name}')
+from RSBot.Python.Components import PythonBridge
+
 module = types.ModuleType('RSBot')
 module.__file__ = 'RSBot.py'
+module._b = PythonBridge
 exec(compile(source, 'RSBot.py', 'exec'), module.__dict__)
+
+class _RSBotLoader(importlib.abc.Loader):
+    def create_module(self, spec):
+        return module
+    def exec_module(self, mod):
+        pass
+
+class _RSBotFinder(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == 'RSBot':
+            return importlib.util.spec_from_loader('RSBot', _RSBotLoader())
+        return None
+
+sys.meta_path.insert(0, _RSBotFinder())
 sys.modules['RSBot'] = module
 "
                 );
 
-                _api = Py.Import("RSBot");
+                _api = scope.Get("module");
             }
 
             WriteApiCopy();
@@ -117,7 +125,8 @@ sys.modules['RSBot'] = module
         }
         catch (Exception e)
         {
-            PythonBridge.Log(null, $"Python could not be started: {e.Message}", 2);
+            var details = e is PythonException pythonException ? pythonException.Format() : e.ToString();
+            PythonBridge.Log(null, $"Python could not be started: {e.Message}\n{details}", 2);
         }
     }
 

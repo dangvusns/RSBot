@@ -24,7 +24,10 @@ import sys as _sys
 import threading as _threading
 import traceback as _traceback
 
-from _rsbot_bridge import bridge as _b
+try:
+    _b  # the bridge to RSBot, set by RSBot before this module runs
+except NameError:
+    raise ImportError("RSBot.py is the API of the RSBot Python plugin and only works inside RSBot") from None
 
 CHAT_ALL = 1
 CHAT_PRIVATE = 2
