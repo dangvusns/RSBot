@@ -4,19 +4,25 @@ on:
   workflow_dispatch:
     inputs:
       version_type:
-        description: 'Version bump type'
+        description: Version bump type
         required: true
-        default: 'patch'
+        default: patch
         type: choice
         options:
-          - patch    # 1.2.3 → 1.2.4
-          - minor    # 1.2.3 → 1.3.0
-          - major    # 1.2.3 → 2.0.0
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rsbot-manual-release
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,75 +30,83 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Get latest release tag
-        id: get_version
+      - name: Calculate release version
+        id: version
         shell: pwsh
+        env:
+          VERSION_TYPE: ${{ inputs.version_type }}
         run: |
-          # Get the latest git tag (expected format: v1.2.3)
-          $latestTag = git describe --tags --abbrev=0 --match "v*" 2>$null
-          if (-not $latestTag -or $latestTag -eq "") {
-            $latestTag = "v0.0.0"
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content Application/RSBot/RSBot.csproj
+          $version = [version]$project.Project.PropertyGroup.AssemblyVersion
+          foreach ($tag in (git tag --list 'v*')) {
+            if ($tag -match '^v(\d+\.\d+\.\d+)$') {
+              $candidate = [version]$Matches[1]
+              if ($candidate -gt $version) { $version = $candidate }
+            }
           }
-          
-          # Parse version components
-          $version = $latestTag -replace '^v',''
-          $parts = $version.Split('.')
-          $major = [int]$parts[0]
-          $minor = [int]$parts[1]
-          $patch = [int]$parts[2]
-          
-          # Bump version based on user input
-          $type = "${{ github.event.inputs.version_type }}"
-          switch ($type) {
-            "major" { $major++; $minor = 0; $patch = 0 }
-            "minor" { $minor++; $patch = 0 }
-            "patch" { $patch++ }
+          $major = $version.Major
+          $minor = $version.Minor
+          $patch = $version.Build
+          switch ($env:VERSION_TYPE) {
+            major { $major++; $minor = 0; $patch = 0 }
+            minor { $minor++; $patch = 0 }
+            patch { $patch++ }
+            default { throw 'Invalid version type' }
           }
-          
-          $newVersion = "v$major.$minor.$patch"
-          echo "new_version=$newVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          Write-Host "Version bump: $latestTag → $newVersion ($type)"
+          "number=$major.$minor.$patch" >> $env:GITHUB_OUTPUT
+          "tag=v$major.$minor.$patch" >> $env:GITHUB_OUTPUT
 
-      - name: Create changelog
-        shell: pwsh
-        run: |
-          $latestTag = git describe --tags --abbrev=0 --match "v*" 2>$null
-          if ($latestTag) {
-            $gitLog = git log "$latestTag..HEAD" --pretty="format:- [%s](https://github.com/myildirimofficial/RSBot/commit/%H) - @%an"
-          } else {
-            $gitLog = git log --pretty="format:- [%s](https://github.com/myildirimofficial/RSBot/commit/%H) - @%an"
-          }
-          Set-Content -Path "commit_log.md" -Value $gitLog -Encoding UTF8
-          $currentLog = Get-Content -Path commit_log.md -Raw
-          $logWithHeader = "## What's Changed`n" + $currentLog
-          Set-Content -Path commit_log.md -Value $logWithHeader
-
-      - name: Install .NET Core
+      - name: Install .NET SDK
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
 
-      - name: Setup MSBuild.exe
+      - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Handle dependencies
-        run: dotnet restore RSBot.sln
+      - name: Build release
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.number }}
+        run: ./build.ps1 -Configuration Release -DoNotStart -Version $env:RELEASE_VERSION
 
-      - name: Create the app package
+      - name: Install x86 runtime for updater checks
+        shell: pwsh
         run: |
-          msbuild /p:Configuration=Release /p:Platform=x86
-          cd Build
-          Compress-Archive -Path ".\*" -DestinationPath ".\..\RSBot.${{ steps.get_version.outputs.new_version }}.zip"
-          cd ..
+          $installer = Join-Path $env:RUNNER_TEMP dotnet-install.ps1
+          Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile $installer
+          $runtime = Join-Path $env:RUNNER_TEMP dotnet-x86
+          & $installer -Channel 8.0 -Runtime dotnet -Architecture x86 -InstallDir $runtime
+          "DOTNET_ROOT_X86=$runtime" >> $env:GITHUB_ENV
 
-      - name: Create release
-        id: create_release
+      - name: Verify updater installation and rollback
+        shell: pwsh
+        run: ./scripts/test-updater.ps1
+
+      - name: Package application
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: ./scripts/package-release.ps1 -Tag $env:RELEASE_TAG
+
+      - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          name: RSBot ${{ steps.get_version.outputs.new_version }}
-          tag_name: ${{ steps.get_version.outputs.new_version }}
-          body_path: commit_log.md
+          name: RSBot ${{ steps.version.outputs.tag }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
           prerelease: false
-          files: RSBot.${{ steps.get_version.outputs.new_version }}.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          make_latest: true
+          fail_on_unmatched_files: true
+          files: |
+            RSBot.${{ steps.version.outputs.tag }}.zip
+            RSBot.${{ steps.version.outputs.tag }}.zip.sha256
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-build-log
+          path: build.log

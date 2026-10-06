@@ -592,10 +592,8 @@ public partial class Main : UIWindow
         EventManager.FireEvent("OnInitialized");
     
         using var updater = new Updater();
-        updater.FormClosed += (s, _) => ((Form)s).Dispose();
-
-        if (await updater.Check())
-            updater.Show();
+        if (await updater.Check() && !IsDisposed)
+            updater.ShowDialog(this);
     }
 
     /// <summary>
