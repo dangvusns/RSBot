@@ -1,7 +1,7 @@
 using RSBot.Core;
-using SDUI.Controls;
 using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -13,19 +13,95 @@ using System.Windows.Forms;
 
 namespace RSBot.Views;
 
-public partial class Updater : UIWindowBase
+public partial class Updater : Form
 {
     private const string LatestReleaseApi =
         "https://api.github.com/repos/dangvusns/RSBot/releases/latest";
     private string _downloadUrl;
     private string _digest;
     private bool _installing;
+    private readonly System.Windows.Forms.Label _status = new();
+    private readonly RichTextBox _releaseNotes = new();
+    private readonly System.Windows.Forms.Button _updateButton = new();
+    private readonly System.Windows.Forms.Button _skipButton = new();
+    private readonly System.Windows.Forms.ProgressBar _progress = new();
 
     public Updater()
     {
         InitializeComponent();
-        btnDownload.DialogResult = DialogResult.None;
+        ConfigureLayout();
         FormClosing += (_, e) => e.Cancel = _installing;
+    }
+
+    private void ConfigureLayout()
+    {
+        // Use native controls here: the custom transparent panel can leave all
+        // of its child controls unpainted in the modal update window.
+        SuspendLayout();
+        foreach (Control control in new[] { (Control)centerPanel, lblInfo, lblDownloadInfo })
+        {
+            Controls.Remove(control);
+            control.Dispose();
+        }
+        Text = "RSBot Update";
+        ControlBox = true;
+        FormBorderStyle = FormBorderStyle.Sizable;
+        BackColor = SystemColors.Control;
+        ForeColor = SystemColors.ControlText;
+        ClientSize = new Size(640, 440);
+        MinimumSize = new Size(480, 320);
+
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(16),
+            ColumnCount = 1,
+            RowCount = 3
+        };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+
+        _status.AutoSize = true;
+        _status.Dock = DockStyle.Fill;
+        _status.Padding = new Padding(0, 0, 0, 12);
+        _status.Text = "A new RSBot update is available.";
+        _releaseNotes.Dock = DockStyle.Fill;
+        _releaseNotes.ReadOnly = true;
+        _releaseNotes.BackColor = SystemColors.Window;
+        _releaseNotes.ForeColor = SystemColors.WindowText;
+        _releaseNotes.BorderStyle = BorderStyle.FixedSingle;
+        _releaseNotes.ScrollBars = RichTextBoxScrollBars.Vertical;
+        _releaseNotes.Text = "No release notes were provided for this update.";
+
+        var actions = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1 };
+        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
+        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
+        actions.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        _skipButton.Text = "Skip";
+        _skipButton.DialogResult = DialogResult.Cancel;
+        _skipButton.Dock = DockStyle.Fill;
+        _skipButton.Margin = new Padding(0, 12, 8, 0);
+        _updateButton.Text = "Update";
+        _updateButton.DialogResult = DialogResult.None;
+        _updateButton.Dock = DockStyle.Fill;
+        _updateButton.Margin = new Padding(8, 12, 0, 0);
+        _updateButton.Click += btnDownload_Click;
+        _progress.Dock = DockStyle.Fill;
+        _progress.Margin = new Padding(8, 16, 8, 4);
+        _progress.Visible = false;
+        actions.Controls.Add(_skipButton, 0, 0);
+        actions.Controls.Add(_progress, 1, 0);
+        actions.Controls.Add(_updateButton, 2, 0);
+        layout.Controls.Add(_status, 0, 0);
+        layout.Controls.Add(_releaseNotes, 0, 1);
+        layout.Controls.Add(actions, 0, 2);
+        Controls.Add(layout);
+        AcceptButton = _updateButton;
+        CancelButton = _skipButton;
+        ResumeLayout(true);
     }
 
     private static HttpClient CreateClient()
@@ -66,8 +142,9 @@ public partial class Updater : UIWindowBase
             if (string.IsNullOrEmpty(_downloadUrl))
                 return false;
             var body = release.GetProperty("body").GetString();
-            rtbUpdateInfo.Rtf = new MarkdownToRtfParser().Parse(body ?? "Update available.");
-            lblInfo.Text = $"RSBot {tag} is available. Update and restart?";
+            _releaseNotes.Rtf = new MarkdownToRtfParser().Parse(
+                string.IsNullOrWhiteSpace(body) ? "No release notes were provided for this update." : body);
+            _status.Text = $"RSBot {tag} is available. Update and restart?";
             return true;
         }
         catch (Exception ex)
@@ -83,12 +160,12 @@ public partial class Updater : UIWindowBase
         if (_installing || string.IsNullOrEmpty(_downloadUrl))
             return;
         _installing = true;
-        btnDownload.Enabled = btnSkip.Enabled = false;
+        _updateButton.Enabled = _skipButton.Enabled = false;
         try
         {
-            downloadProgress.Visible = true;
-            downloadProgress.Value = 0;
-            lblInfo.Text = "Downloading update...";
+            _progress.Visible = true;
+            _progress.Value = 0;
+            _status.Text = "Downloading update...";
             var tempPath = Path.Combine(Kernel.BasePath, "update_temp");
             Directory.CreateDirectory(tempPath);
             var zipPath = Path.Combine(tempPath, "update.zip");
@@ -107,7 +184,7 @@ public partial class Updater : UIWindowBase
                     await file.WriteAsync(buffer, 0, count);
                     received += count;
                     if (total > 0)
-                        downloadProgress.Value = Math.Min(100, received * 100 / total.Value);
+                        _progress.Value = (int)Math.Min(100, received * 100 / total.Value);
                 }
                 if (total.HasValue && received != total.Value)
                     throw new IOException("The update download is incomplete. Please retry.");
@@ -144,8 +221,8 @@ public partial class Updater : UIWindowBase
         catch (Exception ex)
         {
             _installing = false;
-            btnDownload.Enabled = btnSkip.Enabled = true;
-            lblInfo.Text = "Update failed. You can retry or skip.";
+            _updateButton.Enabled = _skipButton.Enabled = true;
+            _status.Text = "Update failed. You can retry or skip.";
             MessageBox.Show(this, ex.Message, "Update Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
