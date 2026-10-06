@@ -61,6 +61,10 @@ public class RefText : IReference<string>
         if (Game.ClientType == GameClientType.Japanese)
             languageTab = 9;
 
+        // A text column set in the settings (RSBot.TranslationIndexOverride) overrides the client default
+        if (Game.ReferenceManager.LanguageTab >= 0)
+            languageTab = Game.ReferenceManager.LanguageTab;
+
         var maxTabs = parser.GetColumnCount();
 
         //Try parse with the already set language tab

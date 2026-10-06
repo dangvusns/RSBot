@@ -219,7 +219,9 @@ public partial class SplashScreen : UIWindowBase
             return;
         }
 
-        Game.ReferenceManager.Load(GlobalConfig.Get("RSBot.TranslationIndex", 9), referenceDataLoader);
+        // -1 keeps the client's default text column. A new key is used because the old
+        // "RSBot.TranslationIndex" was saved as 9 in every config without ever being applied.
+        Game.ReferenceManager.Load(GlobalConfig.Get("RSBot.TranslationIndexOverride", -1), referenceDataLoader);
     }
 
     private void referenceDataLoader_ProgressChanged(object sender, ProgressChangedEventArgs e)

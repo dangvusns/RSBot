@@ -19,7 +19,7 @@ public class ReferenceManager
 {
     private const string ServerDep = "server_dep\\silkroad\\textdata";
 
-    public int LanguageTab { get; set; }
+    public int LanguageTab { get; set; } = -1;
 
     public Dictionary<string, RefText> TextData { get; } = new(70000);
     public Dictionary<uint, RefObjChar> CharacterData { get; } = new(20000);
