@@ -16,6 +16,8 @@ namespace RSBot.Python.Components;
 /// <summary>
 ///     What Python plugins can call (through RSBot.py). Only plain values cross the boundary:
 ///     numbers, strings, and JSON for structured data, so no Python objects are held by C#.
+///     pythonnet releases the GIL while these methods run, so a call that waits (e.g. for a select
+///     reply) does not block packet hooks or other Python code. They must not touch Python objects.
 /// </summary>
 public static class PythonBridge
 {
@@ -60,11 +62,7 @@ public static class PythonBridge
         if (!IsIngame() || Kernel.Bot == null || Kernel.Bot.Running)
             return false;
 
-        PythonPluginManager.WithoutGil(() =>
-        {
-            Kernel.Bot.Start();
-            return true;
-        });
+        Kernel.Bot.Start();
         return true;
     }
 
@@ -73,11 +71,7 @@ public static class PythonBridge
         if (Kernel.Bot == null || !Kernel.Bot.Running)
             return false;
 
-        PythonPluginManager.WithoutGil(() =>
-        {
-            Kernel.Bot.Stop();
-            return true;
-        });
+        Kernel.Bot.Stop();
         return true;
     }
 
@@ -374,26 +368,24 @@ public static class PythonBridge
 
     public static bool SelectTarget(long uniqueId)
     {
-        // Waits for the server's answer; packet hooks of plugins must be able to run meanwhile
-        return SpawnManager.TryGetEntity<SpawnedBionic>((uint)uniqueId, out var entity)
-            && PythonPluginManager.WithoutGil(entity.TrySelect);
+        return SpawnManager.TryGetEntity<SpawnedBionic>((uint)uniqueId, out var entity) && entity.TrySelect();
     }
 
     public static bool CastSkill(long skillId, long targetId)
     {
         var skill = Game.Player?.Skills?.GetSkillInfoById((uint)skillId);
-        return skill != null && PythonPluginManager.WithoutGil(() => SkillManager.CastSkill(skill, (uint)targetId));
+        return skill != null && SkillManager.CastSkill(skill, (uint)targetId);
     }
 
     public static bool UseItem(int slot)
     {
         var item = Game.Player?.Inventory?.GetItemAt((byte)slot);
-        return item != null && PythonPluginManager.WithoutGil(item.Use);
+        return item != null && item.Use();
     }
 
     public static bool UseReturnScroll()
     {
-        return Game.Player != null && PythonPluginManager.WithoutGil(Game.Player.UseReturnScroll);
+        return Game.Player != null && Game.Player.UseReturnScroll();
     }
 
     public static bool MoveTo(double x, double y, int region)
@@ -401,8 +393,7 @@ public static class PythonBridge
         if (Game.Player == null)
             return false;
 
-        var destination = new Position((float)x, (float)y, (ushort)region);
-        return PythonPluginManager.WithoutGil(() => Game.Player.MoveTo(destination, false));
+        return Game.Player.MoveTo(new Position((float)x, (float)y, (ushort)region), false);
     }
 
     public static bool Chat(int type, string text, string receiver)

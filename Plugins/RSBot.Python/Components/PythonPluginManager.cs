@@ -204,26 +204,6 @@ sys.modules['RSBot'] = module
         };
     }
 
-    /// <summary>
-    ///     Runs a blocking bot call from Python without holding the GIL, so packet hooks and
-    ///     script commands of other threads can run meanwhile (e.g. a select waiting for its reply).
-    /// </summary>
-    internal static T WithoutGil<T>(Func<T> action)
-    {
-        if (!IsInitialized)
-            return action();
-
-        var state = PythonEngine.BeginAllowThreads();
-        try
-        {
-            return action();
-        }
-        finally
-        {
-            PythonEngine.EndAllowThreads(state);
-        }
-    }
-
     #endregion
 
     #region Plugins

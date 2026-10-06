@@ -68,6 +68,16 @@ internal static class Program
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
 
+        // Without these a crash leaves no trace in RSBot's logs (Data\Logs\Exceptions). An error on the UI
+        // thread is logged and the bot keeps running, instead of an error dialog that can fail and end it.
+        Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+        Application.ThreadException += (_, e) => Log.Fatal(e.Exception);
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            if (e.ExceptionObject is Exception exception)
+                Log.Fatal(exception);
+        };
+
         var parser = new Parser(with => with.HelpWriter = Console.Out);
         var parserResult = parser.ParseArguments<CommandLineOptions>(args);
 
