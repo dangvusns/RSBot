@@ -1,5 +1,4 @@
 using RSBot.Core;
-using RSBot.Core.Config;
 using SDUI.Controls;
 using System;
 using System.Diagnostics;
