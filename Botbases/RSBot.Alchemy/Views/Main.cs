@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows.Forms;
 using RSBot.Alchemy.Bot;
-using RSBot.Alchemy.Client.ReferenceObjects;
 using RSBot.Alchemy.Views.Settings;
 using RSBot.Core;
 using RSBot.Core.Client.ReferenceObjects;

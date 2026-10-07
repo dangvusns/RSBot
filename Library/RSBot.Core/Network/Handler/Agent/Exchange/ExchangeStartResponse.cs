@@ -14,13 +14,18 @@ internal class ExchangeStartResponse : IPacketHandler
     /// <inheritdoc />
     public void Invoke(Packet packet)
     {
-        if (packet.ReadByte() != 1)
+        var result = packet.ReadByte();
+        if (result != 1)
+        {
+            var errorCode = result == 2 && packet.Remaining >= 2 ? packet.ReadUShort() : (ushort)0;
+            Log.Warn($"The exchange could not be started (result {result}, code 0x{errorCode:X4}).");
             return;
+        }
 
         var playerUniqueId = packet.ReadUInt();
         Game.Player.Exchange = new ExchangeInstance(playerUniqueId);
 
-        Log.Notify($"Started exchanging with the player {Game.Player.Exchange.ExchangePlayer.Name}");
+        Log.Notify($"Started exchanging with the player {Game.Player.Exchange.ExchangePlayerName}");
 
         EventManager.FireEvent("OnStartExchange");
     }

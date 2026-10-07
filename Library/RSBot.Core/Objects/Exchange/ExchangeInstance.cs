@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using RSBot.Core.Components;
 using RSBot.Core.Network;
+using RSBot.Core.Objects.Inventory;
 using RSBot.Core.Objects.Spawn;
 
 namespace RSBot.Core.Objects.Exchange;
@@ -47,6 +48,26 @@ public class ExchangeInstance
     public SpawnedPlayer ExchangePlayer => SpawnManager.GetEntity<SpawnedPlayer>(_exchangePlayerUniqueId);
 
     /// <summary>
+    ///     Gets the unique id of the exchange partner.
+    /// </summary>
+    public uint ExchangePlayerUniqueId => _exchangePlayerUniqueId;
+
+    /// <summary>
+    ///     Gets the name of the exchange partner, or its unique id when it is not spawned.
+    /// </summary>
+    public string ExchangePlayerName => ExchangePlayer?.Name ?? $"#{_exchangePlayerUniqueId}";
+
+    /// <summary>
+    ///     Gets or sets the gold the player puts into the exchange.
+    /// </summary>
+    public ulong SendingGold { get; internal set; }
+
+    /// <summary>
+    ///     Gets or sets the gold the partner puts into the exchange.
+    /// </summary>
+    public ulong ReceivingGold { get; internal set; }
+
+    /// <summary>
     ///     Invites the specified player to an exchange (0x7081).
     /// </summary>
     /// <param name="playerUniqueId">The unique id of the player.</param>
@@ -54,6 +75,45 @@ public class ExchangeInstance
     {
         var packet = new Packet(0x7081);
         packet.WriteUInt(playerUniqueId);
+
+        PacketManager.SendPacket(packet, PacketDestination.Server);
+    }
+
+    /// <summary>
+    ///     Puts an inventory item into the exchange window (0x7034, SP_ADD_EXCHANGE).
+    /// </summary>
+    /// <param name="inventorySlot">The inventory slot of the item.</param>
+    public void AddItem(byte inventorySlot)
+    {
+        var packet = new Packet(0x7034);
+        packet.WriteByte(InventoryOperation.SP_ADD_EXCHANGE);
+        packet.WriteByte(inventorySlot);
+
+        PacketManager.SendPacket(packet, PacketDestination.Server);
+    }
+
+    /// <summary>
+    ///     Takes an item back out of the exchange window (0x7034, SP_DEL_EXCHANGE).
+    /// </summary>
+    /// <param name="exchangeSlot">The slot of the item in the exchange window.</param>
+    public void RemoveItem(byte exchangeSlot)
+    {
+        var packet = new Packet(0x7034);
+        packet.WriteByte(InventoryOperation.SP_DEL_EXCHANGE);
+        packet.WriteByte(exchangeSlot);
+
+        PacketManager.SendPacket(packet, PacketDestination.Server);
+    }
+
+    /// <summary>
+    ///     Sets the gold put into the exchange window (0x7034, SP_UPDATE_EXCHANGE_GOLD).
+    /// </summary>
+    /// <param name="gold">The amount of gold.</param>
+    public void SetGold(ulong gold)
+    {
+        var packet = new Packet(0x7034);
+        packet.WriteByte(InventoryOperation.SP_UPDATE_EXCHANGE_GOLD);
+        packet.WriteULong(gold);
 
         PacketManager.SendPacket(packet, PacketDestination.Server);
     }

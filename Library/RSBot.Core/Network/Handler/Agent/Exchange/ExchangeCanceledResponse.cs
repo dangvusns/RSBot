@@ -15,7 +15,8 @@ internal class ExchangeCanceledResponse : IPacketHandler
     {
         Game.Player.Exchange = null;
 
-        Log.Notify("Exchange has been canceled.");
+        var errorCode = packet.Remaining >= 2 ? packet.ReadUShort() : (ushort)0;
+        Log.Notify(errorCode == 0 ? "Exchange has been canceled." : $"Exchange has been canceled (code 0x{errorCode:X4}).");
 
         EventManager.FireEvent("OnCancelExchange");
     }

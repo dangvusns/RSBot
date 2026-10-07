@@ -268,6 +268,30 @@ public class PickupManager
         SaveFilter();
     }
 
+    /// <summary>
+    ///     Adds many items to the filter and saves once.
+    /// </summary>
+    public static void AddFilters(IEnumerable<string> codeNames, bool pickOnlyChar = false)
+    {
+        var set = codeNames.ToHashSet();
+
+        PickupFilter.RemoveAll(p => set.Contains(p.CodeName));
+        PickupFilter.AddRange(set.Select(codeName => (codeName, pickOnlyChar)));
+
+        SaveFilter();
+    }
+
+    /// <summary>
+    ///     Removes many items from the filter and saves once.
+    /// </summary>
+    public static void RemoveFilters(IEnumerable<string> codeNames)
+    {
+        var set = codeNames.ToHashSet();
+
+        PickupFilter.RemoveAll(p => set.Contains(p.CodeName));
+        SaveFilter();
+    }
+
     public static void LoadFilter()
     {
         var config = PlayerConfig.GetArray<string>("RSBot.Shopping.Pickup");
@@ -285,8 +309,6 @@ public class PickupManager
     public static void SaveFilter()
     {
         var array = PickupFilter.Select(p => $"{p.CodeName}|{p.PickOnlyChar}").ToArray();
-        if (array.Length == 0)
-            return;
 
         PlayerConfig.SetArray("RSBot.Shopping.Pickup", array);
     }

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
-using RSBot.Alchemy.Client.ReferenceObjects;
 using RSBot.Alchemy.Extension;
 using RSBot.Core;
 using RSBot.Core.Client.ReferenceObjects;
+using RSBot.Core.Extensions;
 using RSBot.Core.Components;
 using RSBot.Core.Event;
 using RSBot.Core.Objects;

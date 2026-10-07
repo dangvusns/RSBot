@@ -17,7 +17,7 @@ internal class ExchangeStartedResponse : IPacketHandler
         var playerUniqueId = packet.ReadUInt();
         Game.Player.Exchange = new ExchangeInstance(playerUniqueId);
 
-        Log.Notify($"Started exchanging with the player {Game.Player.Exchange.ExchangePlayer.Name}");
+        Log.Notify($"Started exchanging with the player {Game.Player.Exchange.ExchangePlayerName}");
 
         EventManager.FireEvent("OnStartExchange");
     }

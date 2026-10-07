@@ -81,6 +81,9 @@ internal class Botbase
         if (Bundles.Resurrect.HasPendingResurrect())
             return;
 
+        // Heal the player or party members below the set HP %
+        Bundles.Healing.Invoke();
+
         //Cast buffs
         Bundles.Buff.Invoke();
 

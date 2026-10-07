@@ -233,7 +233,15 @@ internal class InventoryOperationResponse : IPacketHandler
             // The exchange window's contents come with the exchange packets and are applied when the exchange completes
             case InventoryOperation.SP_ADD_EXCHANGE:
             case InventoryOperation.SP_DEL_EXCHANGE:
+                break;
+
             case InventoryOperation.SP_UPDATE_EXCHANGE_GOLD:
+                if (Game.Player.Exchange != null && packet.Remaining >= 8)
+                {
+                    Game.Player.Exchange.SendingGold = packet.ReadULong();
+                    EventManager.FireEvent("OnUpdateExchangeItems");
+                }
+
                 break;
 
             default:

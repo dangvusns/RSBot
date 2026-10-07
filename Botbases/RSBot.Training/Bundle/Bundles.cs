@@ -3,6 +3,7 @@ using RSBot.Training.Bundle.Attack;
 using RSBot.Training.Bundle.Avoidance;
 using RSBot.Training.Bundle.Berzerk;
 using RSBot.Training.Bundle.Buff;
+using RSBot.Training.Bundle.Healing;
 using RSBot.Training.Bundle.Loop;
 using RSBot.Training.Bundle.Loot;
 using RSBot.Training.Bundle.Movement;
@@ -55,6 +56,11 @@ internal static class Bundles
     ///     The party buff.
     /// </value>
     public static PartyBuffingBundle PartyBuff { get; } = new();
+
+    /// <summary>
+    ///     Gets the party and self healing.
+    /// </summary>
+    public static HealingBundle Healing { get; } = new();
 
     /// <summary>
     ///     Gets the target.
@@ -130,6 +136,7 @@ internal static class Bundles
         Movement.Refresh();
         Buff.Refresh();
         PartyBuff.Refresh();
+        Healing.Refresh();
         Target.Refresh();
         Attack.Refresh();
         Pet.Refresh();
@@ -147,6 +154,7 @@ internal static class Bundles
         Movement?.Stop();
         Buff?.Stop();
         PartyBuff?.Stop();
+        Healing?.Stop();
         Target?.Stop();
         Attack?.Stop();
         Pet?.Stop();

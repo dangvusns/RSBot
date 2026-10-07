@@ -1,9 +1,8 @@
-﻿using RSBot.Core;
-using RSBot.Core.Client.ReferenceObjects;
+﻿using RSBot.Core.Client.ReferenceObjects;
 
-namespace RSBot.Alchemy.Client.ReferenceObjects;
+namespace RSBot.Core.Extensions;
 
-internal static class RefMagicOptExtension
+public static class RefMagicOptExtension
 {
     #region Methods
 

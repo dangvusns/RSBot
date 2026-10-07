@@ -61,6 +61,7 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
         BuildPlayersTab();
         BuildGuildTab();
         BuildExchangeTab();
+        BuildExchangeWindow();
 
         // Refreshes only the visible tab, on the UI thread
         _timer.Tick += (s, e) => RefreshVisibleTab();
@@ -88,6 +89,7 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
             _comboExchangeMode.SelectedIndex = mode >= 0 && mode < _comboExchangeMode.Items.Count ? mode : 0;
             _checkAutoConfirm.Checked = PlayerConfig.Get(ExchangeAutomation.AutoConfirmKey, false);
             _checkAutoApprove.Checked = PlayerConfig.Get(ExchangeAutomation.AutoApproveKey, false);
+            _checkShowRequests.Checked = PlayerConfig.Get(ShowRequestsKey, true);
         }
         finally
         {
@@ -670,7 +672,7 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
             page.BackColor = SDUI.ColorScheme.BackColor;
             page.ForeColor = SDUI.ColorScheme.ForeColor;
         }
-        foreach (var list in new[] { _listPlayers, _listEquipment, _listGuild })
+        foreach (var list in new[] { _listPlayers, _listEquipment, _listGuild, _listExchangePlayers, _listExchangeInventory, _listMyOffer, _listPartnerOffer }.Where(l => l != null))
         {
             list.BackColor = SDUI.ColorScheme.BackColor;
             list.ForeColor = SDUI.ColorScheme.ForeColor;

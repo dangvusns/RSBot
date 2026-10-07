@@ -60,6 +60,7 @@ public partial class Main : DoubleBufferedControl
         InitializeMatchingLayout();
         InitializeCommandGuide();
         InitializeProtectTab();
+        InitializeHealingTab();
         InitializeBuffingLayout();
 
         SubscribeEvents();
@@ -405,6 +406,7 @@ public partial class Main : DoubleBufferedControl
             listCommandPlayers.Items.Add(item);
 
         LoadProtectSettings();
+        LoadHealingSettings();
 
         _applySettings = true;
     }
@@ -425,6 +427,7 @@ public partial class Main : DoubleBufferedControl
         var applySettings = _applySettings;
         _applySettings = false;
         LoadProtectSettings();
+        LoadHealingSettings();
         _applySettings = applySettings;
 
         listViewGroups.Items.Clear();

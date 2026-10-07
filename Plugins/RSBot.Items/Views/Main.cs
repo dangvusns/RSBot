@@ -25,6 +25,11 @@ public partial class Main : DoubleBufferedControl
     private List<RefShopGroup> _protectorTrader;
     private List<RefShopGroup> _stableKeeper;
     private List<RefShopGroup> _weaponTrader;
+
+    /// <summary>
+    ///     The index of the filter row a mouse drag selection started on, -1 when not dragging.
+    /// </summary>
+    private int _dragAnchorIndex = -1;
     private bool _loadingSettings;
 
     /// <summary>
@@ -39,6 +44,13 @@ public partial class Main : DoubleBufferedControl
 
         listShoppingList.SmallImageList = ListViewExtensions.StaticItemsImageList;
         listAvailableProducts.SmallImageList = ListViewExtensions.StaticItemsImageList;
+
+        listFilter.MultiSelect = true;
+        listFilter.HideSelection = false;
+        listFilter.KeyDown += listFilter_KeyDown;
+        listFilter.MouseDown += listFilter_MouseDown;
+        listFilter.MouseMove += listFilter_MouseMove;
+        listFilter.MouseUp += (_, _) => _dragAnchorIndex = -1;
     }
 
     /// <summary>
@@ -629,7 +641,8 @@ public partial class Main : DoubleBufferedControl
 
     private void contextList_Opening(object sender, CancelEventArgs e)
     {
-        if (listFilter.SelectedItems.Count != 1)
+        var codeNames = GetSelectedFilterCodeNames();
+        if (codeNames.Count == 0)
         {
             btnAddToSell.Checked = false;
             btnAddToStore.Checked = false;
@@ -638,13 +651,103 @@ public partial class Main : DoubleBufferedControl
             return;
         }
 
-        var item = listFilter.SelectedItems[0];
-        var codeName = (string)item.Tag;
+        // A mark is shown only when every selected item has it.
+        var sell = ShoppingManager.SellFilter.ToHashSet();
+        var store = ShoppingManager.StoreFilter.ToHashSet();
+        var pickup = PickupManager.PickupFilter.Where(p => !p.PickOnlyChar).Select(p => p.CodeName).ToHashSet();
+        var pickupChar = PickupManager.PickupFilter.Where(p => p.PickOnlyChar).Select(p => p.CodeName).ToHashSet();
 
-        btnAddToSell.Checked = ShoppingManager.SellFilter.Contains(codeName);
-        btnAddToStore.Checked = ShoppingManager.StoreFilter.Contains(codeName);
-        btnPickup.Checked = PickupManager.PickupFilter.Any(p => p.CodeName == codeName && !p.PickOnlyChar);
-        btnPickOnlyCharacter.Checked = PickupManager.PickupFilter.Any(p => p.CodeName == codeName && p.PickOnlyChar);
+        btnAddToSell.Checked = codeNames.All(sell.Contains);
+        btnAddToStore.Checked = codeNames.All(store.Contains);
+        btnPickup.Checked = codeNames.All(pickup.Contains);
+        btnPickOnlyCharacter.Checked = codeNames.All(pickupChar.Contains);
+    }
+
+    /// <summary>
+    ///     Gets the code names of the selected filter items.
+    /// </summary>
+    private List<string> GetSelectedFilterCodeNames()
+    {
+        return listFilter.SelectedItems.Cast<ListViewItem>().Select(item => (string)item.Tag).ToList();
+    }
+
+    /// <summary>
+    ///     Sets the text of a column for all selected filter items.
+    /// </summary>
+    private void SetSelectedFilterColumn(int column, string text)
+    {
+        listFilter.BeginUpdate();
+
+        foreach (ListViewItem item in listFilter.SelectedItems)
+            item.SubItems[column].Text = text;
+
+        listFilter.EndUpdate();
+    }
+
+    /// <summary>
+    ///     Adds or removes the code names from a filter list.
+    /// </summary>
+    private static void UpdateFilterList(List<string> filter, IEnumerable<string> codeNames, bool add)
+    {
+        var set = codeNames.ToHashSet();
+
+        filter.RemoveAll(set.Contains);
+        if (add)
+            filter.AddRange(set);
+    }
+
+    private void listFilter_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (!e.Control || e.KeyCode != Keys.A)
+            return;
+
+        listFilter.BeginUpdate();
+
+        foreach (ListViewItem item in listFilter.Items)
+            item.Selected = true;
+
+        listFilter.EndUpdate();
+
+        e.Handled = true;
+        e.SuppressKeyPress = true;
+    }
+
+    private void listFilter_MouseDown(object sender, MouseEventArgs e)
+    {
+        _dragAnchorIndex = -1;
+
+        if (e.Button != MouseButtons.Left || ModifierKeys != Keys.None)
+            return;
+
+        _dragAnchorIndex = listFilter.GetItemAt(e.X, e.Y)?.Index ?? -1;
+    }
+
+    /// <summary>
+    ///     Selects all rows between the row the mouse was pressed on and the row under the mouse.
+    /// </summary>
+    private void listFilter_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (_dragAnchorIndex < 0 || e.Button != MouseButtons.Left)
+            return;
+
+        var current = listFilter.GetItemAt(e.X, e.Y);
+        if (current == null)
+            return;
+
+        var from = Math.Min(_dragAnchorIndex, current.Index);
+        var to = Math.Max(_dragAnchorIndex, current.Index);
+
+        listFilter.BeginUpdate();
+
+        foreach (ListViewItem item in listFilter.Items)
+        {
+            var selected = item.Index >= from && item.Index <= to;
+            if (item.Selected != selected)
+                item.Selected = selected;
+        }
+
+        listFilter.EndUpdate();
+        current.EnsureVisible();
     }
 
     #region Shopping manager
@@ -786,13 +889,8 @@ public partial class Main : DoubleBufferedControl
     /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
     private void btnAddToSell_Click(object sender, EventArgs e)
     {
-        foreach (ListViewItem item in listFilter.SelectedItems)
-        {
-            item.SubItems[4].Text = "√";
-
-            ShoppingManager.SellFilter.Remove((string)item.Tag);
-            ShoppingManager.SellFilter.Add((string)item.Tag);
-        }
+        SetSelectedFilterColumn(4, "√");
+        UpdateFilterList(ShoppingManager.SellFilter, GetSelectedFilterCodeNames(), true);
 
         ShoppingManager.SaveFilters();
     }
@@ -804,13 +902,8 @@ public partial class Main : DoubleBufferedControl
     /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
     private void btnPickup_Click(object sender, EventArgs e)
     {
-        foreach (ListViewItem item in listFilter.SelectedItems)
-        {
-            item.SubItems[3].Text = "√";
-
-            PickupManager.RemoveFilter((string)item.Tag);
-            PickupManager.AddFilter((string)item.Tag);
-        }
+        SetSelectedFilterColumn(3, "√");
+        PickupManager.AddFilters(GetSelectedFilterCodeNames());
     }
 
     /// <summary>
@@ -820,12 +913,8 @@ public partial class Main : DoubleBufferedControl
     /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
     private void btnPickOnlyCharacter_Click(object sender, EventArgs e)
     {
-        foreach (ListViewItem item in listFilter.SelectedItems)
-        {
-            item.SubItems[3].Text = "√ (C)";
-            PickupManager.RemoveFilter((string)item.Tag);
-            PickupManager.AddFilter((string)item.Tag, true);
-        }
+        SetSelectedFilterColumn(3, "√ (C)");
+        PickupManager.AddFilters(GetSelectedFilterCodeNames(), true);
     }
 
     /// <summary>
@@ -835,13 +924,8 @@ public partial class Main : DoubleBufferedControl
     /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
     private void btnAddToStore_Click(object sender, EventArgs e)
     {
-        foreach (ListViewItem item in listFilter.SelectedItems)
-        {
-            item.SubItems[5].Text = "√";
-
-            ShoppingManager.StoreFilter.Remove((string)item.Tag);
-            ShoppingManager.StoreFilter.Add((string)item.Tag);
-        }
+        SetSelectedFilterColumn(5, "√");
+        UpdateFilterList(ShoppingManager.StoreFilter, GetSelectedFilterCodeNames(), true);
 
         ShoppingManager.SaveFilters();
     }
@@ -853,11 +937,8 @@ public partial class Main : DoubleBufferedControl
     /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
     private void btnDontSell_Click(object sender, EventArgs e)
     {
-        foreach (ListViewItem item in listFilter.SelectedItems)
-        {
-            item.SubItems[4].Text = "•";
-            ShoppingManager.SellFilter.Remove((string)item.Tag);
-        }
+        SetSelectedFilterColumn(4, "•");
+        UpdateFilterList(ShoppingManager.SellFilter, GetSelectedFilterCodeNames(), false);
 
         ShoppingManager.SaveFilters();
     }
@@ -869,11 +950,8 @@ public partial class Main : DoubleBufferedControl
     /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
     private void btnDontStore_Click(object sender, EventArgs e)
     {
-        foreach (ListViewItem item in listFilter.SelectedItems)
-        {
-            item.SubItems[5].Text = "•";
-            ShoppingManager.StoreFilter.Remove((string)item.Tag);
-        }
+        SetSelectedFilterColumn(5, "•");
+        UpdateFilterList(ShoppingManager.StoreFilter, GetSelectedFilterCodeNames(), false);
 
         ShoppingManager.SaveFilters();
     }
@@ -885,13 +963,8 @@ public partial class Main : DoubleBufferedControl
     /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
     private void btnDontPickup_Click(object sender, EventArgs e)
     {
-        foreach (ListViewItem item in listFilter.SelectedItems)
-        {
-            item.SubItems[3].Text = "•";
-            PickupManager.RemoveFilter((string)item.Tag);
-        }
-
-        ShoppingManager.SaveFilters();
+        SetSelectedFilterColumn(3, "•");
+        PickupManager.RemoveFilters(GetSelectedFilterCodeNames());
     }
 
     /// <summary>

@@ -27,6 +27,16 @@ public partial class Main : DoubleBufferedControl
     private readonly object _lock;
 
     /// <summary>
+    ///     Shows the stats of the selected item.
+    /// </summary>
+    private RichTextBox _itemDetails;
+
+    /// <summary>
+    ///     The font of the item name in the details panel.
+    /// </summary>
+    private Font _itemDetailsTitleFont;
+
+    /// <summary>
     ///     <inheritdoc />
     /// </summary>
     private int _selectedIndex;
@@ -45,6 +55,87 @@ public partial class Main : DoubleBufferedControl
         var backColor = ColorScheme.BorderColor.Determine().Alpha(85);
         buttonInventory.ForeColor = backColor.Determine();
         buttonInventory.Color = backColor;
+
+        InitializeDetailsPanel();
+    }
+
+    /// <summary>
+    ///     Creates the panel that shows the white and blue stats of the selected item.
+    /// </summary>
+    private void InitializeDetailsPanel()
+    {
+        _itemDetails = new RichTextBox
+        {
+            Name = "itemDetails",
+            Dock = DockStyle.Right,
+            Width = LogicalToDeviceUnits(260),
+            ReadOnly = true,
+            BorderStyle = BorderStyle.None,
+            BackColor = Color.FromArgb(24, 24, 28),
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI", 9F),
+            ScrollBars = RichTextBoxScrollBars.Vertical,
+            DetectUrls = false,
+            TabStop = false,
+        };
+
+        _itemDetailsTitleFont = new Font(_itemDetails.Font, FontStyle.Bold);
+
+        // Docked after the top/bottom panels and before the list that fills the rest.
+        Controls.Add(_itemDetails);
+        Controls.SetChildIndex(_itemDetails, 1);
+
+        listViewMain.SelectedIndexChanged += (_, _) => ShowItemDetails(GetSelectedInventoryItem());
+    }
+
+    /// <summary>
+    ///     Gets the item of the selected row.
+    /// </summary>
+    private InventoryItem GetSelectedInventoryItem()
+    {
+        return listViewMain.SelectedItems.Count == 1 ? listViewMain.SelectedItems[0].Tag as InventoryItem : null;
+    }
+
+    /// <summary>
+    ///     Writes the description of the item into the details panel.
+    /// </summary>
+    private void ShowItemDetails(InventoryItem item)
+    {
+        if (_itemDetails == null)
+            return;
+
+        if (_itemDetails.InvokeRequired)
+        {
+            _itemDetails.BeginInvoke((MethodInvoker)(() => ShowItemDetails(item)));
+            return;
+        }
+
+        _itemDetails.Clear();
+
+        if (item == null)
+            return;
+
+        foreach (var line in item.GetDescriptionLines())
+        {
+            _itemDetails.SelectionStart = _itemDetails.TextLength;
+            _itemDetails.SelectionColor = line.Kind switch
+            {
+                ItemDescriptionLineKind.Title => Color.FromArgb(255, 214, 102),
+                ItemDescriptionLineKind.WhiteStat => Color.White,
+                ItemDescriptionLineKind.BlueStat => Color.FromArgb(80, 160, 255),
+                ItemDescriptionLineKind.Binding => Color.FromArgb(255, 150, 60),
+                _ => Color.Silver,
+            };
+            _itemDetails.SelectionFont = line.Kind == ItemDescriptionLineKind.Title ? _itemDetailsTitleFont : _itemDetails.Font;
+
+            _itemDetails.AppendText(line.Text + Environment.NewLine);
+
+            if (line.Kind == ItemDescriptionLineKind.Title)
+                _itemDetails.AppendText(Environment.NewLine);
+        }
+
+        _itemDetails.SelectionStart = 0;
+        _itemDetails.ScrollToCaret();
     }
 
     /// <summary>
@@ -92,6 +183,13 @@ public partial class Main : DoubleBufferedControl
                 listViewItem.SubItems[2].Text = inventoryItem.Record.GetRarityName();
 
             listViewItem.LoadItemImageAsync(inventoryItem.Record);
+            if (_selectedIndex == 0)
+            {
+                listViewItem.Tag = inventoryItem;
+
+                if (listViewItem.Selected)
+                    ShowItemDetails(inventoryItem);
+            }
         }
     }
 
@@ -110,6 +208,7 @@ public partial class Main : DoubleBufferedControl
         {
             listViewMain.BeginUpdate();
             listViewMain.Items.Clear();
+            ShowItemDetails(null);
 
             switch (_selectedIndex)
             {
