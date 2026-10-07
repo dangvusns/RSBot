@@ -464,6 +464,8 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
         _lblSaved = CreateWrappingLabel("SaveStatus",
             "Changes apply immediately and are saved automatically.");
         var modeDescription = CreateWrappingLabel("ExchangeModeDescription");
+        // It only repeated the selected mode under the drop-down
+        modeDescription.Visible = false;
         var content = CreateLayout(1);
         content.Dock = DockStyle.Top;
         content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));

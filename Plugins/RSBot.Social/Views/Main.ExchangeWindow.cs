@@ -42,6 +42,13 @@ public partial class Main
 
     private const string ShowRequestsKey = "RSBot.Social.Exchange.ShowRequests";
 
+    private readonly List<SDUI.Controls.Button> _exchangeButtons = new();
+
+    /// <summary>
+    ///     The last error, kept on screen after the server closed the exchange because of it.
+    /// </summary>
+    private string _lastExchangeError;
+
     private bool _exchangeConfirmed;
     private bool _exchangePartnerConfirmed;
 
@@ -55,14 +62,14 @@ public partial class Main
             Name = "ExchangeWindow",
             Dock = DockStyle.Fill,
             ColumnCount = 5,
-            RowCount = 5,
+            RowCount = 6,
             BackColor = Color.Transparent,
             Padding = new Padding(0, Px(8), 0, 0),
             MinimumSize = new Size(Px(760), Px(380)),
         };
         window.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 22));
         window.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 26));
-        window.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        window.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(64)));
         window.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 26));
         window.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 26));
         window.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // requests
@@ -70,6 +77,7 @@ public partial class Main
         window.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // lists
         window.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // refresh, gold
         window.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // confirm, approve, cancel
+        window.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // status
 
         // Row 0: incoming requests
         _checkShowRequests = new SDUI.Controls.CheckBox { AutoSize = true, Text = "Show requests", UseVisualStyleBackColor = false };
@@ -124,7 +132,9 @@ public partial class Main
         var arrows = new FlowLayoutPanel
         {
             AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             Anchor = AnchorStyles.None,
+            Margin = Padding.Empty,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
             BackColor = Color.Transparent,
@@ -146,7 +156,16 @@ public partial class Main
         window.Controls.Add(CreateFlow(CreateExchangeButton("RefreshPlayers", "Refresh", RefreshExchangePlayers), _btnInvite), 0, 3);
         window.Controls.Add(CreateFlow(CreateExchangeButton("RefreshInventory", "Refresh", RefreshExchangeInventory)), 1, 3);
 
-        _txtMyGold = new TextBox { Name = "ExchangeGold", Width = Px(130), Text = "0", TextAlign = HorizontalAlignment.Right };
+        var myGoldLabel = new System.Windows.Forms.Label { AutoSize = true, Text = "Gold:", Margin = new Padding(0, Px(11), Px(6), 0) };
+        Localize(myGoldLabel, "ExchangeMyGold", "Gold:");
+        _txtMyGold = new TextBox
+        {
+            Name = "ExchangeGold",
+            Width = Px(130),
+            Text = "0",
+            TextAlign = HorizontalAlignment.Right,
+            Margin = new Padding(0, Px(8), Px(6), 0),
+        };
         _txtMyGold.KeyDown += (s, e) =>
         {
             if (e.KeyCode != Keys.Enter) return;
@@ -154,20 +173,34 @@ public partial class Main
             SetExchangeGold();
         };
         _btnSetGold = CreateExchangeButton("SetGold", "G", SetExchangeGold);
-        _btnSetGold.MinimumSize = new Size(Px(40), Px(30));
-        window.Controls.Add(CreateFlow(_txtMyGold, _btnSetGold), 3, 3);
+        window.Controls.Add(CreateFlow(myGoldLabel, _txtMyGold, _btnSetGold), 3, 3);
 
-        _lblPartnerGold = new System.Windows.Forms.Label { AutoSize = true, Text = "Gold: 0", Margin = new Padding(0, Px(10), 0, 0) };
+        _lblPartnerGold = new System.Windows.Forms.Label { AutoSize = true, Text = "Gold: 0", Margin = new Padding(0, Px(11), 0, 0) };
         window.Controls.Add(_lblPartnerGold, 4, 3);
 
         // Row 4: confirm, approve, cancel
         _btnConfirm = CreateExchangeButton("Confirm", "Confirm", () => Game.Player?.Exchange?.Confirm());
         _btnApprove = CreateExchangeButton("Approve", "Approve", () => Game.Player?.Exchange?.Approve());
         _btnCancel = CreateExchangeButton("Cancel", "Cancel", () => Game.Player?.Exchange?.Cancel());
-        _lblExchangeStatus = new System.Windows.Forms.Label { AutoSize = true, UseMnemonic = false, Margin = new Padding(Px(12), Px(10), 0, 0) };
-        var actions = CreateFlow(_btnConfirm, _btnApprove, _btnCancel, _lblExchangeStatus);
+        var actions = CreateFlow(_btnConfirm, _btnApprove, _btnCancel);
         window.Controls.Add(actions, 0, 4);
         window.SetColumnSpan(actions, 5);
+
+        // Row 5: status, on its own row so a long text never runs under the buttons
+        _lblExchangeStatus = new System.Windows.Forms.Label
+        {
+            AutoSize = true,
+            UseMnemonic = false,
+            Margin = new Padding(0, Px(4), 0, Px(4)),
+        };
+        window.Controls.Add(_lblExchangeStatus, 0, 5);
+        window.SetColumnSpan(_lblExchangeStatus, 5);
+
+        // SDUI buttons do not size themselves to the caption; size them now and after a language or font change
+        FitExchangeButtons();
+        _translations.Add(FitExchangeButtons);
+        window.FontChanged += (s, e) => FitExchangeButtons();
+        window.DpiChangedAfterParent += (s, e) => FitExchangeButtons();
 
         // Below the invitation settings, which are docked to the top
         tabExchange.Controls.Add(window);
@@ -195,10 +228,16 @@ public partial class Main
             _exchangeConfirmed = false;
             _exchangePartnerConfirmed = false;
             _txtMyGold.Text = "0";
+            _lastExchangeError = null;
             UpdateRequestRow();
             UpdateExchangeState();
         }));
-        EventManager.SubscribeEvent("OnUpdateExchangeItems", () => OnUi(UpdateExchangeState));
+        EventManager.SubscribeEvent("OnUpdateExchangeItems", () => OnUi(() =>
+        {
+            // The offer changed after the error, so the error no longer explains the state
+            _lastExchangeError = null;
+            UpdateExchangeState();
+        }));
         EventManager.SubscribeEvent("OnExchangeConfirmed", () => OnUi(() =>
         {
             _exchangeConfirmed = true;
@@ -210,6 +249,18 @@ public partial class Main
             UpdateExchangeState();
         }));
         EventManager.SubscribeEvent("OnApproveExchange", () => OnUi(EndExchange));
+        EventManager.SubscribeEvent("OnExchangeOperationFailed", new Action<string>(message => OnUi(() => ShowExchangeError(message))));
+        EventManager.SubscribeEvent("OnExchangeApproveFailed", new Action<ushort>(code =>
+            OnUi(() => ShowExchangeError(string.Format(TextFor("ExchangeApproveFailed", "Could not approve: {0}."), ExchangeErrors.Describe(code))))));
+        EventManager.SubscribeEvent("OnExchangeCanceledReason", new Action<ushort>(code =>
+            OnUi(() =>
+            {
+                _lastExchangeError ??= string.Format(TextFor("ExchangeCanceledReason", "The exchange was canceled: {0}."), ExchangeErrors.Describe(code));
+
+                // The events can arrive in any order; refresh in case the cancel was already shown
+                if (Game.Player?.Exchange == null)
+                    UpdateExchangeState();
+            })));
         EventManager.SubscribeEvent("OnCancelExchange", () => OnUi(EndExchange));
     }
 
@@ -269,19 +320,63 @@ public partial class Main
     {
         var button = new SDUI.Controls.Button
         {
-            AutoSize = true,
-            MinimumSize = new Size(Px(text.Length <= 2 ? 48 : 90), Px(30)),
+            AutoSize = false,
             Text = text,
             Radius = 6,
             Margin = new Padding(0, Px(4), Px(8), Px(4)),
         };
         button.Click += (s, e) => onClick();
+        _exchangeButtons.Add(button);
 
         // The arrows and the gold button have no words to translate
         if (text.Any(char.IsLetter) && text.Length > 1)
             Localize(button, key, text);
 
         return button;
+    }
+
+    /// <summary>
+    ///     Makes each button as large as its caption: at least 90 x 32 at 96 DPI, 48 wide for the arrows and the gold button.
+    /// </summary>
+    private void FitExchangeButtons()
+    {
+        foreach (var button in _exchangeButtons)
+        {
+            var text = TextRenderer.MeasureText(button.Text, button.Font);
+            var minimumWidth = Px(button.Text.Length <= 2 ? 48 : 90);
+            button.Size = new Size(Math.Max(minimumWidth, text.Width + Px(28)), Math.Max(Px(32), text.Height + Px(12)));
+        }
+    }
+
+    /// <summary>
+    ///     Shows why the last exchange action failed until the next change of the exchange.
+    /// </summary>
+    private void ShowExchangeError(string message)
+    {
+        _lastExchangeError = message;
+        _lblExchangeStatus.Text = message;
+        _lblExchangeStatus.ForeColor = Color.IndianRed;
+    }
+
+    private string GetExchangeStatusText(ExchangeInstance exchange)
+    {
+        if (exchange == null)
+            return TextFor("ExchangeIdle", "No exchange. Select a player and press Exchange.");
+
+        var partner = exchange.ExchangePlayerName;
+
+        if (_exchangeConfirmed && _exchangePartnerConfirmed)
+            return exchange.IsEmpty
+                ? TextFor("ExchangeEmpty", "Both sides confirmed, but nothing is offered: the server would cancel an empty exchange.")
+                : string.Format(TextFor("ExchangeBothConfirmed", "Both sides confirmed with {0}: check the offer, then Approve."), partner);
+
+        if (_exchangeConfirmed)
+            return string.Format(TextFor("ExchangeWaitPartner", "Confirmed, waiting for {0} to confirm."), partner);
+
+        if (_exchangePartnerConfirmed)
+            return string.Format(TextFor("ExchangePartnerConfirmedText", "{0} confirmed. Confirm to continue."), partner);
+
+        return string.Format(TextFor("ExchangeOpen", "Exchanging with {0}."), partner);
     }
 
     #region Requests
@@ -456,15 +551,17 @@ public partial class Main
         if (exchange != null && !_txtMyGold.Focused && exchange.SendingGold > 0)
             _txtMyGold.Text = exchange.SendingGold.ToString("N0");
 
-        _lblExchangeStatus.Text = exchange == null
-            ? TextFor("ExchangeIdle", "No exchange. Select a player and press Exchange.")
-            : _exchangeConfirmed && _exchangePartnerConfirmed
-                ? string.Format(TextFor("ExchangeBothConfirmed", "Both sides confirmed with {0}: check the offer, then Approve."), exchange.ExchangePlayerName)
-                : _exchangeConfirmed
-                    ? string.Format(TextFor("ExchangeWaitPartner", "Confirmed, waiting for {0} to confirm."), exchange.ExchangePlayerName)
-                    : _exchangePartnerConfirmed
-                        ? string.Format(TextFor("ExchangePartnerConfirmedText", "{0} confirmed. Confirm to continue."), exchange.ExchangePlayerName)
-                        : string.Format(TextFor("ExchangeOpen", "Exchanging with {0}."), exchange.ExchangePlayerName);
+        if (exchange == null && _lastExchangeError != null)
+        {
+            // Keep showing why the server closed the exchange
+            _lblExchangeStatus.ForeColor = Color.IndianRed;
+            _lblExchangeStatus.Text = _lastExchangeError;
+        }
+        else
+        {
+            _lblExchangeStatus.ForeColor = SDUI.ColorScheme.ForeColor;
+            _lblExchangeStatus.Text = GetExchangeStatusText(exchange);
+        }
 
         RefreshExchangeInventory();
         UpdateExchangeButtons();
@@ -484,7 +581,7 @@ public partial class Main
         _btnSetGold.Enabled = editable;
         _txtMyGold.Enabled = editable;
         _btnConfirm.Enabled = editable;
-        _btnApprove.Enabled = exchanging && _exchangeConfirmed && _exchangePartnerConfirmed;
+        _btnApprove.Enabled = exchanging && _exchangeConfirmed && _exchangePartnerConfirmed && !Game.Player.Exchange.IsEmpty;
         _btnCancel.Enabled = exchanging;
     }
 

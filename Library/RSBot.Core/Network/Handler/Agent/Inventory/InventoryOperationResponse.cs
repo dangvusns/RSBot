@@ -39,6 +39,7 @@ internal class InventoryOperationResponse : IPacketHandler
             var code = packet.Remaining >= 2 ? packet.ReadUShort() : packet.ReadByte();
 
             Log.Debug($"ItemOperation error received:  [{result:X}] (0x{code:X4})");
+            ReportExchangeError(code);
             return;
         }
 
@@ -233,12 +234,18 @@ internal class InventoryOperationResponse : IPacketHandler
             // The exchange window's contents come with the exchange packets and are applied when the exchange completes
             case InventoryOperation.SP_ADD_EXCHANGE:
             case InventoryOperation.SP_DEL_EXCHANGE:
+                if (Game.Player.Exchange != null)
+                    Game.Player.Exchange.PendingOperation = null;
+
                 break;
 
             case InventoryOperation.SP_UPDATE_EXCHANGE_GOLD:
-                if (Game.Player.Exchange != null && packet.Remaining >= 8)
+                var exchange = Game.Player.Exchange;
+                if (exchange != null)
                 {
-                    Game.Player.Exchange.SendingGold = packet.ReadULong();
+                    // The answer may or may not repeat the amount; otherwise the requested amount was taken
+                    exchange.SendingGold = packet.Remaining >= 8 ? packet.ReadULong() : exchange.PendingGold;
+                    exchange.PendingOperation = null;
                     EventManager.FireEvent("OnUpdateExchangeItems");
                 }
 
@@ -786,5 +793,27 @@ internal class InventoryOperationResponse : IPacketHandler
         }
 
         ShoppingManager.BuybackList = newBuybackList;
+    }
+
+    /// <summary>
+    ///     Explains an error answer to an item or gold operation of the exchange window.
+    /// </summary>
+    private static void ReportExchangeError(ushort code)
+    {
+        var exchange = Game.Player?.Exchange;
+        if (exchange?.PendingOperation == null || Kernel.TickCount - exchange.PendingTick > 3000)
+            return;
+
+        var action = exchange.PendingOperation switch
+        {
+            InventoryOperation.SP_ADD_EXCHANGE => "add the item",
+            InventoryOperation.SP_DEL_EXCHANGE => "take the item back",
+            _ => "change the gold",
+        };
+        exchange.PendingOperation = null;
+
+        var message = $"Could not {action}: {RSBot.Core.Objects.Exchange.ExchangeErrors.Describe(code)}.";
+        Log.Warn($"[Exchange] {message}");
+        EventManager.FireEvent("OnExchangeOperationFailed", message);
     }
 }

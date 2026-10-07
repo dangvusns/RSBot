@@ -68,6 +68,30 @@ public class ExchangeInstance
     public ulong ReceivingGold { get; internal set; }
 
     /// <summary>
+    ///     Gets a value indicating whether neither side offers items or gold; the server refuses to approve that.
+    /// </summary>
+    public bool IsEmpty =>
+        (SendingItems?.Count ?? 0) == 0 && (ReceivingItems?.Count ?? 0) == 0 && SendingGold == 0 && ReceivingGold == 0;
+
+    /// <summary>
+    ///     The last item or gold operation sent, to explain an error answer of the server.
+    /// </summary>
+    internal InventoryOperation? PendingOperation { get; set; }
+
+    internal int PendingTick { get; set; }
+
+    /// <summary>
+    ///     The gold amount of the last gold operation sent.
+    /// </summary>
+    internal ulong PendingGold { get; set; }
+
+    private void SetPending(InventoryOperation operation)
+    {
+        PendingOperation = operation;
+        PendingTick = Kernel.TickCount;
+    }
+
+    /// <summary>
     ///     Invites the specified player to an exchange (0x7081).
     /// </summary>
     /// <param name="playerUniqueId">The unique id of the player.</param>
@@ -89,6 +113,8 @@ public class ExchangeInstance
         packet.WriteByte(InventoryOperation.SP_ADD_EXCHANGE);
         packet.WriteByte(inventorySlot);
 
+        SetPending(InventoryOperation.SP_ADD_EXCHANGE);
+
         PacketManager.SendPacket(packet, PacketDestination.Server);
     }
 
@@ -102,6 +128,8 @@ public class ExchangeInstance
         packet.WriteByte(InventoryOperation.SP_DEL_EXCHANGE);
         packet.WriteByte(exchangeSlot);
 
+        SetPending(InventoryOperation.SP_DEL_EXCHANGE);
+
         PacketManager.SendPacket(packet, PacketDestination.Server);
     }
 
@@ -114,6 +142,9 @@ public class ExchangeInstance
         var packet = new Packet(0x7034);
         packet.WriteByte(InventoryOperation.SP_UPDATE_EXCHANGE_GOLD);
         packet.WriteULong(gold);
+
+        SetPending(InventoryOperation.SP_UPDATE_EXCHANGE_GOLD);
+        PendingGold = gold;
 
         PacketManager.SendPacket(packet, PacketDestination.Server);
     }

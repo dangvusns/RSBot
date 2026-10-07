@@ -119,8 +119,19 @@ internal static class ExchangeAutomation
         if (_approved || !_partnerConfirmed || !_selfConfirmed || !PlayerConfig.Get(AutoApproveKey, false))
             return;
 
+        var exchange = Game.Player?.Exchange;
+        if (exchange == null)
+            return;
+
+        // The server cancels an exchange that is approved with nothing on either side
+        if (exchange.IsEmpty)
+        {
+            Log.Notify("[Social] Not approving the exchange: neither side offers items or gold");
+            return;
+        }
+
         _approved = true;
-        Game.Player?.Exchange?.Approve();
+        exchange.Approve();
     }
 
     private static void Reset()

@@ -1,5 +1,6 @@
 using RSBot.Core.Event;
 using RSBot.Core.Objects;
+using RSBot.Core.Objects.Exchange;
 
 namespace RSBot.Core.Network.Handler.Agent.Exchange;
 
@@ -43,7 +44,7 @@ internal class ExchangeApproveResponse : IPacketHandler
             return;
 
         var errorCode = result == 2 && packet.Remaining >= 2 ? packet.ReadUShort() : (ushort)0;
-        Log.Warn($"The exchange could not be approved (result {result}, code 0x{errorCode:X4}).");
+        Log.Warn($"The exchange could not be approved: {ExchangeErrors.Describe(errorCode)}.");
 
         EventManager.FireEvent("OnExchangeApproveFailed", errorCode);
     }
@@ -65,6 +66,14 @@ internal class ExchangeCancelResponse : IPacketHandler
             return;
 
         var errorCode = result == 2 && packet.Remaining >= 2 ? packet.ReadUShort() : (ushort)0;
-        Log.Warn($"The exchange could not be canceled (result {result}, code 0x{errorCode:X4}).");
+
+        // The game client often cancels once more after the server already closed the exchange
+        if (errorCode == ExchangeErrors.NoExchange || Game.Player?.Exchange == null)
+        {
+            Log.Debug($"Exchange cancel answered: {ExchangeErrors.Describe(errorCode)}.");
+            return;
+        }
+
+        Log.Warn($"The exchange could not be canceled: {ExchangeErrors.Describe(errorCode)}.");
     }
 }
