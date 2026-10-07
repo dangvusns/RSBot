@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using RSBot.Core;
@@ -19,7 +19,33 @@ internal static class PacketHub
 
     private static int _queued;
     private static volatile bool _liveCapture;
+    private static volatile bool _viewActive;
     private static bool _subscribed;
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether the live view is shown. Live capture only runs while it is,
+    ///     a hidden view would only keep thousands of copied packets in memory.
+    /// </summary>
+    public static bool ViewActive
+    {
+        get => _viewActive;
+        set
+        {
+            if (_viewActive == value)
+                return;
+
+            _viewActive = value;
+
+            if (!value)
+            {
+                _viewQueue.Clear();
+                Interlocked.Exchange(ref _queued, 0);
+            }
+
+            if (Recorder != null)
+                UpdateSubscription();
+        }
+    }
 
     public static PacketFilter ViewFilter { get; } = new("View");
     public static PacketFilter RecordFilter { get; } = new("Record");
@@ -76,7 +102,7 @@ internal static class PacketHub
     {
         lock (_lock)
         {
-            var required = _liveCapture || Recorder.IsRecording;
+            var required = (_liveCapture && _viewActive) || Recorder.IsRecording;
 
             if (required && !_subscribed)
                 PacketMonitor.Captured += OnCaptured;
@@ -95,7 +121,7 @@ internal static class PacketHub
         Recorder.OnCapture(capture);
 
         // Filtered here instead of in the view, so noisy opcodes do not fill the queue.
-        if (!_liveCapture || !ViewFilter.Matches(capture))
+        if (!_liveCapture || !_viewActive || !ViewFilter.Matches(capture))
             return;
 
         _viewQueue.Enqueue(capture);

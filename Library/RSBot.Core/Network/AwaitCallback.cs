@@ -133,7 +133,7 @@ public class AwaitCallback
         }
         catch (Exception ex)
         {
-            Log.Debug($"Callback predicate threw an exception: {ex.Message}\n{ex.StackTrace}");
+            Log.Debug(() => $"Callback predicate threw an exception: {ex.Message}\n{ex.StackTrace}");
         }
 
         switch (result)
@@ -191,7 +191,7 @@ public class AwaitCallback
         if (!task.IsCompleted)
         {
             _timeout = true;
-            Log.Debug($"Callback timeout, ResponseOpcode: 0x{ResponseOpcode:X}");
+            Log.Debug(() => $"Callback timeout, ResponseOpcode: 0x{ResponseOpcode:X}");
         }
     }
 
@@ -217,7 +217,7 @@ public class AwaitCallback
             if (!cancellationToken.IsCancellationRequested)
             {
                 _timeout = true;
-                Log.Debug($"Callback timeout, ResponseOpcode: 0x{ResponseOpcode:X}");
+                Log.Debug(() => $"Callback timeout, ResponseOpcode: 0x{ResponseOpcode:X}");
             }
         }
     }

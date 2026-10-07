@@ -27,6 +27,13 @@ public partial class Main : DoubleBufferedControl
     private readonly object _lock;
 
     /// <summary>
+    ///     The items used at the training place, parsed once per list rebuild.
+    /// </summary>
+    private System.Collections.Generic.HashSet<string> _itemsAtTrainingPlace;
+
+    private Font _boldItemFont;
+
+    /// <summary>
     ///     Shows the stats of the selected item.
     /// </summary>
     private RichTextBox _itemDetails;
@@ -160,6 +167,9 @@ public partial class Main : DoubleBufferedControl
     /// <param name="slot"></param>
     private void OnUpdateInventoryItem(byte slot)
     {
+        if (!Visible)
+            return;
+
         var key = slot.ToString();
         if (!listViewMain.Items.ContainsKey(key))
             return;
@@ -200,6 +210,8 @@ public partial class Main : DoubleBufferedControl
     {
         if (!Visible)
             return;
+
+        _itemsAtTrainingPlace = null;
 
         if (Game.Player == null)
             return;
@@ -419,10 +431,10 @@ public partial class Main : DoubleBufferedControl
 
         if (_selectedIndex == 0)
         {
-            var useItemsAtTrainingPlace = PlayerConfig.GetArray<string>("RSBot.Inventory.ItemsAtTrainplace");
+            _itemsAtTrainingPlace ??= PlayerConfig.GetArray<string>("RSBot.Inventory.ItemsAtTrainplace").ToHashSet();
 
-            if (useItemsAtTrainingPlace.Contains(item.Record.CodeName))
-                lvItem.Font = new Font(lvItem.Font, FontStyle.Bold);
+            if (_itemsAtTrainingPlace.Contains(item.Record.CodeName))
+                lvItem.Font = _boldItemFont ??= new Font(lvItem.Font, FontStyle.Bold);
         }
 
         lvItem.LoadItemImageAsync(item.Record);

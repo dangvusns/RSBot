@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -44,6 +44,10 @@ public partial class Main : DoubleBufferedControl
         ColorScheme.ThemeChanged += (_, _) => ApplyTheme();
 
         timerRefresh.Start();
+
+        // Capture packets for the list only while it can be seen
+        VisibleChanged += (_, _) => PacketHub.ViewActive = Visible;
+        Disposed += (_, _) => PacketHub.ViewActive = false;
     }
 
     private PacketFilter EditedFilter =>
@@ -159,6 +163,9 @@ public partial class Main : DoubleBufferedControl
 
     private void timerRefresh_Tick(object sender, EventArgs e)
     {
+        if (!Visible)
+            return;
+
         UpdateStatus();
 
         _drained.Clear();

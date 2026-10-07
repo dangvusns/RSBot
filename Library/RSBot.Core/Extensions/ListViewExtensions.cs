@@ -1,4 +1,6 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using RSBot.Core.Client.ReferenceObjects;
@@ -27,6 +29,40 @@ public static class ListViewExtensions
         StaticImageList = new ImageList { ColorDepth = ColorDepth.Depth32Bit, ImageSize = new Size(32, 32) };
 
         StaticItemsImageList = new ImageList { ColorDepth = ColorDepth.Depth32Bit, ImageSize = new Size(32, 32) };
+
+        // With the native list created, added images are copied right away, so the decoded icon can be disposed
+        try
+        {
+            _ = StaticImageList.Handle;
+            _ = StaticItemsImageList.Handle;
+        }
+        catch (Exception e)
+        {
+            System.Diagnostics.Debug.WriteLine($"Image lists could not be created early: {e.Message}");
+        }
+    }
+
+    /// <summary>
+    ///     The keys already added to the image lists. <see cref="ImageList.ImageCollection.ContainsKey" /> is a linear search.
+    /// </summary>
+    private static readonly HashSet<string> _imageKeys = new();
+    private static readonly HashSet<string> _itemImageKeys = new();
+
+    /// <summary>
+    ///     Adds the icon to the image list once. Call inside <see cref="_lock" />.
+    /// </summary>
+    private static void AddOnce(ImageList imageList, HashSet<string> keys, string key, Func<Image> createIcon)
+    {
+        if (keys.Contains(key))
+            return;
+
+        var icon = createIcon();
+        imageList.Images.Add(key, icon);
+        keys.Add(key);
+
+        // Before the native list exists the image list keeps the original image
+        if (imageList.HandleCreated)
+            icon.Dispose();
     }
 
     /// <summary>
@@ -46,8 +82,7 @@ public static class ListViewExtensions
                 if (listViewItem.Tag is SkillInfo skill)
                 {
                     var imageKey = "skill:" + skill.Id;
-                    if (!StaticImageList.Images.ContainsKey(imageKey))
-                        StaticImageList.Images.Add(imageKey, skill.Record.GetIcon());
+                    AddOnce(StaticImageList, _imageKeys, imageKey, () => skill.Record.GetIcon());
 
                     //Renders the image
                     listViewItem.ImageKey = imageKey;
@@ -56,8 +91,7 @@ public static class ListViewExtensions
                 if (listViewItem.Tag is ItemPerk perk)
                 {
                     var imageKey = "perk:" + perk.ItemId;
-                    if (!StaticImageList.Images.ContainsKey(imageKey))
-                        StaticImageList.Images.Add(imageKey, perk.Item?.GetIcon() ?? new Bitmap(0, 0));
+                    AddOnce(StaticImageList, _imageKeys, imageKey, () => perk.Item?.GetIcon() ?? new Bitmap(1, 1));
 
                     listViewItem.ImageKey = imageKey;
                 }
@@ -79,8 +113,7 @@ public static class ListViewExtensions
         lock (_lock)
         {
             //No need to reload the image from the PK2
-            if (!StaticItemsImageList.Images.ContainsKey(item.CodeName))
-                StaticItemsImageList.Images.Add(item.CodeName, item.GetIcon());
+            AddOnce(StaticItemsImageList, _itemImageKeys, item.CodeName, item.GetIcon);
 
             //Renders the image
             listViewItem.ImageKey = item.CodeName;

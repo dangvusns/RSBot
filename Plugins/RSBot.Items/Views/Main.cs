@@ -316,13 +316,22 @@ public partial class Main : DoubleBufferedControl
     {
         listFilter.BeginUpdate();
 
+        // Looked up once per row; the filter lists are searched linearly otherwise
+        var pickup = new Dictionary<string, bool>();
+        foreach (var filter in PickupManager.PickupFilter)
+            if (filter.CodeName != null)
+                pickup.TryAdd(filter.CodeName, filter.PickOnlyChar);
+
+        var sell = ShoppingManager.SellFilter.ToHashSet();
+        var store = ShoppingManager.StoreFilter.ToHashSet();
+        var drop = ShoppingManager.DropFilter.ToHashSet();
+
         string getSubItemString(RefObjItem item)
         {
-            var filter = PickupManager.PickupFilter.Find(p => p.CodeName == item.CodeName);
-            if (string.IsNullOrWhiteSpace(filter.CodeName))
+            if (!pickup.TryGetValue(item.CodeName, out var pickOnlyChar))
                 return "•";
 
-            if (filter.PickOnlyChar)
+            if (pickOnlyChar)
                 return "√ (C)";
 
             return "√";
@@ -342,9 +351,9 @@ public partial class Main : DoubleBufferedControl
                     $"{item.ReqLevel1} (Dg.{item.Degree})",
                     ((ObjectGender)item.ReqGender).ToString(),
                     getSubItemString(item),
-                    ShoppingManager.SellFilter.Contains(item.CodeName) ? "√" : "•",
-                    ShoppingManager.StoreFilter.Contains(item.CodeName) ? "√" : "•",
-                    ShoppingManager.DropFilter.Contains(item.CodeName) ? "√" : "•",
+                    sell.Contains(item.CodeName) ? "√" : "•",
+                    store.Contains(item.CodeName) ? "√" : "•",
+                    drop.Contains(item.CodeName) ? "√" : "•",
                 },
             };
 

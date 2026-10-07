@@ -9,7 +9,17 @@ namespace RSBot.Core.Event;
 
 public class EventManager
 {
-    private static readonly List<(string name, Delegate handler)> _listeners = new();
+    /// <summary>
+    ///     A subscribed handler with its parameter count, taken once so firing needs no reflection.
+    /// </summary>
+    private readonly record struct Listener(Delegate Handler, int ParameterCount);
+
+    /// <summary>
+    ///     Handlers by event name. The arrays are never changed once published (copy-on-write),
+    ///     so firing reads them without taking the lock.
+    /// </summary>
+    private static volatile Dictionary<string, Listener[]> _listeners = new();
+
     private static readonly object _listenerLock = new();
 
     /// <summary>
@@ -22,8 +32,14 @@ public class EventManager
         if (handler == null)
             return;
 
+        var listener = new Listener(handler, handler.Method.GetParameters().Length);
+
         lock (_listenerLock)
-            _listeners.Add((name, handler));
+        {
+            var listeners = new Dictionary<string, Listener[]>(_listeners);
+            listeners[name] = listeners.TryGetValue(name, out var existing) ? [.. existing, listener] : [listener];
+            _listeners = listeners;
+        }
     }
 
     /// <summary>
@@ -33,11 +49,7 @@ public class EventManager
     /// <param name="handler">The handler.</param>
     public static void SubscribeEvent(string name, Action handler)
     {
-        if (handler == null)
-            return;
-
-        lock (_listenerLock)
-            _listeners.Add((name, handler));
+        SubscribeEvent(name, (Delegate)handler);
     }
 
     /// <summary>
@@ -46,7 +58,22 @@ public class EventManager
     public static void UnsubscribeEvent(string name, Delegate handler)
     {
         lock (_listenerLock)
-            _listeners.RemoveAll(listener => listener.name == name && listener.handler == handler);
+        {
+            if (!_listeners.TryGetValue(name, out var existing))
+                return;
+
+            var remaining = existing.Where(listener => listener.Handler != handler).ToArray();
+            if (remaining.Length == existing.Length)
+                return;
+
+            var listeners = new Dictionary<string, Listener[]>(_listeners);
+            if (remaining.Length == 0)
+                listeners.Remove(name);
+            else
+                listeners[name] = remaining;
+
+            _listeners = listeners;
+        }
     }
 
     /// <summary>
@@ -58,19 +85,24 @@ public class EventManager
     {
         try
         {
-            Delegate[] targets;
-            lock (_listenerLock)
-                targets = (
-                    from listener in _listeners
-                    where listener.name == name && listener.handler.Method.GetParameters().Length == parameters.Length
-                    select listener.handler
-                ).ToArray();
+            // Many events (e.g. one per packet) have no subscribers at all
+            if (!_listeners.TryGetValue(name, out var listeners))
+                return;
 
-            foreach (var target in targets)
-                if (Thread.CurrentThread.Name == "Network.PacketProcessor")
+            var parameterCount = parameters?.Length ?? 0;
+            var onPacketThread = Thread.CurrentThread.Name == "Network.PacketProcessor";
+
+            foreach (var listener in listeners)
+            {
+                if (listener.ParameterCount != parameterCount)
+                    continue;
+
+                var target = listener.Handler;
+                if (onPacketThread)
                     Task.Run(() => InvokeHandler(name, target, parameters));
                 else
                     InvokeHandler(name, target, parameters);
+            }
         }
         catch (Exception e)
         {
@@ -85,7 +117,10 @@ public class EventManager
     {
         try
         {
-            target.DynamicInvoke(parameters);
+            if (target is Action action)
+                action();
+            else
+                target.DynamicInvoke(parameters);
         }
         catch (Exception e)
         {

@@ -477,7 +477,7 @@ public partial class Main : DoubleBufferedControl
             }
         }
 
-        comboLearnMastery.EndUpdate();
+        comboTeleportSkill.EndUpdate();
     }
 
     /// <summary>
@@ -646,7 +646,6 @@ public partial class Main : DoubleBufferedControl
 
             LoadTeleportSkills();
             LoadResurrectionSkills();
-            LoadTeleportSkills();
             LoadImbues();
             LoadBuffs();
             LoadMasteries();
@@ -844,6 +843,14 @@ public partial class Main : DoubleBufferedControl
         finally { graphics.Restore(state); }
     }
 
+    private static readonly SolidBrush CooldownBackgroundBrush = new(Color.FromArgb(100, Color.Black));
+
+    private static readonly StringFormat CenteredFormat = new()
+    {
+        Alignment = StringAlignment.Center,
+        LineAlignment = StringAlignment.Center,
+    };
+
     private void ListSkill_DrawItem(object sender, DrawListViewItemEventArgs e)
     {
         try
@@ -863,21 +870,17 @@ public partial class Main : DoubleBufferedControl
             Rectangle iconRect = listView.GetItemRect(item.Index, ItemBoundsPortion.Icon);
 
             // --- DRAW ICON
-            Image img = null;
-            if (!string.IsNullOrEmpty(item.ImageKey) &&
-                listView.SmallImageList?.Images.ContainsKey(item.ImageKey) == true)
+            // ImageList.Draw paints from the native list; Images[...] would copy the bitmap on every repaint
+            var imageList = listView.SmallImageList;
+            if (imageList != null)
             {
-                img = listView.SmallImageList.Images[item.ImageKey];
-            }
-            else if (item.ImageIndex >= 0 &&
-                     listView.SmallImageList != null &&
-                     item.ImageIndex < listView.SmallImageList.Images.Count)
-            {
-                img = listView.SmallImageList.Images[item.ImageIndex];
-            }
+                var imageIndex = !string.IsNullOrEmpty(item.ImageKey)
+                    ? imageList.Images.IndexOfKey(item.ImageKey)
+                    : item.ImageIndex;
 
-            if (img != null)
-                g.DrawImage(img, iconRect);
+                if (imageIndex >= 0 && imageIndex < imageList.Images.Count)
+                    imageList.Draw(g, iconRect.X, iconRect.Y, iconRect.Width, iconRect.Height, imageIndex);
+            }
 
             // --- TEXT (skill name)
             Rectangle textRect = new Rectangle(
@@ -908,8 +911,7 @@ public partial class Main : DoubleBufferedControl
             if (percent <= 0f)
                 return;
 
-            using var bgbrush = new SolidBrush(Color.FromArgb(100, Color.Black));
-            g.FillRectangle(bgbrush, cooldownRect);
+            g.FillRectangle(CooldownBackgroundBrush, cooldownRect);
 
             DrawRectCooldown(
                 g,
@@ -922,15 +924,7 @@ public partial class Main : DoubleBufferedControl
             int seconds = (int)Math.Ceiling(skill.CooldownRemainingMilliseconds / 1000f);
             string label = seconds > 60 ? (seconds / 60f).ToString("0.0") : seconds.ToString();
 
-            using var sf = new StringFormat
-            {
-                Alignment = StringAlignment.Center,
-                LineAlignment = StringAlignment.Center
-            };
-
-            using var textBrush = new SolidBrush(Color.White);
-
-            g.DrawString(label, listView.Font, textBrush, cooldownRect, sf);
+            g.DrawString(label, listView.Font, Brushes.White, cooldownRect, CenteredFormat);
         }
         catch
         {

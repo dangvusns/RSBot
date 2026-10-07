@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -29,6 +29,13 @@ public partial class Main
     private System.Windows.Forms.ListView _listTown;
     private SDUI.Controls.TextBox _txtTownSearch;
     private bool _populatingTown;
+
+    /// <summary>
+    ///     Loads the row icons a few at a time after the list was filled, decoding hundreds at once freezes the UI.
+    /// </summary>
+    private System.Windows.Forms.Timer _townIconTimer;
+
+    private int _townIconIndex;
 
     private SDUI.Controls.CheckBox _checkSkipGuildStorage;
     private System.Windows.Forms.NumericUpDown _numGuildStorageRetry;
@@ -326,11 +333,15 @@ public partial class Main
         _listTown.BeginUpdate();
         _listTown.Items.Clear();
 
+        var entries = new Dictionary<string, TownBuyEntry>();
+        foreach (var buyEntry in ShoppingManager.ShoppingList)
+            entries.TryAdd(buyEntry.ItemCodeName, buyEntry);
+
         var rows = new System.Windows.Forms.ListViewItem[items.Count];
         for (var i = 0; i < items.Count; i++)
         {
             var catalogItem = items[i];
-            var entry = ShoppingManager.ShoppingList.Find(e => e.ItemCodeName == catalogItem.Item.CodeName);
+            entries.TryGetValue(catalogItem.Item.CodeName, out var entry);
 
             var row = new System.Windows.Forms.ListViewItem(catalogItem.Name)
             {
@@ -341,14 +352,38 @@ public partial class Main
             row.SubItems.Add(catalogItem.Item.ReqLevel1.ToString());
             row.SubItems.Add((entry?.Quantity ?? 0).ToString());
             row.SubItems.Add(catalogItem.SoldAt);
-            row.LoadItemImageAsync(catalogItem.Item);
-
             rows[i] = row;
         }
 
         _listTown.Items.AddRange(rows);
         _listTown.EndUpdate();
         _populatingTown = false;
+
+        _townIconIndex = 0;
+        if (_townIconTimer == null)
+        {
+            _townIconTimer = new System.Windows.Forms.Timer { Interval = 30 };
+            _townIconTimer.Tick += (_, _) => LoadTownIcons();
+            Disposed += (_, _) => _townIconTimer.Dispose();
+        }
+
+        _townIconTimer.Start();
+    }
+
+    private void LoadTownIcons()
+    {
+        const int batchSize = 40;
+
+        var end = Math.Min(_townIconIndex + batchSize, _listTown.Items.Count);
+        for (; _townIconIndex < end; _townIconIndex++)
+        {
+            var row = _listTown.Items[_townIconIndex];
+            if (row.Tag is RefObjItem item)
+                row.LoadItemImage(item);
+        }
+
+        if (_townIconIndex >= _listTown.Items.Count)
+            _townIconTimer.Stop();
     }
 
     private void ClearTownList()

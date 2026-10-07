@@ -110,7 +110,11 @@ public partial class Fellow : CosControlBase
 
         var icon = Game.Player.Fellow.Record?.GetIcon();
         if (icon != null)
+        {
+            var previousIcon = MiniCosControl.Icon.BackgroundImage;
             MiniCosControl.Icon.BackgroundImage = icon;
+            previousIcon?.Dispose();
+        }
     }
 
     public override void Reset()

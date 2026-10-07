@@ -35,7 +35,11 @@ public partial class JobTransport : CosControlBase
 
         var icon = Game.Player.JobTransport.Record?.GetIcon();
         if (icon != null)
+        {
+            var previousIcon = MiniCosControl.Icon.BackgroundImage;
             MiniCosControl.Icon.BackgroundImage = icon;
+            previousIcon?.Dispose();
+        }
     }
 
     /// <summary>

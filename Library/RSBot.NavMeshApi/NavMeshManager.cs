@@ -28,6 +28,24 @@ public static class NavMeshManager
     private static readonly Dictionary<int, NavMeshObj> _objectCache = new Dictionary<int, NavMeshObj>();
     private static readonly Dictionary<RID, NavMeshDungeon> _dungeonCache = new Dictionary<RID, NavMeshDungeon>();
 
+    /// <summary>
+    ///     Guards the caches; they are used by the bot and the map view at the same time.
+    ///     A dictionary written by two threads at once can break and loop forever.
+    /// </summary>
+    private static readonly object _cacheLock = new();
+
+    /// <summary>
+    ///     The regions kept loaded. All caches are cleared when a new region would exceed it, so travelling
+    ///     does not keep every visited region in memory (meshes reference their neighbours and objects,
+    ///     clearing everything keeps them consistent).
+    /// </summary>
+    private const int MaxCachedRegions = 64;
+
+    /// <summary>
+    ///     A raycast crosses at most this many mesh borders; more means the meshes link in a loop.
+    /// </summary>
+    private const int MaxRaycastTransitions = 256;
+
     public static void Initialize(IFileSystem dataFileSystem)
     {
         _dataFileSystem = dataFileSystem;
@@ -69,8 +87,12 @@ public static class NavMeshManager
         while (true)
         {
             raycastCount++;
-            //if (raycastCount > 100)
-            //throw new Exception("raycastCount above 100");
+            if (raycastCount > MaxRaycastTransitions)
+            {
+                Debug.WriteLine($"Raycast stopped after {MaxRaycastTransitions} transitions");
+                hit = null;
+                return false;
+            }
 
             // Move destination into the same region space as source.
             if (dst.Region != src.Region)
@@ -173,10 +195,25 @@ public static class NavMeshManager
 
     public static void InvalidateCaches()
     {
-        _objectCache.Clear();
-        _regionCache.Clear();
-        _dungeonCache.Clear();
-        _terrainCache.Clear();
+        lock (_cacheLock)
+        {
+            _objectCache.Clear();
+            _regionCache.Clear();
+            _dungeonCache.Clear();
+            _terrainCache.Clear();
+        }
+    }
+
+    /// <summary>
+    ///     Makes room before a new region is loaded. Call inside <see cref="_cacheLock" />.
+    /// </summary>
+    private static void TrimCaches()
+    {
+        if (_regionCache.Count < MaxCachedRegions)
+            return;
+
+        Debug.WriteLine($"NavMesh cache reached {MaxCachedRegions} regions, clearing it");
+        InvalidateCaches();
     }
 
     public static NavMeshObj LoadNavMeshObj(string fileName)
@@ -323,8 +360,11 @@ public static class NavMeshManager
 
     public static bool TryGetNavMesh(RID region, out NavMesh mesh)
     {
-        if (_regionCache.TryGetValue(region, out mesh))
-            return true;
+        lock (_cacheLock)
+        {
+            if (_regionCache.TryGetValue(region, out mesh))
+                return true;
+        }
 
         if (region.IsDungeon)
         {
@@ -358,25 +398,34 @@ public static class NavMeshManager
             return false;
         }
 
-        if (!_terrainCache.TryGetValue(region, out terrain))
+        lock (_cacheLock)
         {
-            terrain = LoadNavMeshTerrain($"navmesh\\nv_{(ushort)region:X4}.nvm", region);
-            _regionCache[region] = terrain;
-            _terrainCache[region] = terrain;
+            if (!_terrainCache.TryGetValue(region, out terrain))
+            {
+                TrimCaches();
+
+                terrain = LoadNavMeshTerrain($"navmesh\\nv_{(ushort)region:X4}.nvm", region);
+                _regionCache[region] = terrain;
+                _terrainCache[region] = terrain;
+            }
         }
+
         return terrain != null;
     }
 
     public static bool TryGetNavMeshObj(int index, out NavMeshObj obj)
     {
-        if (!_objectCache.TryGetValue(index, out obj))
+        lock (_cacheLock)
         {
-            var objectIndex = ObjectIndex[index];
-            if (objectIndex == null)
-                return false;
+            if (!_objectCache.TryGetValue(index, out obj))
+            {
+                var objectIndex = ObjectIndex[index];
+                if (objectIndex == null)
+                    return false;
 
-            _objectCache[index] = obj = LoadNavMeshObj(objectIndex.Path);
-            obj.IndexFlag = objectIndex.Flag;
+                _objectCache[index] = obj = LoadNavMeshObj(objectIndex.Path);
+                obj.IndexFlag = objectIndex.Flag;
+            }
         }
 
         return obj != null;
@@ -390,15 +439,20 @@ public static class NavMeshManager
             return false;
         }
 
-        if (!_dungeonCache.TryGetValue(region, out dungeon))
+        lock (_cacheLock)
         {
-            var dungeonInfo = DungeonInfo[region];
-            if (dungeonInfo == null)
-                return false;
+            if (!_dungeonCache.TryGetValue(region, out dungeon))
+            {
+                var dungeonInfo = DungeonInfo[region];
+                if (dungeonInfo == null)
+                    return false;
 
-            dungeon = LoadNavMeshDungeon(dungeonInfo, region);
-            _regionCache[region] = dungeon;
-            _dungeonCache[region] = dungeon;
+                TrimCaches();
+
+                dungeon = LoadNavMeshDungeon(dungeonInfo, region);
+                _regionCache[region] = dungeon;
+                _dungeonCache[region] = dungeon;
+            }
         }
 
         return dungeon != null;

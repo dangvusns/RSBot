@@ -107,7 +107,11 @@ public partial class Growth : CosControlBase
 
         var icon = Game.Player.Growth.Record?.GetIcon();
         if (icon != null)
+        {
+            var previousIcon = MiniCosControl.Icon.BackgroundImage;
             MiniCosControl.Icon.BackgroundImage = icon;
+            previousIcon?.Dispose();
+        }
     }
 
     public override void Reset()

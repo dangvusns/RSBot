@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using RSBot.Core;
 using RSBot.Core.Objects;
@@ -171,7 +171,7 @@ internal class HealingBundle : IBundle
         Log.Status($"Healing {reason}");
 
         var result = skill.CastBuff(target);
-        Log.Debug($"[Healing] {skill.Record.GetRealName()} -> {reason}: {result}");
+        Log.Debug(() => $"[Healing] {skill.Record.GetRealName()} -> {reason}: {result}");
 
         return result == SkillCastResult.Accepted;
     }

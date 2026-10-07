@@ -38,7 +38,7 @@ internal class InventoryOperationResponse : IPacketHandler
             // Error codes are two bytes; older handling read only the low byte
             var code = packet.Remaining >= 2 ? packet.ReadUShort() : packet.ReadByte();
 
-            Log.Debug($"ItemOperation error received:  [{result:X}] (0x{code:X4})");
+            Log.Debug(() => $"ItemOperation error received:  [{result:X}] (0x{code:X4})");
             ReportExchangeError(code);
             return;
         }
@@ -300,7 +300,7 @@ internal class InventoryOperationResponse : IPacketHandler
 
             EventManager.FireEvent("OnUpdateInventoryItem", itemAtSlot.Slot);
             Log.Debug(
-                $"[Floor->Inventory] Merge item {itemAtSlot.Record.GetRealName()} (slot={destinationSlot}, amount={item.Amount})"
+                () => $"[Floor->Inventory] Merge item {itemAtSlot.Record.GetRealName()} (slot={destinationSlot}, amount={item.Amount})"
             );
         }
         else
@@ -308,7 +308,7 @@ internal class InventoryOperationResponse : IPacketHandler
             inventory.Add(item);
 
             Log.Debug(
-                $"[Floor->Inventory] Add item {item.Record.GetRealName()} (slot={destinationSlot}, amount={item.Amount}"
+                () => $"[Floor->Inventory] Add item {item.Record.GetRealName()} (slot={destinationSlot}, amount={item.Amount}"
             );
         }
 
@@ -443,7 +443,7 @@ internal class InventoryOperationResponse : IPacketHandler
             inventory.RemoveAt(sourceSlot);
 
             Log.Debug(
-                $"[Inventory->NPC] Remove item {itemAtSlot.Record.GetRealName()} (slot={sourceSlot}, amount={amount})"
+                () => $"[Inventory->NPC] Remove item {itemAtSlot.Record.GetRealName()} (slot={sourceSlot}, amount={amount})"
             );
         }
         else
@@ -451,7 +451,7 @@ internal class InventoryOperationResponse : IPacketHandler
             inventory.UpdateItemAmount(sourceSlot, (ushort)(itemAtSlot.Amount - amount));
 
             Log.Debug(
-                $"[Inventory->NPC] Update item {itemAtSlot.Record.GetRealName()} (slot={sourceSlot}, amount={amount})"
+                () => $"[Inventory->NPC] Update item {itemAtSlot.Record.GetRealName()} (slot={sourceSlot}, amount={amount})"
             );
         }
 
@@ -518,7 +518,7 @@ internal class InventoryOperationResponse : IPacketHandler
         var sourceSlot = packet.ReadByte();
         Game.Player.Inventory.RemoveAt(sourceSlot);
 
-        Log.Debug($"[Inventory->Delete] Remove item (slot={sourceSlot})");
+        Log.Debug(() => $"[Inventory->Delete] Remove item (slot={sourceSlot})");
     }
 
     /// <summary>
@@ -544,7 +544,7 @@ internal class InventoryOperationResponse : IPacketHandler
 
         cos.Inventory.RemoveAt(sourceSlot);
 
-        Log.Debug($"[Inventory->Delete] Remove cos item (slot={sourceSlot})");
+        Log.Debug(() => $"[Inventory->Delete] Remove cos item (slot={sourceSlot})");
     }
 
     /// <summary>
@@ -609,7 +609,7 @@ internal class InventoryOperationResponse : IPacketHandler
             return;
 
         cos.Inventory.RemoveAt(sourceSlot);
-        Log.Debug($"[Pet->Floor] Remove item (slot={sourceSlot})");
+        Log.Debug(() => $"[Pet->Floor] Remove item (slot={sourceSlot})");
     }
 
     /// <summary>

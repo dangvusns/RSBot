@@ -51,7 +51,7 @@ internal class EntityGroupSpawnEndResponse : IPacketHandler
             }
             catch (Exception)
             {
-                Log.Debug($"Spawn parse failed at index {i}!");
+                Log.Debug(() => $"Spawn parse failed at index {i}!");
                 break;
             }
 

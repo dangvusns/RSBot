@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
+using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using RSBot.Core;
+using RSBot.Core.Components;
 using RSBot.Core.Event;
 using SDUI.Controls;
 
@@ -52,6 +53,69 @@ public partial class Main : DoubleBufferedControl
             }
         };
         UpdateTimer();
+        InitializeFileSettings();
+    }
+
+    /// <summary>
+    ///     Adds the log file level and retention settings next to the filters.
+    /// </summary>
+    private void InitializeFileSettings()
+    {
+        var levels = new[] { LogLevel.Debug, LogLevel.Notify, LogLevel.Warning, LogLevel.Error };
+
+        var comboLevel = new System.Windows.Forms.ComboBox
+        {
+            DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList,
+            Width = LogicalToDeviceUnits(85),
+            Margin = new System.Windows.Forms.Padding(LogicalToDeviceUnits(4), LogicalToDeviceUnits(11), 0, 0),
+        };
+        foreach (var level in levels)
+            comboLevel.Items.Add(level);
+
+        var configuredLevel = GlobalConfig.GetEnum("RSBot.Log.File.Level", LogLevel.Warning);
+        comboLevel.SelectedItem = Array.IndexOf(levels, configuredLevel) >= 0 ? configuredLevel : LogLevel.Warning;
+        comboLevel.SelectedIndexChanged += (_, _) =>
+        {
+            GlobalConfig.Set("RSBot.Log.File.Level", comboLevel.SelectedItem.ToString());
+            LogFileWriter.ReloadSettings();
+        };
+
+        var numKeepDays = new System.Windows.Forms.NumericUpDown
+        {
+            Minimum = 0,
+            Maximum = 365,
+            Width = LogicalToDeviceUnits(55),
+            Margin = new System.Windows.Forms.Padding(LogicalToDeviceUnits(4), LogicalToDeviceUnits(11), 0, 0),
+        };
+        numKeepDays.Value = Math.Clamp(GlobalConfig.Get("RSBot.Log.File.KeepDays", 7), 0, 365);
+        numKeepDays.ValueChanged += (_, _) =>
+        {
+            GlobalConfig.Set("RSBot.Log.File.KeepDays", (int)numKeepDays.Value);
+            LogFileWriter.ReloadSettings();
+        };
+
+        System.Windows.Forms.Label createLabel(string text) =>
+            new()
+            {
+                AutoSize = true,
+                Text = text,
+                BackColor = Color.Transparent,
+                Margin = new System.Windows.Forms.Padding(LogicalToDeviceUnits(8), LogicalToDeviceUnits(15), 0, 0),
+            };
+
+        var panelFile = new System.Windows.Forms.FlowLayoutPanel
+        {
+            Dock = System.Windows.Forms.DockStyle.Right,
+            AutoSize = true,
+            WrapContents = false,
+            BackColor = Color.Transparent,
+        };
+        panelFile.Controls.Add(createLabel("Log file:"));
+        panelFile.Controls.Add(comboLevel);
+        panelFile.Controls.Add(createLabel("Keep days:"));
+        panelFile.Controls.Add(numKeepDays);
+
+        panel1.Controls.Add(panelFile);
     }
 
     private void UpdateFilters()
@@ -73,25 +137,10 @@ public partial class Main : DoubleBufferedControl
         if (_disposed || (_enabledLevels & (1 << (int)level)) == 0) return;
         var now = DateTime.Now;
         var line = $"[{now:HH:mm:ss}]\t<{level}> \t{message}{Environment.NewLine}";
-        // File logging keeps its existing debug-mode behavior, independently of page visibility.
+        // The log file is written by LogFileWriter in Core, independently of these filters
         lock (_queueLock)
         {
             if (_disposed) return;
-            if (Kernel.Debug)
-            {
-                var logFile = Path.Combine(Kernel.BasePath, "User", "Logs",
-                    Game.Player?.Name ?? "Environment", $"{now:dd-MM-yyyy}.txt");
-                try
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(logFile));
-                    File.AppendAllText(logFile, line);
-                }
-                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
-                {
-                    // Do not recursively log a failure of the log writer.
-                    Enqueue($"[{now:HH:mm:ss}] Log file could not be written: {e.Message}{Environment.NewLine}");
-                }
-            }
             Enqueue(line);
         }
     }
@@ -134,9 +183,12 @@ public partial class Main : DoubleBufferedControl
         var removed = 0;
         if (txtLog.TextLength > MaximumCharacters)
         {
-            var text = txtLog.Text;
-            removed = text.IndexOf('\n', text.Length - RetainedCharacters);
-            removed = removed < 0 ? text.Length - RetainedCharacters : removed + 1;
+            // Cut at a line start without copying the whole text out of the control
+            var line = txtLog.GetLineFromCharIndex(txtLog.TextLength - RetainedCharacters);
+            removed = txtLog.GetFirstCharIndexFromLine(line + 1);
+            if (removed <= 0)
+                removed = txtLog.TextLength - RetainedCharacters;
+
             txtLog.Select(0, removed);
             txtLog.SelectedText = string.Empty;
         }

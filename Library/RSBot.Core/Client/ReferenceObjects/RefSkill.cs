@@ -33,7 +33,7 @@ public class RefSkill : IReference<uint>
         {
             var path = $"icon\\{UI_IconFile}";
             if (!Game.MediaPk2.TryGetFile(path, out var file))
-                bitmap = Game.MediaPk2.GetFile("icon\\icon_default.ddj").ToImage();
+                file = Game.MediaPk2.GetFile("icon\\icon_default.ddj");
 
             bitmap = file.ToImage();
         }

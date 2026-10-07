@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using RSBot.Core;
+using RSBot.Core.Components;
 using RSBot.Core.Event;
 using RSBot.Core.Network;
 
@@ -359,41 +360,7 @@ internal sealed class PacketRecorder
     /// </summary>
     private void CleanupOldFiles()
     {
-        FileInfo[] files;
-        try
-        {
-            files = new DirectoryInfo(RootDirectory)
-                .GetFiles("*.log", SearchOption.AllDirectories)
-                .OrderBy(f => f.LastWriteTime)
-                .ToArray();
-        }
-        catch (Exception e)
-        {
-            Log.Debug($"[PacketAnalyzer] Could not list old packet logs: {e.Message}");
-            return;
-        }
-
-        var maxBytes = (long)Math.Max(1, _maxFolderMB) * 1024 * 1024;
-        var expiry = _keepDays > 0 ? DateTime.Now.AddDays(-_keepDays) : DateTime.MinValue;
-        var total = files.Sum(f => f.Length);
-
-        foreach (var file in files)
-        {
-            if (file.LastWriteTime >= expiry && total <= maxBytes)
-                break;
-
-            var length = file.Length;
-
-            try
-            {
-                file.Delete();
-                total -= length;
-            }
-            catch
-            {
-                // still in use, e.g. by another bot instance
-            }
-        }
+        FileRetention.Cleanup(RootDirectory, "*.log", _keepDays, _maxFolderMB);
     }
 
     #endregion Writer thread

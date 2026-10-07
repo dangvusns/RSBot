@@ -40,7 +40,11 @@ public partial class Transport : CosControlBase
 
         var icon = Game.Player.Transport.Record?.GetIcon();
         if (icon != null)
+        {
+            var previousIcon = MiniCosControl.Icon.BackgroundImage;
             MiniCosControl.Icon.BackgroundImage = icon;
+            previousIcon?.Dispose();
+        }
     }
 
     /// <summary>

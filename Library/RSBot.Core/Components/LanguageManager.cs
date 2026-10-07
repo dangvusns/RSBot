@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
 namespace RSBot.Core.Components;
@@ -14,9 +16,19 @@ public class LanguageManager
     private static readonly string _path = Path.Combine(Kernel.BasePath, "Data", "Languages");
 
     /// <summary>
-    ///     Parsed language values
+    ///     Parsed language values by assembly name. Read from any thread while views are translated.
     /// </summary>
-    private static readonly Dictionary<string, LangDict> _values = new();
+    private static readonly ConcurrentDictionary<string, LangDict> _values = new();
+
+    /// <summary>
+    ///     Parsed language files by path, re-parsed only when the file changed.
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, (DateTime LastWrite, LangDict Values)> _parsedFiles = new();
+
+    /// <summary>
+    ///     Assembly names, cached because <see cref="Assembly.GetName()" /> allocates.
+    /// </summary>
+    private static readonly ConcurrentDictionary<Assembly, string> _assemblyNames = new();
 
     /// <summary>
     ///     Get all menu items
@@ -138,31 +150,38 @@ public class LanguageManager
     ///     Get language value
     /// </summary>
     /// <param name="key">The key</param>
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static string GetLang(string key)
     {
-        var trace = new StackTrace();
-
-        var parent = string.Empty;
-        for (var i = 0; i < trace.FrameCount; i++)
-        {
-            parent = Path.GetFileNameWithoutExtension(trace.GetFrame(i).GetMethod().Module.Name);
-            if (parent != "RSBot.Core")
-                break;
-        }
-
-        if (_values.ContainsKey(parent) && _values[parent].ContainsKey(key))
-            return _values[parent][key];
-
-        return string.Empty;
+        // The calling plugin decides which language file is used
+        return GetLangForAssembly(Assembly.GetCallingAssembly(), key);
     }
 
     /// <summary>
     ///     Get language value
     /// </summary>
     /// <param name="key">The key</param>
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static string GetLang(string key, params object[] args)
     {
-        return string.Format(GetLang(key), args);
+        return string.Format(GetLangForAssembly(Assembly.GetCallingAssembly(), key), args);
+    }
+
+    /// <summary>
+    ///     Get the language value of the given assembly's language file.
+    ///     Used by Core helpers that translate on behalf of their caller, e.g. <see cref="Log.NotifyLang" />.
+    /// </summary>
+    /// <param name="assembly">The assembly whose language file is used</param>
+    /// <param name="key">The key</param>
+    /// <param name="args">The format arguments</param>
+    public static string GetLangForAssembly(Assembly assembly, string key, params object[] args)
+    {
+        var parent = _assemblyNames.GetOrAdd(assembly, a => a.GetName().Name);
+
+        if (!_values.TryGetValue(parent, out var values) || !values.TryGetValue(key, out var value))
+            return string.Empty;
+
+        return args == null || args.Length == 0 ? value : string.Format(value, args);
     }
 
     /// <summary>
@@ -172,8 +191,8 @@ public class LanguageManager
     /// <param name="default">The default value that will be returned if the translation could not be found</param>
     public static string GetLangBySpecificKey(string parent, string key, string @default = "")
     {
-        if (_values.ContainsKey(parent) && _values[parent].ContainsKey(key))
-            return _values[parent][key];
+        if (_values.TryGetValue(parent, out var values) && values.TryGetValue(key, out var value))
+            return value;
 
         return @default;
     }
@@ -199,15 +218,18 @@ public class LanguageManager
         if (!Directory.Exists(dir))
             Directory.CreateDirectory(dir);
 
-        var stopwatch = Stopwatch.StartNew();
-
         if (!File.Exists(path))
             return;
-        //File.CreateText(path).Dispose();
 
-        //var instance = (Control)Activator.CreateInstance(type);
+        // Every view of a plugin shares one file; parse it once instead of per view
+        var lastWrite = File.GetLastWriteTimeUtc(path);
+        if (!_parsedFiles.TryGetValue(path, out var parsed) || parsed.LastWrite != lastWrite)
+        {
+            parsed = (lastWrite, ParseLanguageFile(path));
+            _parsedFiles[path] = parsed;
+        }
 
-        var values = ParseLanguageFile(path);
+        var values = parsed.Values;
         //CheckMissings(path, assembly, view, values);
 
         _values[assembly] = values;

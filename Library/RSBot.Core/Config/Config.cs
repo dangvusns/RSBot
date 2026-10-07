@@ -111,16 +111,19 @@ public class Config
         if (!_isLoaded)
             return (T)Convert.ChangeType(false, typeof(T));
 
-        if (!_config.ContainsKey(key))
+        if (!_config.TryGetValue(key, out var value))
         {
             Set(key, defaultValue);
 
             return defaultValue;
         }
 
-        var value = _config[key];
         if (string.IsNullOrEmpty(value))
             return defaultValue;
+
+        // Strings are read on hot paths (e.g. every bot tick) and need no conversion
+        if (typeof(T) == typeof(string))
+            return (T)(object)value;
 
         return (T)Convert.ChangeType(value, typeof(T));
     }

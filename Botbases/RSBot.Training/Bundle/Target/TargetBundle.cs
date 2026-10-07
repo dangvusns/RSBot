@@ -63,7 +63,7 @@ internal class TargetBundle : IBundle
         Bundles.Movement.LastEntityWasBehindObstacle = true;
 
         if (_blacklist?.TryAdd(selectedEntityUniqueId, Kernel.TickCount) == true)
-            Log.Debug($"Add mob [{selectedEntityUniqueId} to blacklist for {BLACKLIST_TIMEOUT}ms");
+            Log.Debug(() => $"Add mob [{selectedEntityUniqueId} to blacklist for {BLACKLIST_TIMEOUT}ms");
     }
 
     #endregion Events
@@ -101,7 +101,7 @@ internal class TargetBundle : IBundle
             {
                 var flag = Kernel.TickCount - tick > BLACKLIST_TIMEOUT;
                 if (flag)
-                    Log.Debug($"Removed mob [{uniqueId} from blacklist!");
+                    Log.Debug(() => $"Removed mob [{uniqueId} from blacklist!");
 
                 return flag;
             }
@@ -129,7 +129,7 @@ internal class TargetBundle : IBundle
                 return;
 
             Log.Debug(
-                $"[TargetBundle] Protecting a member against: {protectedAttacker.Record?.GetRealName()} ({protectedAttacker.UniqueId}) "
+                () => $"[TargetBundle] Protecting a member against: {protectedAttacker.Record?.GetRealName()} ({protectedAttacker.UniqueId}) "
                     + $"targeting {protectedAttacker.TargetId}"
             );
 
@@ -195,7 +195,7 @@ internal class TargetBundle : IBundle
             )
         )
         {
-            Log.Debug($"[TargetBundle] Defending the pet against: {petAttacker.Record?.GetRealName()}");
+            Log.Debug(() => $"[TargetBundle] Defending the pet against: {petAttacker.Record?.GetRealName()}");
 
             if (petAttacker.TrySelect())
                 Bundles.Movement.LastEntityWasBehindObstacle = false;
@@ -212,7 +212,7 @@ internal class TargetBundle : IBundle
             && GetMonstersFoughtByOthers().Contains(currentMonster.UniqueId)
         )
         {
-            Log.Debug($"[TargetBundle] Another player attacks the target, switching: {currentMonster.Record?.GetRealName()}");
+            Log.Debug(() => $"[TargetBundle] Another player attacks the target, switching: {currentMonster.Record?.GetRealName()}");
 
             Game.SelectedEntity?.TryDeselect();
             Game.SelectedEntity = null;
@@ -227,7 +227,7 @@ internal class TargetBundle : IBundle
         {
             if (Game.SelectedEntity?.UniqueId != leaderTarget.UniqueId)
             {
-                Log.Debug($"[TargetBundle] Attacking the party leader's target: {leaderTarget.Record?.GetRealName()}");
+                Log.Debug(() => $"[TargetBundle] Attacking the party leader's target: {leaderTarget.Record?.GetRealName()}");
 
                 if (leaderTarget.TrySelect())
                     Bundles.Movement.LastEntityWasBehindObstacle = false;
@@ -449,7 +449,7 @@ internal class TargetBundle : IBundle
 
         if (attacker != null)
         {
-            Log.Debug($"[TargetBundle] Interrupt: from={current?.UniqueId} type={current?.Rarity} "
+            Log.Debug(() => $"[TargetBundle] Interrupt: from={current?.UniqueId} type={current?.Rarity} "
                 + $"to={attacker.UniqueId} type={attacker.Rarity} hp={EstimateHealth(attacker)} "
                 + $"distance={attacker.DistanceToPlayer:F1} resume={current?.UniqueId ?? original?.UniqueId}");
             if (!Kernel.Bot.Running)
@@ -471,7 +471,7 @@ internal class TargetBundle : IBundle
             else
             {
                 _blacklist?.TryAdd(attacker.UniqueId, Kernel.TickCount);
-                Log.Debug($"[TargetBundle] Defensive selection unconfirmed: {attacker.UniqueId}; retry delayed");
+                Log.Debug(() => $"[TargetBundle] Defensive selection unconfirmed: {attacker.UniqueId}; retry delayed");
             }
             return true;
         }
@@ -483,7 +483,7 @@ internal class TargetBundle : IBundle
         // After the interruption ends, resume the most recently interrupted valid fight.
         if (original != null)
         {
-            Log.Debug($"[TargetBundle] Resume original target: {original.UniqueId} type={original.Rarity}");
+            Log.Debug(() => $"[TargetBundle] Resume original target: {original.UniqueId} type={original.Rarity}");
             var lifecycleVersion = Volatile.Read(ref _lifecycleVersion);
             var selected = original.TrySelect();
             if (!Kernel.Bot.Running || lifecycleVersion != Volatile.Read(ref _lifecycleVersion))
@@ -498,7 +498,7 @@ internal class TargetBundle : IBundle
             else
             {
                 _blacklist?.TryAdd(original.UniqueId, Kernel.TickCount);
-                Log.Debug($"[TargetBundle] Resume failed: {original.UniqueId}; retry delayed");
+                Log.Debug(() => $"[TargetBundle] Resume failed: {original.UniqueId}; retry delayed");
             }
             return true;
         }
@@ -513,7 +513,7 @@ internal class TargetBundle : IBundle
             if (SpawnManager.TryGetEntity<SpawnedMonster>(id, out var target) && IsDefensiveTargetEligible(target))
                 return target;
             _interruptedTargets.Pop();
-            Log.Debug($"[TargetBundle] Abandon interrupted target: {id}; dead, missing or invalid");
+            Log.Debug(() => $"[TargetBundle] Abandon interrupted target: {id}; dead, missing or invalid");
         }
         return null;
     }
@@ -568,7 +568,7 @@ internal class TargetBundle : IBundle
                     + $"reason={GetDefensiveRejectionReason(m) ?? (current != null && GetTypePriority(m.Rarity) >= GetTypePriority(current.Rarity) ? "not-lower-type" : "eligible")}");
             candidates = string.Join("; ", details);
         }
-        Log.Debug($"[TargetBundle] Type-switch decision: enabled={enabled} "
+        Log.Debug(() => $"[TargetBundle] Type-switch decision: enabled={enabled} "
             + $"current={current?.UniqueId} type={current?.Rarity} committed={_committedAttackerId} "
             + $"interrupted={_interruptedTargets.Count} attackers=[{candidates}]");
     }
@@ -624,7 +624,7 @@ internal class TargetBundle : IBundle
     private void CommitAttacker(SpawnedMonster monster, string reason)
     {
         _committedAttackerId = monster.UniqueId;
-        Log.Debug($"[TargetBundle] Finish attacker: {monster.UniqueId} reason={reason} "
+        Log.Debug(() => $"[TargetBundle] Finish attacker: {monster.UniqueId} reason={reason} "
             + $"hp={EstimateHealth(monster)} source={(HasRecentHealth(monster) ? "server" : "estimated")} distance={monster.DistanceToPlayer:F1}");
     }
 
@@ -633,7 +633,7 @@ internal class TargetBundle : IBundle
         if (_committedAttackerId == 0)
             return;
 
-        Log.Debug($"[TargetBundle] Release attacker: {_committedAttackerId} reason={reason}");
+        Log.Debug(() => $"[TargetBundle] Release attacker: {_committedAttackerId} reason={reason}");
         _committedAttackerId = 0;
     }
 

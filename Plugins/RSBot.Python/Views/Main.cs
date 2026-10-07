@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -24,6 +25,8 @@ public class Main : SDUI.Controls.DoubleBufferedControl
     private readonly ListView _listPlugins;
     private readonly System.Windows.Forms.TextBox _txtLog;
     private readonly List<Action> _pendingUiActions = new();
+    private readonly ConcurrentQueue<string> _pendingLogLines = new();
+    private readonly System.Windows.Forms.Timer _logTimer;
 
     private bool _refreshing;
     private bool _pendingFlushed;
@@ -100,6 +103,12 @@ public class Main : SDUI.Controls.DoubleBufferedControl
         ColorScheme.ThemeChanged += (_, _) => ApplyTheme();
 
         HandleCreated += (_, _) => FlushPendingUiActions();
+
+        // Lines are added in batches; appending them one by one re-renders the text box for every line
+        _logTimer = new System.Windows.Forms.Timer { Interval = 250 };
+        _logTimer.Tick += (_, _) => FlushLog();
+        _logTimer.Start();
+        Disposed += (_, _) => _logTimer.Dispose();
     }
 
     private int Px(int value)
@@ -188,15 +197,42 @@ public class Main : SDUI.Controls.DoubleBufferedControl
 
     public void AppendLog(string text)
     {
-        RunOnUi(() =>
+        _pendingLogLines.Enqueue($"[{DateTime.Now:HH:mm:ss}] {text.Replace("\n", Environment.NewLine)}");
+
+        // Bound the queue while the tab is not shown
+        while (_pendingLogLines.Count > MaxLogLines)
+            _pendingLogLines.TryDequeue(out _);
+    }
+
+    private void FlushLog()
+    {
+        if (_pendingLogLines.IsEmpty || IsDisposed)
+            return;
+
+        var batch = new System.Text.StringBuilder();
+        while (_pendingLogLines.TryDequeue(out var line))
         {
-            var line = $"[{DateTime.Now:HH:mm:ss}] {text.Replace("\n", Environment.NewLine)}";
+            if (batch.Length > 0 || _txtLog.TextLength > 0)
+                batch.Append(Environment.NewLine);
 
-            if (_txtLog.Lines.Length > MaxLogLines)
-                _txtLog.Lines = _txtLog.Lines.Skip(_txtLog.Lines.Length - MaxLogLines / 2).ToArray();
+            batch.Append(line);
+        }
 
-            _txtLog.AppendText((_txtLog.TextLength > 0 ? Environment.NewLine : string.Empty) + line);
-        });
+        _txtLog.AppendText(batch.ToString());
+
+        // Keep the newest half once the limit is reached, cutting at a line start
+        var lineCount = _txtLog.GetLineFromCharIndex(_txtLog.TextLength) + 1;
+        if (lineCount > MaxLogLines)
+        {
+            var cut = _txtLog.GetFirstCharIndexFromLine(lineCount - MaxLogLines / 2);
+            if (cut > 0)
+            {
+                _txtLog.Select(0, cut);
+                _txtLog.SelectedText = string.Empty;
+                _txtLog.Select(_txtLog.TextLength, 0);
+                _txtLog.ScrollToCaret();
+            }
+        }
     }
 
     #endregion

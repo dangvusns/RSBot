@@ -228,7 +228,7 @@ public sealed class SpawnedPlayer : SpawnedBionic
                 if (Game.ClientType != GameClientType.Global)
                     packet.ReadByte();
 
-                Log.Debug($"unknown item [{itemId}]");
+                Log.Debug(() => $"unknown item [{itemId}]");
                 continue;
             }
 
@@ -272,7 +272,7 @@ public sealed class SpawnedPlayer : SpawnedBionic
                             break;
                         }
 
-                        Log.Debug($"Unknown item [{itemId}]");
+                        Log.Debug(() => $"Unknown item [{itemId}]");
                         continue;
                     }
 
@@ -293,7 +293,7 @@ public sealed class SpawnedPlayer : SpawnedBionic
                     if (itemObj == null)
                     {
                         packet.ReadByte();
-                        Log.Debug($"Unknown item [{itemId}]");
+                        Log.Debug(() => $"Unknown item [{itemId}]");
                         continue;
                     }
 
@@ -312,7 +312,7 @@ public sealed class SpawnedPlayer : SpawnedBionic
                     if (itemObj == null)
                     {
                         packet.ReadByte();
-                        Log.Debug($"Unknown item [{itemId}]");
+                        Log.Debug(() => $"Unknown item [{itemId}]");
                         continue;
                     }
 

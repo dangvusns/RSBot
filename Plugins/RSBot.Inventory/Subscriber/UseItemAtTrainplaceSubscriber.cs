@@ -8,7 +8,13 @@ namespace RSBot.Inventory.Subscriber;
 internal class UseItemAtTrainplaceSubscriber
 {
     private static readonly List<string> _blacklistedItems = new();
-    private static long _lastTick;
+    private static long _lastBlacklistClear;
+    private static long _lastCheck;
+
+    /// <summary>
+    ///     OnTick fires many times a second; checking the inventory twice a second is enough.
+    /// </summary>
+    private const int CheckIntervalMs = 500;
 
     public static void SubscribeEvents()
     {
@@ -17,11 +23,20 @@ internal class UseItemAtTrainplaceSubscriber
 
     private static void OnTick()
     {
-        //Retry blacklisted items after 5 minutes
-        if (TimeSpan.FromMilliseconds(Kernel.TickCount - _lastTick).Minutes >= 5)
-            _blacklistedItems.Clear();
+        // The tick count wraps after ~24 days; a negative difference counts as elapsed
+        var sinceCheck = Kernel.TickCount - _lastCheck;
+        if (sinceCheck >= 0 && sinceCheck < CheckIntervalMs)
+            return;
 
-        _lastTick = Kernel.TickCount;
+        _lastCheck = Kernel.TickCount;
+
+        //Retry blacklisted items after 5 minutes
+        var sinceClear = Kernel.TickCount - _lastBlacklistClear;
+        if (sinceClear < 0 || sinceClear >= TimeSpan.FromMinutes(5).TotalMilliseconds)
+        {
+            _blacklistedItems.Clear();
+            _lastBlacklistClear = Kernel.TickCount;
+        }
 
         if (!Kernel.Bot.Running || Kernel.Bot.Botbase.Area.Position.Region == 0)
             return;

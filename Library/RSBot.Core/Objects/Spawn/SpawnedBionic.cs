@@ -136,7 +136,7 @@ public class SpawnedBionic : SpawnedEntity
             return true;
 
         Log.Debug(
-            $"Trying to select the entity: {UniqueId} State: {State.LifeState} Health: {Health} HasHealth: {HasHealth} Dst: {Math.Round(DistanceToPlayer, 1)}"
+            () => $"Trying to select the entity: {UniqueId} State: {State.LifeState} Health: {Health} HasHealth: {HasHealth} Dst: {Math.Round(DistanceToPlayer, 1)}"
         );
 
         var packet = new Packet(0x7045);
@@ -168,7 +168,7 @@ public class SpawnedBionic : SpawnedEntity
     /// <returns></returns>
     public bool TryDeselect()
     {
-        Log.Debug($"Trying to deselect entity: {UniqueId}");
+        Log.Debug(() => $"Trying to deselect entity: {UniqueId}");
 
         var packet = new Packet(0x704B);
         packet.WriteUInt(UniqueId);
@@ -182,7 +182,7 @@ public class SpawnedBionic : SpawnedEntity
                 {
                     var errorCode = response.ReadUShort();
 
-                    Log.Debug($"Error deselecting Entity {UniqueId} [Code={errorCode:X4}]");
+                    Log.Debug(() => $"Error deselecting Entity {UniqueId} [Code={errorCode:X4}]");
 
                     return AwaitCallbackResult.Fail;
                 }
@@ -196,7 +196,7 @@ public class SpawnedBionic : SpawnedEntity
         awaitResult.AwaitResponse();
 
         if (awaitResult.IsCompleted)
-            Log.Debug($"Entity deselected: {UniqueId}");
+            Log.Debug(() => $"Entity deselected: {UniqueId}");
 
         return awaitResult.IsCompleted;
     }

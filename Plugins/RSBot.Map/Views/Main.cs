@@ -79,6 +79,27 @@ public partial class Main : DoubleBufferedControl
     private readonly NavMeshRenderer _navMeshRenderer;
 
     /// <summary>
+    ///     The graphics the buffer is rendered to; replaced (and disposed) when the canvas is resized.
+    /// </summary>
+    private Graphics _canvasGraphics;
+
+    /// <summary>
+    ///     The rows collected while drawing a frame; the list is only updated once a second.
+    /// </summary>
+    private readonly List<(string Key, string Name, string Type, byte Level, Position Position)> _gridRows = new();
+
+    private DateTime _lastGridUpdate = DateTime.MinValue;
+
+    /// <summary>
+    ///     The player arrow rotated for <see cref="_playerArrowAngle" />, rebuilt when the player turns.
+    /// </summary>
+    private Bitmap _playerArrow;
+
+    private int _playerArrowAngle = int.MinValue;
+
+    private Font _boldFont;
+
+    /// <summary>
     /// The region name
     /// </summary>
     private string _regionName = string.Empty;
@@ -108,7 +129,8 @@ public partial class Main : DoubleBufferedControl
 
         bufferedGraphicsContext = BufferedGraphicsManager.Current;
         bufferedGraphicsContext.MaximumBuffer = new Size(mapCanvas.Width + 1, mapCanvas.Height + 1);
-        bufferedGraphics = bufferedGraphicsContext.Allocate(mapCanvas.CreateGraphics(), mapCanvas.ClientRectangle);
+        _canvasGraphics = mapCanvas.CreateGraphics();
+        bufferedGraphics = bufferedGraphicsContext.Allocate(_canvasGraphics, mapCanvas.ClientRectangle);
 
         // All
         comboViewType.SelectedIndex = 6;
@@ -151,28 +173,69 @@ public partial class Main : DoubleBufferedControl
     #endregion Core Handlers
 
     /// <summary>
-    ///     Adds the grid item.
+    ///     Adds the grid item. The row is collected and shown by <see cref="UpdateGrid" />.
     /// </summary>
+    /// <param name="key">Identifies the row between updates.</param>
     /// <param name="name">The name.</param>
     /// <param name="type">The type.</param>
     /// <param name="level">The level.</param>
     /// <param name="position"></param>
-    private void AddGridItem(string name, string type, byte level, Position position)
+    private void AddGridItem(string key, string name, string type, byte level, Position position)
     {
-        if (lvMonster.InvokeRequired)
+        _gridRows.Add((key, name, type, level, position));
+    }
+
+    /// <summary>
+    ///     Updates the grid rows in place, so the selection and scroll position stay where the user left them.
+    /// </summary>
+    private void UpdateGrid()
+    {
+        var keys = new HashSet<string>();
+
+        lvMonster.BeginUpdate();
+        try
         {
-            lvMonster.Invoke(() => AddGridItem(name, type, level, position));
-            return;
+            foreach (var row in _gridRows)
+            {
+                if (!keys.Add(row.Key))
+                    continue;
+
+                var name = string.IsNullOrWhiteSpace(row.Name) ? LanguageManager.GetLang("NoName") : row.Name;
+                var level = row.Level.ToString();
+                var position = row.Position.ToString();
+
+                var item = lvMonster.Items[row.Key];
+                if (item == null)
+                {
+                    item = new ListViewItem(name) { Name = row.Key };
+                    item.SubItems.Add(row.Type);
+                    item.SubItems.Add(level);
+                    item.SubItems.Add(position);
+                    lvMonster.Items.Add(item);
+
+                    continue;
+                }
+
+                SetText(item.SubItems[0], name);
+                SetText(item.SubItems[1], row.Type);
+                SetText(item.SubItems[2], level);
+                SetText(item.SubItems[3], position);
+            }
+
+            for (var i = lvMonster.Items.Count - 1; i >= 0; i--)
+                if (!keys.Contains(lvMonster.Items[i].Name))
+                    lvMonster.Items.RemoveAt(i);
+        }
+        finally
+        {
+            lvMonster.EndUpdate();
         }
 
-        if (string.IsNullOrWhiteSpace(name))
-            name = LanguageManager.GetLang("NoName");
-
-        var item = new ListViewItem(name);
-        item.SubItems.Add(type);
-        item.SubItems.Add(level.ToString());
-        item.SubItems.Add(position.ToString());
-        lvMonster.Items.Add(item);
+        static void SetText(ListViewItem.ListViewSubItem subItem, string text)
+        {
+            if (subItem.Text != text)
+                subItem.Text = text;
+        }
     }
 
     /// <summary>
@@ -189,18 +252,30 @@ public partial class Main : DoubleBufferedControl
             var x = GetMapX(position);
             var y = GetMapY(position);
 
-            using var img = (Image)_mapEntityImages[entityIndex].Clone();
+            var img = _mapEntityImages[entityIndex];
 
             if (entityIndex == 0)
-                gfx.DrawImage(
-                    RotateImage(img, Geometry.RadianToDegree(Game.Player.Movement.Angle)),
-                    x - img.Width / 2,
-                    y - img.Height / 2
-                );
+                gfx.DrawImage(GetPlayerArrow(img), x - img.Width / 2, y - img.Height / 2);
             else
                 gfx.DrawImage(img, x - img.Width / 2, y - img.Height / 2);
         }
         catch { }
+    }
+
+    /// <summary>
+    ///     Gets the player arrow rotated to the player's direction, in 5 degree steps.
+    /// </summary>
+    private Bitmap GetPlayerArrow(Image arrow)
+    {
+        var angle = (int)Math.Round(Geometry.RadianToDegree(Game.Player.Movement.Angle) / 5f) * 5;
+        if (_playerArrow == null || angle != _playerArrowAngle)
+        {
+            _playerArrow?.Dispose();
+            _playerArrow = RotateImage(arrow, angle);
+            _playerArrowAngle = angle;
+        }
+
+        return _playerArrow;
     }
 
     private void DrawRectangleAt(Graphics gfx, Position position, Brush brush, Size size, string label = "")
@@ -254,7 +329,8 @@ public partial class Main : DoubleBufferedControl
             var point = new PointF(x - diameterF / 2, y - diameterF / 2);
 
             gfx.FillEllipse(brush, new RectangleF(point, new SizeF(diameterF, diameterF)));
-            gfx.DrawEllipse(new Pen(color), new RectangleF(point, new SizeF(diameterF, diameterF)));
+            using var pen = new Pen(color);
+            gfx.DrawEllipse(pen, new RectangleF(point, new SizeF(diameterF, diameterF)));
         }
         catch { }
     }
@@ -264,11 +340,7 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     private void PopulateMapAndGrid(Graphics graphics)
     {
-        int topIndex = lvMonster.TopItem?.Index ?? 0;
-        int selectedIndex = lvMonster.SelectedIndices.Count > 0 ? lvMonster.SelectedIndices[0] : -1;
-
-        lvMonster.BeginUpdate();
-        lvMonster.Items.Clear();
+        _gridRows.Clear();
 
         try
         {
@@ -310,6 +382,7 @@ public partial class Main : DoubleBufferedControl
                     foreach (var entry in monsters)
                     {
                         AddGridItem(
+                            $"m{entry.UniqueId}",
                             entry.Record.GetRealName(),
                             entry.Rarity.GetName(),
                             entry.Record.Level,
@@ -331,7 +404,7 @@ public partial class Main : DoubleBufferedControl
                         // Avoid painting vehicles from main player
                         if (Game.Player.Vehicle?.UniqueId != entry.UniqueId)
                         {
-                            AddGridItem(entry.Name, entry.Record?.GetRealName(), entry.Record.Level, entry.Movement.Source);
+                            AddGridItem($"c{entry.UniqueId}", entry.Name, entry.Record?.GetRealName(), entry.Record.Level, entry.Movement.Source);
                             DrawPointAt(graphics, entry.Movement.Source, 1);
                         }
 
@@ -346,7 +419,7 @@ public partial class Main : DoubleBufferedControl
                             continue;
 
                         DrawPointAt(graphics, member.Position, 6);
-                        AddGridItem(member.Name, "Party Member", member.Level, member.Position);
+                        AddGridItem($"p{member.Name}", member.Name, "Party Member", member.Level, member.Position);
                     }
 
             if (comboViewType.SelectedIndex == 1 || comboViewType.SelectedIndex == 6)
@@ -360,7 +433,7 @@ public partial class Main : DoubleBufferedControl
                         )
                             continue;
 
-                        AddGridItem(entry.Name, "Player", 0, entry.Movement.Source);
+                        AddGridItem($"u{entry.UniqueId}", entry.Name, "Player", 0, entry.Movement.Source);
                         DrawPointAt(graphics, entry.Movement.Source, 3);
                     }
 
@@ -369,6 +442,7 @@ public partial class Main : DoubleBufferedControl
                     foreach (var entry in npcs)
                     {
                         AddGridItem(
+                            $"n{entry.UniqueId}",
                             entry.Record.GetRealName(),
                             entry.UniqueId.ToString(),
                             entry.Record.Level,
@@ -381,7 +455,7 @@ public partial class Main : DoubleBufferedControl
                 if (SpawnManager.TryGetEntities<SpawnedPortal>(out var portals))
                     foreach (var entry in portals)
                     {
-                        AddGridItem(entry.Record.GetRealName(), "Teleport", 0, entry.Movement.Source);
+                        AddGridItem($"t{entry.UniqueId}", entry.Record.GetRealName(), "Teleport", 0, entry.Movement.Source);
                         DrawPointAt(graphics, entry.Movement.Source, 7);
                     }
         }
@@ -390,15 +464,11 @@ public partial class Main : DoubleBufferedControl
             Log.Debug($"[Map] Render error: {ex.Message}");
         }
 
-        lvMonster.EndUpdate();
-
-        if (lvMonster.Items.Count > 0)
+        // The canvas is drawn every frame, the list only needs a slower refresh
+        if (DateTime.Now - _lastGridUpdate >= TimeSpan.FromSeconds(1))
         {
-            if (topIndex < lvMonster.Items.Count)
-                lvMonster.TopItem = lvMonster.Items[topIndex];
-
-            if (selectedIndex >= 0 && selectedIndex < lvMonster.Items.Count)
-                lvMonster.Items[selectedIndex].Selected = true;
+            _lastGridUpdate = DateTime.Now;
+            UpdateGrid();
         }
     }
 
@@ -460,7 +530,9 @@ public partial class Main : DoubleBufferedControl
         )
         {
             bufferedGraphics?.Dispose();
-            bufferedGraphics = bufferedGraphicsContext.Allocate(mapCanvas.CreateGraphics(), mapCanvas.ClientRectangle);
+            _canvasGraphics?.Dispose();
+            _canvasGraphics = mapCanvas.CreateGraphics();
+            bufferedGraphics = bufferedGraphicsContext.Allocate(_canvasGraphics, mapCanvas.ClientRectangle);
         }
 
         // Set layer path & sectors
@@ -512,7 +584,7 @@ public partial class Main : DoubleBufferedControl
             if (_cachedImages.Count >= 25)
                 ClearCachedImages();
 
-            using var sectorGraphic = new Bitmap(SectorSize * GridSize, SectorSize * GridSize, PixelFormat.Format32bppArgb);
+            using var sectorGraphic = new Bitmap(SectorSize * GridSize, SectorSize * GridSize, PixelFormat.Format32bppPArgb);
             using var gfx = Graphics.FromImage(sectorGraphic);
             gfx.InterpolationMode = InterpolationMode.Bicubic;
 
@@ -632,7 +704,7 @@ public partial class Main : DoubleBufferedControl
         bufferedGraphics.Graphics.Clear(Color.Black);
         DrawObjects(bufferedGraphics.Graphics);
 
-        using var font = new Font(Font, FontStyle.Bold);
+        var font = _boldFont ??= new Font(Font, FontStyle.Bold);
 
         var text = Game.Player.Position.ToString();
         var measuredText = bufferedGraphics.Graphics.MeasureString(text, font);
