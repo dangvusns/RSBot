@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using RSBot.Core.Components;
 using RSBot.Core.Event;
 
 namespace RSBot.Core.Network;
@@ -329,6 +330,8 @@ public class Proxy
             Game.Ready = false;
             Game.Started = false;
 
+            PacketManager.CancelCallbacks();
+            ShoppingManager.ResetOperations();
             EventManager.FireEvent("OnAgentServerDisconnected");
         }
         else if (IsConnectedToGatewayserver || _connectionTarget == ConnectionTarget.Gateway)
@@ -350,6 +353,7 @@ public class Proxy
                 Log.Debug("Disconnected from login server!");
             }
 
+            PacketManager.CancelCallbacks();
             EventManager.FireEvent("OnGatewayServerDisconnected");
         }
     }

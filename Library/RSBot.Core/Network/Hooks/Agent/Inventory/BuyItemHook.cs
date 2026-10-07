@@ -76,7 +76,7 @@ internal class BuyItemHook : IPacketHook
             return packet;
 
         var refPackageItem = Game.ReferenceManager.GetRefPackageItem(bionic.Record.CodeName, tab, slot);
-        var refItem = Game.ReferenceManager.GetRefItem(refPackageItem.RefItemCodeName);
+        var refItem = refPackageItem == null ? null : Game.ReferenceManager.GetRefItem(refPackageItem.RefItemCodeName);
 
         if (refItem == null)
         {

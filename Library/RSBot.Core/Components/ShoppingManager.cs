@@ -16,6 +16,102 @@ namespace RSBot.Core.Components;
 
 public static class ShoppingManager
 {
+    private static readonly object _operationLock = new();
+    private static AwaitCallback _pendingOperation;
+    private static Packet _pendingRequest;
+    private static bool _requiresReconciliation;
+    private static int _operationGeneration;
+    private static ShopOperationResult _lastOperationResult = new(ShopOperationOutcome.NotSent);
+
+    public static ShopOperationResult LastOperationResult
+    {
+        get { lock (_operationLock) return _lastOperationResult; }
+    }
+
+    public static bool RequiresReconciliation
+    {
+        get { lock (_operationLock) return _requiresReconciliation; }
+    }
+
+    // Other inventory mutations may have indistinguishable error replies. Stop this operation
+    // rather than crediting a manual move/pickup/weapon swap to the pending NPC request.
+    internal static void ObserveInventoryRequest(Packet request)
+    {
+        lock (_operationLock)
+            if (_pendingOperation != null && !ReferenceEquals(request, _pendingRequest))
+                _pendingOperation.Cancel();
+    }
+
+    internal static void ResetOperations()
+    {
+        lock (_operationLock)
+        {
+            _pendingOperation?.Cancel();
+            _operationGeneration++;
+            _requiresReconciliation = false;
+        }
+    }
+
+    private static ShopOperationResult ExecuteOperation(Packet request, ShopResponseMatcher matcher, Func<bool> confirmed)
+    {
+        AwaitCallback callback;
+        int generation;
+        lock (_operationLock)
+        {
+            if (_pendingOperation != null)
+                return new ShopOperationResult(ShopOperationOutcome.Busy);
+            if (_requiresReconciliation)
+                return new ShopOperationResult(ShopOperationOutcome.Unconfirmed);
+
+            callback = new AwaitCallback(response =>
+            {
+                var match = matcher.Match(response, Game.ClientType);
+                return match == AwaitCallbackResult.Success && !confirmed() ? AwaitCallbackResult.Fail : match;
+            }, 0xB034);
+            _pendingOperation = callback;
+            _pendingRequest = request;
+            generation = _operationGeneration;
+        }
+
+        try
+        {
+            PacketManager.SendPacket(request, PacketDestination.Server, callback);
+            callback.AwaitResponse();
+            var outcome = callback.State switch
+            {
+                AwaitCallbackState.Succeeded => ShopOperationOutcome.Confirmed,
+                AwaitCallbackState.NotSent => ShopOperationOutcome.NotSent,
+                AwaitCallbackState.Cancelled => ShopOperationOutcome.Cancelled,
+                AwaitCallbackState.TimedOut => ShopOperationOutcome.TimedOut,
+                _ => ShopOperationOutcome.Unconfirmed,
+            };
+            var result = new ShopOperationResult(outcome, matcher.ErrorCode);
+            lock (_operationLock)
+            {
+                if (generation != _operationGeneration)
+                    return new ShopOperationResult(ShopOperationOutcome.Cancelled);
+                _lastOperationResult = result;
+                // An error/timeout/cancel may leave an acknowledgement in flight. Never start an
+                // automatic retry which that old response could satisfy. A fresh session resets this.
+                _requiresReconciliation |= outcome is ShopOperationOutcome.TimedOut
+                    or ShopOperationOutcome.Cancelled or ShopOperationOutcome.Unconfirmed;
+            }
+            if (!result.IsConfirmed)
+                Log.Warn($"[Shopping] Operation {outcome}"
+                    + (result.ErrorCode.HasValue ? $"; uncorrelated inventory error 0x{result.ErrorCode:X4}" : "")
+                    + (RequiresReconciliation ? ". Automatic shopping paused until reconnect to avoid duplicate operations." : "."));
+            return result;
+        }
+        finally
+        {
+            callback.Cancel();
+            lock (_operationLock)
+            {
+                _pendingOperation = null;
+                _pendingRequest = null;
+            }
+        }
+    }
     /// <summary>
     ///     Gets or sets the items to keep in stock, keyed by item code name so any NPC that sells them can be used.
     /// </summary>
@@ -150,6 +246,12 @@ public static class ShoppingManager
 
         SelectNPC(npcCodeName);
 
+        if (!Running || !Game.Ready || Game.Player == null || SelectedEntity == null)
+        {
+            Stop();
+            return;
+        }
+
         Log.Status("Selling items");
 
         //Prevent modification during the for-each loop
@@ -158,7 +260,13 @@ public static class ShoppingManager
         );
 
         foreach (var item in tempItemSellList)
-            SellItem(item);
+        {
+            if (!Running || !SellItemConfirmed(item).IsConfirmed)
+            {
+                Stop();
+                return;
+            }
+        }
 
         if (Game.Player.HasActiveAbilityPet && SellPetItems)
         {
@@ -168,9 +276,14 @@ public static class ShoppingManager
 
             foreach (var item in tempItemSellList)
             {
+                if (!Running)
+                    return;
                 var playerSlot = Game.Player.AbilityPet.MoveItemToPlayer(item.Slot);
-                if (playerSlot != 0xFF)
-                    SellItem(Game.Player.Inventory.GetItemAt(playerSlot));
+                if (playerSlot != 0xFF && !SellItemConfirmed(Game.Player.Inventory.GetItemAt(playerSlot)).IsConfirmed)
+                {
+                    Stop();
+                    return;
+                }
             }
         }
 
@@ -191,8 +304,14 @@ public static class ShoppingManager
         if (SellExcess)
             SellExcessItems();
 
+        if (!Running)
+            return;
+
         if (DropItems)
             DropFilteredItems();
+
+        if (!Running)
+            return;
 
         foreach (var entry in ShoppingList.Where(e => e.Enabled && e.Quantity > 0).ToList())
         {
@@ -221,15 +340,19 @@ public static class ShoppingManager
 
             Log.Status("Buying items");
 
-            while (totalAmountToBuy > 0 && !Game.Player.Inventory.Full)
+            while (Running && totalAmountToBuy > 0 && !Game.Player.Inventory.Full)
             {
-                var amountStep = totalAmountToBuy;
-                if (totalAmountToBuy >= refItem.MaxStack)
-                    amountStep = refItem.MaxStack; //Buy only one stack
+                var amountStep = Math.Min(ushort.MaxValue, Math.Min(totalAmountToBuy, refItem.MaxStack));
 
-                PurchaseItem(tabIndex, actualItem.SlotIndex, (ushort)amountStep);
-                totalAmountToBuy -= amountStep; //One stack bought, substract from total amount!
-                Thread.Sleep(500);
+                var beforePurchase = Game.Player.Inventory.GetSumAmount(refPackageItem.RefItemCodeName);
+                var result = PurchaseItemConfirmed(null, tabIndex, actualItem.SlotIndex, (ushort)amountStep);
+                var actualAmount = Game.Player.Inventory.GetSumAmount(refPackageItem.RefItemCodeName);
+                if (!result.IsConfirmed || actualAmount <= beforePurchase)
+                {
+                    Stop();
+                    return;
+                }
+                totalAmountToBuy = Math.Max(0, entry.Quantity - actualAmount);
             }
 
             if (totalAmountToBuy > 0 && Game.Player.Inventory.Full)
@@ -261,13 +384,19 @@ public static class ShoppingManager
                 }
 
                 var nonFullStacks = getItems();
-                while (nonFullStacks.Count >= 2)
+                var mergeAttempts = Game.Player.Inventory.Capacity;
+                while (Running && nonFullStacks.Count >= 2 && mergeAttempts-- > 0)
                 {
-                    Game.Player.Inventory.MoveItem(
+                    if (!Game.Player.Inventory.MoveItem(
                         nonFullStacks[1].Slot,
                         nonFullStacks[0].Slot,
                         (ushort)Math.Min(refItem.MaxStack - nonFullStacks[0].Amount, nonFullStacks[1].Amount)
-                    );
+                    ))
+                    {
+                        Log.Warn("[Shopping] Stack merge was not confirmed, ending this town operation.");
+                        Stop();
+                        return;
+                    }
                     nonFullStacks = getItems();
                     Thread.Sleep(500);
                 }
@@ -288,24 +417,44 @@ public static class ShoppingManager
     /// <param name="amount">The amount to sell, the whole stack if <c>null</c>.</param>
     public static void SellItem(InventoryItem item, SpawnedBionic cos = null, ushort? amount = null)
     {
-        if (SelectedEntity == null)
-            return;
+        SellItemConfirmed(item, cos, amount);
+    }
+
+    public static ShopOperationResult SellItemConfirmed(InventoryItem item, SpawnedBionic cos = null, ushort? amount = null)
+    {
+        var npc = SelectedEntity;
+        var player = Game.Player;
+        var inventory = cos == null ? player?.Inventory
+            : cos.UniqueId == player?.JobTransport?.UniqueId ? player.JobTransport.Inventory
+            : cos.UniqueId == player?.AbilityPet?.UniqueId ? player.AbilityPet.Inventory : null;
+        if (!Game.Ready || npc == null || item == null || inventory == null || (amount ?? item.Amount) == 0
+            || !ReferenceEquals(inventory.GetItemAt(item.Slot), item))
+            return new ShopOperationResult(ShopOperationOutcome.NotSent);
+
+        var sourceSlot = item.Slot;
+        var before = item.Amount;
+        var soldAmount = Math.Min(amount ?? before, before);
+        var itemId = item.ItemId;
+        var operation = cos == null ? InventoryOperation.SP_SELL_ITEM : InventoryOperation.SP_SELL_ITEM_COS;
 
         var packet = new Packet(0x7034);
-        packet.WriteByte(cos == null ? InventoryOperation.SP_SELL_ITEM : InventoryOperation.SP_SELL_ITEM_COS);
+        packet.WriteByte(operation);
 
         if (cos != null)
             packet.WriteUInt(cos.UniqueId);
 
-        packet.WriteByte(item.Slot);
-        packet.WriteUShort(Math.Min(amount ?? item.Amount, item.Amount));
-        packet.WriteUInt(SelectedEntity.UniqueId);
+        packet.WriteByte(sourceSlot);
+        packet.WriteUShort(soldAmount);
+        packet.WriteUInt(npc.UniqueId);
 
-        var awaitResult = new AwaitCallback(null, 0xB034);
-        PacketManager.SendPacket(packet, PacketDestination.Server, awaitResult);
-        awaitResult.AwaitResponse();
-
-        Log.Debug("[Shopping manager] - Sold item: " + item.Record.GetRealName());
+        return ExecuteOperation(packet,
+            new ShopResponseMatcher(operation, sourceSlot, soldAmount, npcId: npc.UniqueId, actorId: cos?.UniqueId),
+            () =>
+            {
+                var remaining = inventory.GetItemAt(sourceSlot);
+                return Game.Player == player && ReferenceEquals(SelectedEntity, npc) && (soldAmount == before ? remaining == null
+                    : remaining?.ItemId == itemId && remaining.Amount == before - soldAmount);
+            });
     }
 
     /// <summary>
@@ -316,22 +465,37 @@ public static class ShoppingManager
     /// <param name="amount">The amount.</param>
     public static void PurchaseItem(int tab, int slot, ushort amount)
     {
-        if (SelectedEntity == null)
-        {
-            Log.Debug("Cannot buy items, because no shop is selected!");
-            return;
-        }
+        PurchaseItemConfirmed(null, tab, slot, amount);
+    }
+
+    public static ShopOperationResult PurchaseItemConfirmed(Cos transport, int tab, int slot, ushort amount)
+    {
+        var npc = SelectedEntity;
+        var player = Game.Player;
+        var inventory = transport == null ? player?.Inventory : transport.Inventory;
+        if (!Game.Ready || npc == null || player == null || inventory == null || amount == 0
+            || tab < 0 || tab > byte.MaxValue || slot < 0 || slot > byte.MaxValue)
+            return new ShopOperationResult(ShopOperationOutcome.NotSent);
+
+        var package = ReferenceManager.GetRefPackageItem(npc.Record.CodeName, (byte)tab, (byte)slot);
+        if (package?.RefItem == null)
+            return new ShopOperationResult(ShopOperationOutcome.NotSent);
+        var before = inventory.GetSumAmount(package.RefItemCodeName);
+        var operation = transport == null ? InventoryOperation.SP_BUY_ITEM : InventoryOperation.SP_BUY_ITEM_COS;
 
         var packet = new Packet(0x7034);
-        packet.WriteByte(InventoryOperation.SP_BUY_ITEM); //Buy item flag
+        packet.WriteByte(operation);
+        if (transport != null)
+            packet.WriteUInt(0); // preserve the existing client request layout
         packet.WriteByte(tab);
         packet.WriteByte(slot);
         packet.WriteUShort(amount);
-        packet.WriteUInt(SelectedEntity.UniqueId);
+        packet.WriteUInt(npc.UniqueId);
 
-        var awaitResult = new AwaitCallback(null, 0xB034);
-        PacketManager.SendPacket(packet, PacketDestination.Server, awaitResult);
-        awaitResult.AwaitResponse();
+        return ExecuteOperation(packet,
+            new ShopResponseMatcher(operation, (byte)slot, amount, (byte)tab, actorId: transport?.UniqueId),
+            () => Game.Player == player && ReferenceEquals(SelectedEntity, npc)
+                && inventory.GetSumAmount(package.RefItemCodeName) > before);
     }
 
     /// <summary>
@@ -343,24 +507,7 @@ public static class ShoppingManager
     /// <param name="amount"></param>
     public static void PurchaseItem(Cos transport, int tab, int slot, ushort amount)
     {
-        if (SelectedEntity == null)
-        {
-            Log.Debug("Cannot buy items, because no shop is selected!");
-            return;
-        }
-
-        var packet = new Packet(0x7034);
-        packet.WriteByte(InventoryOperation.SP_BUY_ITEM_COS); //Buy item flag
-        packet.WriteUInt(0); //Always 0 but should actually be the transport's unique id as it would make more sense
-        //packet.WriteUInt(transport.UniqueId); //may be 0?
-        packet.WriteByte(tab);
-        packet.WriteByte(slot);
-        packet.WriteUShort(amount);
-        packet.WriteUInt(SelectedEntity.UniqueId);
-
-        var awaitResult = new AwaitCallback(null, 0xB034);
-        PacketManager.SendPacket(packet, PacketDestination.Server, awaitResult);
-        awaitResult.AwaitResponse();
+        PurchaseItemConfirmed(transport, tab, slot, amount);
     }
 
     public static void ReceiveSupplies(string npcCodeName)
@@ -807,11 +954,15 @@ public static class ShoppingManager
 
             foreach (var stack in stacks)
             {
-                if (excess <= 0)
+                if (!Running || excess <= 0)
                     break;
 
                 var amount = (ushort)Math.Min(excess, stack.Amount);
-                SellItem(stack, amount: amount);
+                if (!SellItemConfirmed(stack, amount: amount).IsConfirmed)
+                {
+                    Stop();
+                    return;
+                }
                 excess -= amount;
             }
         }
@@ -1045,6 +1196,8 @@ public static class ShoppingManager
     /// </summary>
     public static void Stop()
     {
+        lock (_operationLock)
+            _pendingOperation?.Cancel();
         Running = false;
         Finished = true;
     }

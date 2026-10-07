@@ -549,10 +549,12 @@ public class ReferenceManager
 
     public RefPackageItemScrap GetRefPackageItem(string npcCodeName, byte tab, byte slot)
     {
-        var shops = GetRefShopGroup(npcCodeName).GetShops();
-        var tabs = shops[0].GetTabs();
-        var goods = tabs[tab].GetGoods();
-        return PackageItemScrap[goods.FirstOrDefault(s => s.SlotIndex == slot)?.RefPackageItemCodeName];
+        var shops = GetRefShopGroup(npcCodeName)?.GetShops();
+        var tabs = shops?.FirstOrDefault()?.GetTabs();
+        if (tabs == null || tab >= tabs.Count)
+            return null;
+        var good = tabs[tab].GetGoods().FirstOrDefault(s => s.SlotIndex == slot);
+        return good == null ? null : GetRefPackageItem(good.RefPackageItemCodeName);
     }
 
     public RefPackageItemScrap GetRefPackageItemById(ushort id, byte group, byte tab, byte slot)

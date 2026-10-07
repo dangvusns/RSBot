@@ -5,6 +5,7 @@ using RSBot.Core.Objects;
 using RSBot.Core.Objects.Cos;
 using RSBot.Core.Objects.Inventory;
 using RSBot.Core.Objects.Item;
+using RSBot.Core.Objects.Shopping;
 
 namespace RSBot.Core.Network.Handler.Agent.Inventory;
 
@@ -351,7 +352,12 @@ internal class InventoryOperationResponse : IPacketHandler
         }
 
         var refShopGoodObj = Game.ReferenceManager.GetRefPackageItem(npc.Record.CodeName, tabIndex, tabSlot);
-        var item = Game.ReferenceManager.GetRefItem(refShopGoodObj.RefItemCodeName);
+        var item = refShopGoodObj == null ? null : Game.ReferenceManager.GetRefItem(refShopGoodObj.RefItemCodeName);
+        if (item == null)
+        {
+            Log.Warn("[Shopping] Purchased item is missing from the reference data; inventory confirmation unavailable.");
+            return;
+        }
 
         if (item.IsStackable && refShopGoodObj.Data > 0)
             amount = (ushort)refShopGoodObj.Data;
@@ -425,17 +431,13 @@ internal class InventoryOperationResponse : IPacketHandler
         var buybackSlot = packet.ReadByte();
 
         var itemAtSlot = inventory.GetItemAt(sourceSlot);
-        if (itemAtSlot == null)
+        if (itemAtSlot == null || amount == 0 || amount > itemAtSlot.Amount)
             return;
 
-        if (buybackSlot != byte.MaxValue)
+        if (buybackSlot != byte.MaxValue && buybackSlot != 0)
         {
             buybackSlot -= 1;
-
-            if (ShoppingManager.BuybackList.ContainsKey(buybackSlot))
-                ShoppingManager.BuybackList[buybackSlot] = itemAtSlot;
-            else
-                ShoppingManager.BuybackList.Add(buybackSlot, itemAtSlot);
+            BuybackItems.RecordSale(ShoppingManager.BuybackList, buybackSlot, itemAtSlot, amount);
         }
 
         if (amount == itemAtSlot.Amount)
@@ -775,24 +777,14 @@ internal class InventoryOperationResponse : IPacketHandler
         var sourceSlot = packet.ReadByte();
         var amount = packet.ReadUShort();
 
-        var itemAtSource = ShoppingManager.BuybackList[sourceSlot];
-        itemAtSource.Slot = destinationSlot;
-        itemAtSource.Amount = amount;
-
-        Game.Player.Inventory.Add(itemAtSource);
-
-        Log.Debug("Buyback: " + itemAtSource.Record.GetRealName());
-        var newBuybackList = new Dictionary<byte, InventoryItem>();
-
-        foreach (var item in ShoppingManager.BuybackList)
+        if (Game.Player.Inventory.GetItemAt(destinationSlot) != null
+            || !BuybackItems.TryRestore(ShoppingManager.BuybackList, sourceSlot, destinationSlot, amount, out var restored))
         {
-            if (item.Key == sourceSlot)
-                continue;
-
-            newBuybackList.Add(item.Key > sourceSlot ? (byte)(item.Key - 1) : item.Key, item.Value);
+            Log.Warn($"[Buyback] Cannot reconcile slot {sourceSlot} -> {destinationSlot}, quantity {amount}.");
+            return;
         }
-
-        ShoppingManager.BuybackList = newBuybackList;
+        Game.Player.Inventory.Add(restored);
+        Log.Debug(() => "Buyback: " + restored.Record.GetRealName());
     }
 
     /// <summary>

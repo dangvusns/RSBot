@@ -536,6 +536,31 @@ public class InventoryItem
         return (InventoryItem)MemberwiseClone();
     }
 
+    /// <summary>Copies mutable item metadata as well as slot and quantity.</summary>
+    public InventoryItem CloneDetached()
+    {
+        var copy = Clone();
+        copy.MagicOptions = MagicOptions?.Select(o => new MagicOptionInfo { Id = o.Id, Value = o.Value }).ToList();
+        copy.BindingOptions = BindingOptions?.Select(o => new BindingOption
+        {
+            Type = o.Type, Slot = o.Slot, Id = o.Id, Value = o.Value,
+        }).ToList();
+        copy.Rental = CopyRental(Rental);
+        copy.Cos.Rental = CopyRental(Cos.Rental);
+        return copy;
+    }
+
+    private static RentInfo CopyRental(RentInfo rental) => rental == null ? null : new RentInfo
+    {
+        Type = rental.Type,
+        CanDelete = rental.CanDelete,
+        PeriodBeginTime = rental.PeriodBeginTime,
+        PeriodEndTime = rental.PeriodEndTime,
+        CanRecharge = rental.CanRecharge,
+        MeterRateTime = rental.MeterRateTime,
+        PackingTime = rental.PackingTime,
+    };
+
     public override int GetHashCode()
     {
         return Record.GetHashCode();

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using RSBot.Core.Components;
 
 namespace RSBot.Core.Network;
 
@@ -30,6 +31,29 @@ public class PacketManager
     ///     The callbacks
     /// </summary>
     private static readonly List<AwaitCallback> _callbacks = new();
+
+    public static int PendingCallbackCount
+    {
+        get { lock (_lock) return _callbacks.Count; }
+    }
+
+    internal static void RemoveCallback(AwaitCallback callback)
+    {
+        lock (_lock)
+            _callbacks.Remove(callback);
+    }
+
+    internal static void CancelCallbacks()
+    {
+        AwaitCallback[] callbacks;
+        lock (_lock)
+        {
+            callbacks = _callbacks.ToArray();
+            _callbacks.Clear();
+        }
+        foreach (var callback in callbacks)
+            callback.Cancel();
+    }
 
     /// <summary>
     ///     Registers the handler.
@@ -124,17 +148,26 @@ public class PacketManager
     /// <param name="packet">The packet.</param>
     internal static void CallCallback(Packet packet)
     {
+        AwaitCallback[] callbacks;
         lock (_lock)
         {
-            var tempCallbacks = _callbacks.Where(c => c.ResponseOpcode == packet.Opcode);
+            if (_callbacks.Count == 0)
+                return;
+            callbacks = _callbacks.Where(c => c.ResponseOpcode == packet.Opcode && !c.IsClosed).ToArray();
+        }
 
-            foreach (var callback in tempCallbacks)
+        try
+        {
+            foreach (var callback in callbacks)
             {
                 packet.SeekRead(0, SeekOrigin.Begin);
                 callback.Invoke(packet);
             }
 
-            _callbacks.RemoveAll(c => c.IsClosed);
+        }
+        finally
+        {
+            packet.SeekRead(0, SeekOrigin.Begin);
         }
     }
 
@@ -156,8 +189,14 @@ public class PacketManager
     /// <param name="forwarded">Whether the packet was received by the proxy and is only being forwarded.</param>
     internal static void SendPacket(Packet packet, PacketDestination destination, bool forwarded)
     {
-        if (Kernel.Proxy == null)
-            return;
+        TrySendPacket(packet, destination, forwarded);
+    }
+
+    private static bool TrySendPacket(Packet packet, PacketDestination destination, bool forwarded)
+    {
+        var proxy = Kernel.Proxy;
+        if (proxy == null)
+            return false;
 
         if (!packet.Locked)
             packet.Lock();
@@ -170,18 +209,27 @@ public class PacketManager
             switch (destination)
             {
                 case PacketDestination.Client:
-                    if (!Game.Clientless)
-                        Kernel.Proxy.Client?.Send(packet);
+                    if (Game.Clientless || proxy.Client?.IsConnected != true)
+                        return false;
+                    proxy.Client.Send(packet);
                     break;
 
                 case PacketDestination.Server:
-                    Kernel.Proxy.Server?.Send(packet);
+                    if (proxy.Server?.IsConnected != true)
+                        return false;
+                    if (packet.Opcode == 0x7034)
+                        ShoppingManager.ObserveInventoryRequest(packet);
+                    proxy.Server.Send(packet);
                     break;
+                default:
+                    return false;
             }
+            return true;
         }
         catch (Exception e)
         {
             Log.Fatal(e);
+            return false;
         }
     }
 
@@ -193,15 +241,21 @@ public class PacketManager
     /// <param name="callback">The callback.</param>
     public static void SendPacket(Packet packet, PacketDestination destination, params AwaitCallback[] callbacks)
     {
-        if (Kernel.Proxy == null)
+        callbacks ??= Array.Empty<AwaitCallback>();
+        if (callbacks.Any(c => c?.IsClosed == true))
+        {
+            foreach (var callback in callbacks)
+                callback?.Cancel();
             return;
-
+        }
         lock (_lock)
         {
-            _callbacks.AddRange(callbacks);
+            _callbacks.AddRange(callbacks.Where(c => c != null && !c.IsClosed));
         }
 
-        SendPacket(packet, destination);
+        if (!TrySendPacket(packet, destination, false))
+            foreach (var callback in callbacks)
+                callback?.NotSent();
     }
 
     /// <summary>

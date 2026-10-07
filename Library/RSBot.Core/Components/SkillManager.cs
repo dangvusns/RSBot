@@ -78,15 +78,7 @@ public static class SkillManager
     /// </summary>
     public static HashSet<uint> StrongTargetBuffs { get; set; }
 
-    /// <summary>
-    ///     The target the opener skills were used on.
-    /// </summary>
-    private static uint _openerTargetId;
-
-    /// <summary>
-    ///     The opener skills already used on <see cref="_openerTargetId" />.
-    /// </summary>
-    private static readonly HashSet<uint> _usedOpeners = new();
+    private static readonly EncounterOpeners _encounterOpeners = new();
 
     /// <summary>
     ///     Gets or sets the teleport skill.
@@ -117,6 +109,10 @@ public static class SkillManager
 
         EventManager.SubscribeEvent("OnLoadGameData", OnLoadGamedData);
         EventManager.SubscribeEvent("OnCastSkill", new Action<uint>(OnCastSkill));
+        EventManager.SubscribeEvent("OnStopBot", _encounterOpeners.Clear);
+        EventManager.SubscribeEvent("OnPlayerDied", _encounterOpeners.Clear);
+        EventManager.SubscribeEvent("OnTeleportStart", _encounterOpeners.Clear);
+        EventManager.SubscribeEvent("OnAgentServerDisconnected", _encounterOpeners.Clear);
 
         Log.Debug($"Initialized [SkillManager] for [{Skills.Count}] different mob rarities!");
     }
@@ -235,6 +231,14 @@ public static class SkillManager
         lock (_consecutiveRefusals)
             _consecutiveRefusals.Remove(skill.Id);
     }
+
+    internal static void ConfirmOpener(uint targetId, uint skillId)
+    {
+        if (OpenerSkills?.Values.Any(ids => ids.Contains(skillId)) == true)
+            _encounterOpeners.Confirm(targetId, skillId);
+    }
+
+    internal static void ForgetEncounter(uint targetId) => _encounterOpeners.Forget(targetId);
 
     /// <summary>
     ///     Gets the monster type whose skill list is used: the own one, otherwise the closest weaker type that has
@@ -369,17 +373,8 @@ public static class SkillManager
         if (OpenerSkills == null || !OpenerSkills.TryGetValue(rarity, out var openers) || openers.Count == 0)
             return null;
 
-        if (_openerTargetId != targetId)
-        {
-            _openerTargetId = targetId;
-            _usedOpeners.Clear();
-        }
-
-        var opener = Skills[rarity].Find(s => openers.Contains(s.Id) && !_usedOpeners.Contains(s.Id) && s.CanBeCasted);
-        if (opener != null)
-            _usedOpeners.Add(opener.Id);
-
-        return opener;
+        return Skills[rarity].Find(s => openers.Contains(s.Id)
+            && !_encounterOpeners.WasAccepted(targetId, s.Id) && s.CanBeCasted);
     }
 
     private static bool IsOpener(MonsterRarity rarity, SkillInfo skill)
@@ -604,15 +599,23 @@ public static class SkillManager
         );
 
         PacketManager.SendPacket(packet, PacketDestination.Server, callback);
-        Thread.Sleep(duration);
-
-        if (skill.Record.Basic_Activity != 1)
+        try
         {
-            callback.AwaitResponse(duration);
-            return callback.IsCompleted;
-        }
+            Thread.Sleep(duration);
 
-        return true;
+            if (skill.Record.Basic_Activity != 1)
+            {
+                callback.AwaitResponse(duration);
+                return callback.IsCompleted;
+            }
+
+            return true;
+        }
+        finally
+        {
+            // Basic attacks do not wait for B074; their registration still needs an owner.
+            callback.Cancel();
+        }
     }
 
     /// <summary>

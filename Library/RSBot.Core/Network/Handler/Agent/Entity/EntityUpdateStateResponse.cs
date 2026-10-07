@@ -42,6 +42,8 @@ internal class EntityUpdateStateResponse : IPacketHandler
             case 0:
 
                 entity.State.LifeState = (LifeState)state;
+                if (entity.State.LifeState == LifeState.Dead)
+                    SkillManager.ForgetEncounter(uniqueId);
                 if ( /*uniqueId == Game.SelectedEntity?.UniqueId || */
                     Game.Player.GetAttackers().Any(e => e.UniqueId == uniqueId)
                     && entity.State.LifeState == LifeState.Dead

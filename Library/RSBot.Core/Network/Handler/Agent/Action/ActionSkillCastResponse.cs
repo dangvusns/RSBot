@@ -112,6 +112,8 @@ internal class ActionSkillCastResponse : IPacketHandler
 
         action.Flag = (ActionStateFlag)packet.ReadByte();*/
         Objects.Action.RememberCast(action);
+        if (action.PlayerIsExecutor)
+            SkillManager.ConfirmOpener(action.TargetId, action.SkillId);
         action.ReadPacket(packet);
 
         if (action.PlayerIsExecutor)

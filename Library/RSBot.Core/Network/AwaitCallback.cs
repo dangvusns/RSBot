@@ -34,6 +34,16 @@ public enum AwaitCallbackResult
 /// </returns>
 public delegate AwaitCallbackResult AwaitCallbackPredicate(Packet packet);
 
+public enum AwaitCallbackState
+{
+    Pending,
+    Succeeded,
+    Failed,
+    TimedOut,
+    Cancelled,
+    NotSent,
+}
+
 /// <summary>
 ///     <see cref="AwaitCallback" /> is a callback with wait for response method.
 /// </summary>
@@ -56,19 +66,9 @@ public class AwaitCallback
     private readonly AwaitCallbackPredicate _predicate;
 
     /// <summary>
-    ///     The value indicating whether the <see cref="AwaitCallback" /> is invoked.
+    ///     One terminal state wins, even when a response races cancellation or timeout.
     /// </summary>
-    private volatile bool _invoked;
-
-    /// <summary>
-    ///     The value indicating whether the <see cref="AwaitCallback" /> is successed.
-    /// </summary>
-    private volatile bool _succeeded;
-
-    /// <summary>
-    ///     The value indicating whether the <see cref="AwaitCallback" /> is timeout.
-    /// </summary>
-    private volatile bool _timeout;
+    private int _state;
 
     /// <summary>
     ///     The value indicating whether the <see cref="AwaitCallback" /> is waited for response.
@@ -101,7 +101,7 @@ public class AwaitCallback
     /// <value>
     ///     <c>true</c> if completed(not timeout and invoked and successed); otherwise <c>false</c>.
     /// </value>
-    public bool IsCompleted => !_timeout && _invoked && _succeeded;
+    public bool IsCompleted => State == AwaitCallbackState.Succeeded;
 
     /// <summary>
     ///     Gets the value indicating whether the <see cref="AwaitCallback" /> is closed.
@@ -109,7 +109,25 @@ public class AwaitCallback
     /// <value>
     ///     <c>true</c> if closed(timeout or invoked); otherwise, <c>false</c>.
     /// </value>
-    public bool IsClosed => _timeout || _invoked;
+    public bool IsClosed => State != AwaitCallbackState.Pending;
+
+    public AwaitCallbackState State => (AwaitCallbackState)Volatile.Read(ref _state);
+
+    public void Cancel() => Complete(AwaitCallbackState.Cancelled);
+
+    internal void NotSent() => Complete(AwaitCallbackState.NotSent);
+
+    private bool Complete(AwaitCallbackState state)
+    {
+        if (Interlocked.CompareExchange(ref _state, (int)state, (int)AwaitCallbackState.Pending)
+            != (int)AwaitCallbackState.Pending)
+            return false;
+
+        // Cleanup does not depend on another packet arriving after a timeout/disconnect.
+        PacketManager.RemoveCallback(this);
+        _completionSource.TrySetResult(state == AwaitCallbackState.Succeeded);
+        return true;
+    }
 
     /// <summary>
     ///     Invokes this <see cref="AwaitCallback" /> instance.
@@ -117,11 +135,12 @@ public class AwaitCallback
     /// <param name="packet">The received <see cref="Packet" />.</param>
     internal void Invoke(Packet packet)
     {
+        if (IsClosed)
+            return;
+
         if (_predicate == null)
         {
-            _succeeded = true;
-            _invoked = true;
-            _completionSource.TrySetResult(true);
+            Complete(AwaitCallbackState.Succeeded);
             return;
         }
 
@@ -139,18 +158,14 @@ public class AwaitCallback
         switch (result)
         {
             case AwaitCallbackResult.Success:
-                _succeeded = true;
-                _invoked = true;
-                _completionSource.TrySetResult(true);
+                Complete(AwaitCallbackState.Succeeded);
                 break;
 
             case AwaitCallbackResult.ConditionFailed:
                 break;
 
             case AwaitCallbackResult.Fail:
-                _succeeded = false;
-                _invoked = true;
-                _completionSource.TrySetResult(false);
+                Complete(AwaitCallbackState.Failed);
                 break;
         }
     }
@@ -161,7 +176,7 @@ public class AwaitCallback
     /// </summary>
     /// <param name="milliseconds">The timeout in milliseconds, default value is <see cref="TIMEOUT_DEFAULT" />.</param>
     /// <returns></returns>
-    public void AwaitResponse(int milliseconds = TIMEOUT_DEFAULT)
+    public void AwaitResponse(int milliseconds = TIMEOUT_DEFAULT, CancellationToken cancellationToken = default)
     {
         if (Interlocked.CompareExchange(ref _waited, 1, 0) != 0)
             return;
@@ -169,6 +184,7 @@ public class AwaitCallback
         if (milliseconds < 1)
             milliseconds = 1;
 
+        using var registration = cancellationToken.Register(Cancel);
         var task = _completionSource.Task;
 
         if (SynchronizationContext.Current != null)
@@ -190,8 +206,8 @@ public class AwaitCallback
 
         if (!task.IsCompleted)
         {
-            _timeout = true;
-            Log.Debug(() => $"Callback timeout, ResponseOpcode: 0x{ResponseOpcode:X}");
+            if (Complete(AwaitCallbackState.TimedOut))
+                Log.Debug(() => $"Callback timeout, ResponseOpcode: 0x{ResponseOpcode:X}");
         }
     }
 
@@ -206,6 +222,7 @@ public class AwaitCallback
         if (milliseconds < 1)
             milliseconds = 1;
 
+        using var registration = cancellationToken.Register(Cancel);
         try
         {
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -214,11 +231,10 @@ public class AwaitCallback
         }
         catch (OperationCanceledException)
         {
-            if (!cancellationToken.IsCancellationRequested)
-            {
-                _timeout = true;
+            if (cancellationToken.IsCancellationRequested)
+                Cancel();
+            else if (Complete(AwaitCallbackState.TimedOut))
                 Log.Debug(() => $"Callback timeout, ResponseOpcode: 0x{ResponseOpcode:X}");
-            }
         }
     }
 }

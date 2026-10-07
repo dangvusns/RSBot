@@ -76,9 +76,15 @@ internal class BuyGoodsScriptCommand : IScriptCommand
 
             SellGoods();
 
+            if (!IsBusy || !ShoppingManager.Running || ShoppingManager.RequiresReconciliation)
+                return false;
+
             Log.Notify($"[Script] Purchasing goods from {Game.SelectedEntity.Record.GetRealName()}...");
 
             BuyGoods();
+
+            if (!IsBusy || !ShoppingManager.Running || ShoppingManager.RequiresReconciliation)
+                return false;
 
             ShoppingManager.CloseShop();
 
@@ -116,6 +122,8 @@ internal class BuyGoodsScriptCommand : IScriptCommand
 
         foreach (var item in items)
         {
+            if (!IsBusy || !ShoppingManager.Running)
+                return;
             var canSellToNpc =
                 shopGoods.FirstOrDefault(i =>
                     Game.ReferenceManager.GetRefPackageItem(i.RefPackageItemCodeName).RefItem.ID == item.ItemId
@@ -124,7 +132,11 @@ internal class BuyGoodsScriptCommand : IScriptCommand
             if (!canSellToNpc)
                 continue;
 
-            ShoppingManager.SellItem(item, Game.Player.JobTransport.Bionic);
+            if (!ShoppingManager.SellItemConfirmed(item, Game.Player.JobTransport.Bionic).IsConfirmed)
+            {
+                ShoppingManager.Stop();
+                return;
+            }
         }
     }
 
@@ -173,7 +185,7 @@ internal class BuyGoodsScriptCommand : IScriptCommand
         var maxSteps = Game.Player.JobTransport.Inventory.Capacity;
         var existingItemsCount = Game.Player.JobTransport.Inventory.GetSumAmount(packageItem.RefItemCodeName);
         while (
-            !Game.Player.JobTransport.Inventory.Full
+            IsBusy && ShoppingManager.Running && !Game.Player.JobTransport.Inventory.Full
             && (existingItemsCount < TradeConfig.BuyGoodsQuantity || TradeConfig.BuyGoodsQuantity == 0)
         )
         {
@@ -181,15 +193,20 @@ internal class BuyGoodsScriptCommand : IScriptCommand
             if (--maxSteps == 0)
                 break;
 
-            var buyNextQty = packageItem.RefItem.MaxStack;
-            if (buyNextQty == 0)
+            var buyNextQty = System.Math.Min(ushort.MaxValue, packageItem.RefItem.MaxStack);
+            if (buyNextQty <= 0)
                 break;
 
             // The quantity counts the goods already carried, too
             if (TradeConfig.BuyGoodsQuantity > 0 && existingItemsCount + buyNextQty > TradeConfig.BuyGoodsQuantity)
                 buyNextQty = TradeConfig.BuyGoodsQuantity - existingItemsCount;
 
-            ShoppingManager.PurchaseItem(Game.Player.JobTransport, tabIndex, item.SlotIndex, (ushort)buyNextQty);
+            var result = ShoppingManager.PurchaseItemConfirmed(Game.Player.JobTransport, tabIndex, item.SlotIndex, (ushort)buyNextQty);
+            if (!result.IsConfirmed)
+            {
+                ShoppingManager.Stop();
+                return;
+            }
 
             // Count what actually arrived; a refused purchase (e.g. not enough gold) ends the buying
             var previousCount = existingItemsCount;

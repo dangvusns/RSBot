@@ -119,7 +119,10 @@ public class Action
                     {
                         entity.State.HitState = state;
                         if (state.HasFlag(ActionHitStateFlag.Dead))
+                        {
                             entity.State.LifeState = LifeState.Dead;
+                            SkillManager.ForgetEncounter(uniqueId);
+                        }
                     }
 
                     if (!state.HasFlag(ActionHitStateFlag.Block))

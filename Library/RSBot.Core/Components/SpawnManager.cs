@@ -178,6 +178,7 @@ public static class SpawnManager
                 Game.SelectedEntity = null;
 
             removedEntity.Dispose();
+            SkillManager.ForgetEncounter(uniqueId);
             return _entities.Remove(removedEntity);
         }
     }

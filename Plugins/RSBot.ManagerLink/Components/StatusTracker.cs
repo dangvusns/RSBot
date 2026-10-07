@@ -63,6 +63,10 @@ internal static class StatusTracker
             region = ready ? (ushort)player.Position.Region : (ushort)0,
             clientless = Game.Clientless,
             clientRunning = ClientManager.IsRunning,
+            pendingCallbacks = RSBot.Core.Network.PacketManager.PendingCallbackCount,
+            shoppingRequiresReconciliation = ShoppingManager.RequiresReconciliation,
+            lastShoppingOutcome = ShoppingManager.LastOperationResult.Outcome.ToString(),
+            lastShoppingError = ShoppingManager.LastOperationResult.ErrorCode,
         };
     }
 
