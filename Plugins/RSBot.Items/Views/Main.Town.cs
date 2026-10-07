@@ -89,7 +89,7 @@ public partial class Main
         _listTown.ItemChecked += listTown_ItemChecked;
         _listTown.MouseDoubleClick += listTown_MouseDoubleClick;
 
-        var buttons = new FlowLayoutPanel
+        var buttons = new System.Windows.Forms.FlowLayoutPanel
         {
             Dock = DockStyle.Bottom,
             Height = Px(62),
