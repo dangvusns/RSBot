@@ -3,6 +3,7 @@ using RSBot.Core.Network;
 using RSBot.Core.Objects;
 using RSBot.Core.Objects.Cos;
 using RSBot.Core.Objects.Inventory;
+using RSBot.Core.Objects.Shopping;
 using RSBot.Core.Objects.Spawn;
 using System;
 using System.Collections.Generic;
@@ -16,12 +17,39 @@ namespace RSBot.Core.Components;
 public static class ShoppingManager
 {
     /// <summary>
-    ///     Gets or sets the shopping list.
+    ///     Gets or sets the items to keep in stock, keyed by item code name so any NPC that sells them can be used.
     /// </summary>
-    /// <value>
-    ///     The shopping list.
-    /// </value>
-    public static Dictionary<RefShopGood, int> ShoppingList { get; set; }
+    public static List<TownBuyEntry> ShoppingList { get; set; }
+
+    /// <summary>
+    ///     Gets the code names of the items to drop in town.
+    /// </summary>
+    public static List<string> DropFilter { get; set; }
+
+    /// <summary>
+    ///     Gets a value indicating whether guild storage is skipped while another guild member is nearby.
+    /// </summary>
+    public static bool SkipGuildStorageIfMemberNearby => PlayerConfig.Get("RSBot.Town.SkipGuildStorageIfMemberNearby", false);
+
+    /// <summary>
+    ///     Gets the number of times entering the guild storage is retried.
+    /// </summary>
+    public static int GuildStorageRetry => Math.Max(0, PlayerConfig.Get("RSBot.Town.GuildStorageRetry", 3));
+
+    /// <summary>
+    ///     Gets a value indicating whether the bot stops when the inventory fills up while buying.
+    /// </summary>
+    public static bool StopIfInventoryFull => PlayerConfig.Get("RSBot.Town.StopIfInventoryFull", false);
+
+    /// <summary>
+    ///     Gets a value indicating whether potions, arrows and bolts above the buy quantity are sold.
+    /// </summary>
+    public static bool SellExcess => PlayerConfig.Get("RSBot.Town.SellExcess", false);
+
+    /// <summary>
+    ///     Gets a value indicating whether items in the drop filter are dropped in town.
+    /// </summary>
+    public static bool DropItems => PlayerConfig.Get("RSBot.Town.DropItems", false);
 
     /// <summary>
     ///     Gets a value indicating whether this <see cref="ShoppingManager" /> is finished.
@@ -100,9 +128,10 @@ public static class ShoppingManager
     /// </summary>
     internal static void Initialize()
     {
-        ShoppingList = new Dictionary<RefShopGood, int>();
+        ShoppingList = new List<TownBuyEntry>();
         StoreFilter = new List<string>();
         SellFilter = new List<string>();
+        DropFilter = new List<string>();
         BuybackList = new Dictionary<byte, InventoryItem>();
 
         Log.Debug("Initialized [ShoppingManager]!");
@@ -159,12 +188,20 @@ public static class ShoppingManager
 
         var shopGoods = ReferenceManager.GetRefShopGoods(shopGroup);
 
-        foreach (var item in ShoppingList)
+        if (SellExcess)
+            SellExcessItems();
+
+        if (DropItems)
+            DropFilteredItems();
+
+        foreach (var entry in ShoppingList.Where(e => e.Enabled && e.Quantity > 0).ToList())
         {
             if (!Running)
                 return;
 
-            var actualItem = shopGoods.FirstOrDefault(x => x.RefPackageItemCodeName == item.Key.RefPackageItemCodeName);
+            var actualItem = shopGoods.FirstOrDefault(x =>
+                ReferenceManager.GetRefPackageItem(x.RefPackageItemCodeName)?.RefItemCodeName == entry.ItemCodeName
+            );
 
             if (actualItem == null)
                 continue;
@@ -173,10 +210,10 @@ public static class ShoppingManager
             if (tabIndex == 0xFF) //Specified item not available in this shop!
                 continue;
 
-            var refPackageItem = ReferenceManager.GetRefPackageItem(item.Key.RefPackageItemCodeName);
+            var refPackageItem = ReferenceManager.GetRefPackageItem(actualItem.RefPackageItemCodeName);
 
             var holdingAmount = Game.Player.Inventory.GetSumAmount(refPackageItem.RefItemCodeName);
-            var totalAmountToBuy = item.Value - holdingAmount;
+            var totalAmountToBuy = entry.Quantity - holdingAmount;
 
             var refItem = ReferenceManager.GetRefItem(refPackageItem.RefItemCodeName);
             if (refItem == null)
@@ -193,6 +230,24 @@ public static class ShoppingManager
                 PurchaseItem(tabIndex, actualItem.SlotIndex, (ushort)amountStep);
                 totalAmountToBuy -= amountStep; //One stack bought, substract from total amount!
                 Thread.Sleep(500);
+            }
+
+            if (totalAmountToBuy > 0 && Game.Player.Inventory.Full)
+            {
+                Log.Warn($"The inventory is full, could not buy {totalAmountToBuy}x {refItem.GetRealName()}.");
+
+                if (StopIfInventoryFull)
+                {
+                    CloseShop();
+
+                    Finished = true;
+                    Running = false;
+
+                    Log.Notify("Stopping the bot because the inventory is full.");
+                    Kernel.Bot.Stop();
+
+                    return;
+                }
             }
 
             //merge stacks
@@ -230,7 +285,8 @@ public static class ShoppingManager
     /// </summary>
     /// <param name="item">The item.</param>
     /// <param name="cos"></param>
-    public static void SellItem(InventoryItem item, SpawnedBionic cos = null)
+    /// <param name="amount">The amount to sell, the whole stack if <c>null</c>.</param>
+    public static void SellItem(InventoryItem item, SpawnedBionic cos = null, ushort? amount = null)
     {
         if (SelectedEntity == null)
             return;
@@ -242,7 +298,7 @@ public static class ShoppingManager
             packet.WriteUInt(cos.UniqueId);
 
         packet.WriteByte(item.Slot);
-        packet.WriteUShort(item.Amount);
+        packet.WriteUShort(Math.Min(amount ?? item.Amount, item.Amount));
         packet.WriteUInt(SelectedEntity.UniqueId);
 
         var awaitResult = new AwaitCallback(null, 0xB034);
@@ -462,9 +518,20 @@ public static class ShoppingManager
         }
         else
         {
-            OpenGuildStorage(npc.UniqueId);
-            if (Game.Player.GuildStorage == null)
+            if (SkipGuildStorageIfMemberNearby && IsGuildMemberNearby())
+            {
+                Log.Notify("Skipping the guild storage because another guild member is nearby.");
+                CloseGuildShop();
+
                 return;
+            }
+
+            if (!TryOpenGuildStorage(npc.UniqueId))
+            {
+                CloseGuildShop();
+
+                return;
+            }
         }
 
         Log.Status("Storing items");
@@ -675,6 +742,100 @@ public static class ShoppingManager
     }
 
     /// <summary>
+    ///     Opens the guild storage, retrying when another member is still inside.
+    /// </summary>
+    /// <returns><c>true</c> if the guild storage could be opened.</returns>
+    private static bool TryOpenGuildStorage(uint uniqueId)
+    {
+        var retries = GuildStorageRetry;
+
+        for (var attempt = 0; attempt <= retries; attempt++)
+        {
+            if (attempt > 0)
+            {
+                Log.Notify($"Could not enter the guild storage, retrying ({attempt}/{retries})...");
+                Thread.Sleep(3000);
+            }
+
+            // Reset so the check below sees the result of this attempt and not a previous visit
+            Game.Player.GuildStorage = null;
+            OpenGuildStorage(uniqueId);
+
+            if (Game.Player.GuildStorage != null)
+                return true;
+        }
+
+        Log.Warn("Could not enter the guild storage.");
+
+        return false;
+    }
+
+    /// <summary>
+    ///     Gets a value indicating whether another member of the player's guild is nearby.
+    /// </summary>
+    private static bool IsGuildMemberNearby()
+    {
+        var guildId = GuildManager.Guild?.Id ?? 0;
+        if (guildId == 0)
+            return false;
+
+        return SpawnManager.TryGetEntities<SpawnedPlayer>(p => p.Guild != null && p.Guild.Id == guildId, out _);
+    }
+
+    /// <summary>
+    ///     Sells potions, arrows and bolts that exceed the amount set to buy.
+    /// </summary>
+    private static void SellExcessItems()
+    {
+        foreach (var entry in ShoppingList.Where(e => e.Enabled).ToList())
+        {
+            var refItem = ReferenceManager.GetRefItem(entry.ItemCodeName);
+            if (refItem == null || !refItem.IsStackable || refItem.TypeID3 is not (1 or 4))
+                continue;
+
+            var excess = Game.Player.Inventory.GetSumAmount(entry.ItemCodeName) - entry.Quantity;
+            if (excess <= 0)
+                continue;
+
+            Log.Status("Selling excess items");
+
+            // Sell the smallest stacks first so full stacks are kept
+            var stacks = Game.Player.Inventory
+                .GetNormalPartItems(i => i.Record.CodeName == entry.ItemCodeName)
+                .OrderBy(i => i.Amount)
+                .ToList();
+
+            foreach (var stack in stacks)
+            {
+                if (excess <= 0)
+                    break;
+
+                var amount = (ushort)Math.Min(excess, stack.Amount);
+                SellItem(stack, amount: amount);
+                excess -= amount;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Drops the items in the drop filter.
+    /// </summary>
+    private static void DropFilteredItems()
+    {
+        var items = Game.Player.Inventory.GetNormalPartItems(item => DropFilter.Contains(item.Record.CodeName));
+        if (items.Count == 0)
+            return;
+
+        Log.Status("Dropping items");
+
+        foreach (var item in items.ToList())
+        {
+            if (item.Drop())
+                Thread.Sleep(500);
+        }
+    }
+
+    /// <summary>
     ///     Opens the guild storage.
     /// </summary>
     private static void OpenGuildStorage(uint uniqueId)
@@ -782,6 +943,11 @@ public static class ShoppingManager
         var configSell = PlayerConfig.GetArray<string>("RSBot.Shopping.Sell");
         var configStore = PlayerConfig.GetArray<string>("RSBot.Shopping.Store");
 
+        SellFilter.Clear();
+        StoreFilter.Clear();
+        DropFilter.Clear();
+        DropFilter.AddRange(PlayerConfig.GetArray<string>("RSBot.Shopping.Drop"));
+
         foreach (var item in configSell)
             SellFilter.Add(item);
 
@@ -793,6 +959,51 @@ public static class ShoppingManager
     {
         PlayerConfig.SetArray("RSBot.Shopping.Sell", SellFilter);
         PlayerConfig.SetArray("RSBot.Shopping.Store", StoreFilter);
+        PlayerConfig.SetArray("RSBot.Shopping.Drop", DropFilter);
+    }
+
+    /// <summary>
+    ///     Loads the buy list, importing the old per-trader shopping groups once.
+    /// </summary>
+    public static void LoadBuyList()
+    {
+        ShoppingList.Clear();
+
+        foreach (var value in PlayerConfig.GetArray<string>("RSBot.Town.Buy"))
+        {
+            var entry = TownBuyEntry.Parse(value);
+            if (entry != null && ShoppingList.All(e => e.ItemCodeName != entry.ItemCodeName))
+                ShoppingList.Add(entry);
+        }
+
+        if (ShoppingList.Count > 0 || PlayerConfig.Get("RSBot.Town.Migrated", false))
+            return;
+
+        string[] oldGroups = ["groupPotion", "groupStable", "groupProtector", "groupWeapon", "groupAccessory"];
+        foreach (var group in oldGroups)
+        foreach (var value in PlayerConfig.GetArray<string>("RSBot.Shopping." + group))
+        {
+            var parts = value.Split('|');
+            if (parts.Length < 2 || !int.TryParse(parts[1], out var quantity))
+                continue;
+
+            var itemCodeName = ReferenceManager.GetRefPackageItem(parts[0])?.RefItemCodeName;
+            if (itemCodeName == null || ShoppingList.Any(e => e.ItemCodeName == itemCodeName))
+                continue;
+
+            ShoppingList.Add(new TownBuyEntry { ItemCodeName = itemCodeName, Quantity = quantity, Enabled = true });
+        }
+
+        PlayerConfig.Set("RSBot.Town.Migrated", true);
+        SaveBuyList();
+    }
+
+    /// <summary>
+    ///     Saves the buy list.
+    /// </summary>
+    public static void SaveBuyList()
+    {
+        PlayerConfig.SetArray("RSBot.Town.Buy", ShoppingList.Select(e => e.ToString()));
     }
 
     /// <summary>

@@ -24,6 +24,14 @@ public class ScriptManager
     public static string File { get; set; }
 
     /// <summary>
+    ///     Gets a value indicating whether the running script is a town script (Data/Scripts/Towns).
+    /// </summary>
+    public static bool IsTownScript =>
+        Running
+        && !string.IsNullOrEmpty(File)
+        && string.Equals(Path.GetFileName(Path.GetDirectoryName(File)), "Towns", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
     ///     Gets or sets the commands.
     /// </summary>
     /// <value>

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using RSBot.Core.Objects;
 
@@ -125,10 +126,23 @@ internal class MoveScriptCommand : IScriptCommand
             return false; //Invalid format
         }
 
+        var isTownScript = ScriptManager.IsTownScript;
+
+        if (isTownScript && !Game.Player.IsInDungeon && PlayerConfig.Get("RSBot.Town.RandomizeWalk", false))
+        {
+            // Offsets are in decimeters, the range in meters; stay inside the region
+            var range = Math.Max(0, PlayerConfig.Get("RSBot.Town.RandomizeWalkRange", 2)) * 10;
+            xOffset = Math.Clamp(xOffset + Random.Shared.Next(-range, range + 1), 0, 1920);
+            yOffset = Math.Clamp(yOffset + Random.Shared.Next(-range, range + 1), 0, 1920);
+        }
+
         Position previousPosition = Game.Player.Position;
         Position pos = new(xSector, ySector, xOffset, yOffset, zOffset);
 
-        if (PlayerConfig.Get("RSBot.Training.checkUseSpeedDrug", true))
+        if (
+            PlayerConfig.Get("RSBot.Training.checkUseSpeedDrug", true)
+            && !(isTownScript && PlayerConfig.Get("RSBot.Town.NoSpeedInScript", false))
+        )
         {
             if (!Game.Player.HasActiveVehicle && !Game.Player.InAction)
                 SpeedDrugManager.TryUse();

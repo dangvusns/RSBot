@@ -20,12 +20,6 @@ namespace RSBot.Items.Views;
 [ToolboxItem(false)]
 public partial class Main : DoubleBufferedControl
 {
-    private List<RefShopGroup> _accessoryTrader;
-    private List<RefShopGroup> _potionTrader;
-    private List<RefShopGroup> _protectorTrader;
-    private List<RefShopGroup> _stableKeeper;
-    private List<RefShopGroup> _weaponTrader;
-
     /// <summary>
     ///     The index of the filter row a mouse drag selection started on, -1 when not dragging.
     /// </summary>
@@ -42,8 +36,8 @@ public partial class Main : DoubleBufferedControl
         InitializeComponent();
         SubscribeEvents();
 
-        listShoppingList.SmallImageList = ListViewExtensions.StaticItemsImageList;
-        listAvailableProducts.SmallImageList = ListViewExtensions.StaticItemsImageList;
+        InitializeTownTab();
+        InitializeDropFilter();
 
         listFilter.MultiSelect = true;
         listFilter.HideSelection = false;
@@ -60,124 +54,6 @@ public partial class Main : DoubleBufferedControl
     {
         EventManager.SubscribeEvent("OnLoadGameData", OnLoadGameData);
         EventManager.SubscribeEvent("OnEnterGame", LoadSettings);
-    }
-
-    /// <summary>
-    ///     Loads the npcs
-    /// </summary>
-    private void LoadGroups()
-    {
-        _accessoryTrader = new List<RefShopGroup>();
-        _potionTrader = new List<RefShopGroup>();
-        _protectorTrader = new List<RefShopGroup>();
-        _weaponTrader = new List<RefShopGroup>();
-        _stableKeeper = new List<RefShopGroup>();
-
-        foreach (var group in Game.ReferenceManager.ShopGroups)
-        {
-            if (group.Value.CodeName.Contains("SMITH") && !group.Value.CodeName.Contains("MALL_"))
-                _weaponTrader.Add(group.Value);
-
-            if (group.Value.CodeName.Contains("POTION") && !group.Value.CodeName.Contains("MALL_"))
-                _potionTrader.Add(group.Value);
-
-            if (group.Value.CodeName.Contains("ARMOR") && !group.Value.CodeName.Contains("MALL_"))
-                _protectorTrader.Add(group.Value);
-
-            if (group.Value.CodeName.Contains("ACCESSORY") && !group.Value.CodeName.Contains("MALL_"))
-                _accessoryTrader.Add(group.Value);
-
-            if (group.Value.CodeName.Contains("STABLE") && !group.Value.CodeName.Contains("MALL_"))
-                _stableKeeper.Add(group.Value);
-        }
-    }
-
-    /// <summary>
-    ///     Populates the product list.
-    /// </summary>
-    private void PopulateProductList(int index, string filter = "")
-    {
-        if (index < 0)
-            return;
-
-        listAvailableProducts.BeginUpdate();
-        listAvailableProducts.Items.Clear();
-
-        List<RefShopGroup> groups;
-        switch (index)
-        {
-            case 0:
-                groups = _potionTrader;
-                break;
-
-            case 1:
-                groups = _stableKeeper;
-                break;
-
-            case 2:
-                groups = _protectorTrader;
-                break;
-
-            case 3:
-                groups = _weaponTrader;
-                break;
-
-            case 4:
-                groups = _accessoryTrader;
-                break;
-
-            default:
-                return;
-        }
-
-        foreach (var group in groups)
-        {
-            var goods = Game.ReferenceManager.GetRefShopGoods(group);
-
-            if (goods == null)
-                continue;
-
-            foreach (var good in goods)
-            {
-                var tabName = Game.ReferenceManager.GetTranslation(
-                    Game.ReferenceManager.GetTab(good.RefTabCodeName).StrID128_Tab
-                );
-
-                var lvGroup = new ListViewGroup(tabName) { Name = tabName };
-                if (!listAvailableProducts.Groups.Contains(lvGroup))
-                    listAvailableProducts.Groups.Add(lvGroup);
-
-                var refPackageItem = Game.ReferenceManager.GetRefPackageItem(good.RefPackageItemCodeName);
-                var item = Game.ReferenceManager.GetRefItem(refPackageItem.RefItemCodeName);
-
-                if (item == null)
-                    continue;
-
-                if (!checkShowEquipment.Checked && item.TypeID2 == 1)
-                    continue;
-
-                var realItemName = item.GetRealName();
-
-                //Apply filters
-                if (refPackageItem.RefItemCodeName.Contains("_MALL_"))
-                    continue;
-                if (filter != "" && !realItemName.Contains(filter))
-                    continue;
-
-                var listItem = new ListViewItem(realItemName)
-                {
-                    Tag = good,
-                    Name = item.CodeName,
-                    Group = listAvailableProducts.Groups[tabName],
-                };
-                listItem.LoadItemImageAsync(good);
-
-                if (!listAvailableProducts.Items.ContainsKey(item.CodeName))
-                    listAvailableProducts.Items.Add(listItem);
-            }
-        }
-
-        listAvailableProducts.EndUpdate();
     }
 
     /// <summary>
@@ -200,75 +76,6 @@ public partial class Main : DoubleBufferedControl
         listFilter.EndUpdate();
 
         await Task.Yield();
-    }
-
-    /// <summary>
-    ///     Saves the shopping list.
-    /// </summary>
-    private void SaveShoppingList()
-    {
-        ShoppingManager.ShoppingList.Clear();
-        foreach (ListViewGroup grp in listShoppingList.Groups)
-        {
-            var values = new List<string>(grp.Items.Count);
-
-            foreach (ListViewItem item in grp.Items)
-            {
-                if (!(item.Tag is RefShopGood packageItem))
-                    continue;
-
-                if (ShoppingManager.ShoppingList.ContainsKey(packageItem))
-                    continue;
-
-                if (!int.TryParse(item.SubItems[1].Text.Substring(1), out var amount))
-                    continue;
-
-                ShoppingManager.ShoppingList.Add(packageItem, amount);
-
-                values.Add(packageItem.RefPackageItemCodeName + "|" + amount);
-            }
-
-            PlayerConfig.SetArray("RSBot.Shopping." + grp.Name, values);
-        }
-    }
-
-    /// <summary>
-    ///     Loads the shopping list.
-    /// </summary>
-    private void LoadShoppingList()
-    {
-        listShoppingList.BeginUpdate();
-        listShoppingList.Items.Clear();
-
-        foreach (ListViewGroup group in listShoppingList.Groups)
-        {
-            var values = PlayerConfig.GetArray<string>("RSBot.Shopping." + group.Name);
-
-            foreach (var value in values)
-            {
-                var packageCodeName = value.Split('|')[0];
-                var amount = value.Split('|')[1];
-                var good = Game.ReferenceManager.GetRefShopGood(packageCodeName);
-
-                if (good == null)
-                    continue;
-
-                var refPackageItem = Game.ReferenceManager.GetRefPackageItem(good.RefPackageItemCodeName);
-                var item = Game.ReferenceManager.GetRefItem(refPackageItem.RefItemCodeName);
-
-                var listItem = new ListViewItem(item.GetRealName()) { Name = item.CodeName, Tag = good };
-                listItem.SubItems.Add("x" + amount);
-                listItem.Group = group;
-                listShoppingList.Items.Add(listItem);
-
-                listItem.LoadItemImageAsync(good);
-
-                if (!ShoppingManager.ShoppingList.ContainsKey(good))
-                    ShoppingManager.ShoppingList.Add(good, int.Parse(amount));
-            }
-        }
-
-        listShoppingList.EndUpdate();
     }
 
     /// <summary>
@@ -537,6 +344,7 @@ public partial class Main : DoubleBufferedControl
                     getSubItemString(item),
                     ShoppingManager.SellFilter.Contains(item.CodeName) ? "√" : "•",
                     ShoppingManager.StoreFilter.Contains(item.CodeName) ? "√" : "•",
+                    ShoppingManager.DropFilter.Contains(item.CodeName) ? "√" : "•",
                 },
             };
 
@@ -591,7 +399,7 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     private void OnLoadGameData()
     {
-        LoadGroups();
+        _townCatalog = null;
     }
 
     /// <summary>
@@ -624,10 +432,12 @@ public partial class Main : DoubleBufferedControl
             ShoppingManager.SellPetItems = checkSellItemsFromPet.Checked;
             ShoppingManager.StorePetItems = checkStoreItemsFromPet.Checked;
 
-            LoadShoppingList();
-
             ShoppingManager.LoadFilters();
+            ShoppingManager.LoadBuyList();
             PickupManager.LoadFilter();
+
+            LoadTownSettings();
+            ShowConfiguredTownItems();
         });
 
         _loadingSettings = false;
@@ -648,6 +458,7 @@ public partial class Main : DoubleBufferedControl
             btnAddToStore.Checked = false;
             btnPickup.Checked = false;
             btnPickOnlyCharacter.Checked = false;
+            _btnAddToDrop.Checked = false;
             return;
         }
 
@@ -661,6 +472,7 @@ public partial class Main : DoubleBufferedControl
         btnAddToStore.Checked = codeNames.All(store.Contains);
         btnPickup.Checked = codeNames.All(pickup.Contains);
         btnPickOnlyCharacter.Checked = codeNames.All(pickupChar.Contains);
+        _btnAddToDrop.Checked = codeNames.All(ShoppingManager.DropFilter.ToHashSet().Contains);
     }
 
     /// <summary>
@@ -752,93 +564,14 @@ public partial class Main : DoubleBufferedControl
 
     #region Shopping manager
 
-    /// <summary>
-    ///     Handles the SelectedIndexChanged event of the comboStore control.
-    /// </summary>
-    /// <param name="sender">The source of the event.</param>
-    /// <param name="e">The <see cref="System.EventArgs" /> instance containing the event data.</param>
-    private void comboStore_SelectedIndexChanged(object sender, EventArgs e)
-    {
-        PopulateProductList(comboStore.SelectedIndex);
-    }
+    // The legacy shopping controls are still created by the designer but replaced by the town tab (Main.Town.cs).
+    private void comboStore_SelectedIndexChanged(object sender, EventArgs e) { }
 
-    /// <summary>
-    ///     Handles the Click event of the menuAddToShoppingList control.
-    /// </summary>
-    /// <param name="sender">The source of the event.</param>
-    /// <param name="e">The <see cref="System.EventArgs" /> instance containing the event data.</param>
-    private void menuAddToShoppingList_Click(object sender, EventArgs e)
-    {
-        foreach (ListViewItem listItem in listAvailableProducts.SelectedItems)
-        {
-            var refItem = Game.ReferenceManager.GetRefItem(listItem.Name);
-            var title = LanguageManager.GetLang("InputDialogTitle");
-            var content = LanguageManager.GetLang("InputDialogContent");
-            var itemNameTrans = LanguageManager.GetLang("InputDialogItemName", refItem.GetRealName(), refItem.MaxStack);
-            var dialog = new InputDialog(title, itemNameTrans, content, InputDialog.InputType.Numeric);
-            if (dialog.ShowDialog(this) == DialogResult.Cancel)
-                return;
+    private void menuAddToShoppingList_Click(object sender, EventArgs e) { }
 
-            if (listShoppingList.Items.ContainsKey(listItem.Name))
-            {
-                var item = listShoppingList.Items[listItem.Name];
-                if (!int.TryParse(item.SubItems[1].Text.Substring(1), out var amount))
-                    continue;
+    private void menuRemoveItem_Click(object sender, EventArgs e) { }
 
-                item.SubItems[1].Text = $"x{Convert.ToInt32(dialog.Value) + amount}";
-                continue;
-            }
-
-            //var newListItem = (ListViewItem)listItem.Clone();
-            //newListItem.Group = listShoppingList.Groups[comboStore.SelectedIndex];
-            var newListItem = new ListViewItem(listItem.Text) { Tag = listItem.Tag };
-            newListItem.Group = listShoppingList.Groups[comboStore.SelectedIndex];
-            newListItem.SubItems.Add("x" + dialog.Value);
-
-            //newListItem.SubItems.Add("x" + dialog.Value);
-            listShoppingList.Items.Add(newListItem);
-        }
-
-        SaveShoppingList();
-    }
-
-    /// <summary>
-    ///     Handles the Click event of the menuRemoveItem control.
-    /// </summary>
-    /// <param name="sender">The source of the event.</param>
-    /// <param name="e">The <see cref="System.EventArgs" /> instance containing the event data.</param>
-    private void menuRemoveItem_Click(object sender, EventArgs e)
-    {
-        foreach (ListViewItem item in listShoppingList.SelectedItems)
-            listShoppingList.Items.Remove(item);
-
-        SaveShoppingList();
-    }
-
-    /// <summary>
-    ///     Handles the Click event of the menuChangeAmount control.
-    /// </summary>
-    /// <param name="sender">The source of the event.</param>
-    /// <param name="e">The <see cref="System.EventArgs" /> instance containing the event data.</param>
-    private void menuChangeAmount_Click(object sender, EventArgs e)
-    {
-        foreach (ListViewItem item in listShoppingList.SelectedItems)
-        {
-            var defaultValue = int.Parse(item.SubItems[1].Text.Substring(1, item.SubItems[1].Text.Length - 1));
-
-            var title = LanguageManager.GetLang("InputDialogTitle");
-            var content = LanguageManager.GetLang("InputDialogContent");
-            var dialog = new InputDialog(title, item.Text, content, InputDialog.InputType.Numeric);
-            dialog.Numeric.Value = defaultValue;
-
-            if (dialog.ShowDialog(this) == DialogResult.Cancel)
-                return;
-
-            item.SubItems[1].Text = "x" + dialog.Value;
-        }
-
-        SaveShoppingList();
-    }
+    private void menuChangeAmount_Click(object sender, EventArgs e) { }
 
     private void checkShoppingSetting_CheckedChanged(object sender, EventArgs e)
     {
@@ -858,15 +591,7 @@ public partial class Main : DoubleBufferedControl
         ShoppingManager.SellPetItems = checkSellItemsFromPet.Checked;
     }
 
-    /// <summary>
-    ///     Handles the TextChanged event of the txtShopSearch control.
-    /// </summary>
-    /// <param name="sender">The source of the event.</param>
-    /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
-    private void txtShopSearch_TextChanged(object sender, EventArgs e)
-    {
-        PopulateProductList(comboStore.SelectedIndex, txtShopSearch.Text);
-    }
+    private void txtShopSearch_TextChanged(object sender, EventArgs e) { }
 
     #endregion Shopping manager
 
@@ -993,10 +718,7 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     /// <param name="sender">The source of the event.</param>
     /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
-    private void checkShowEquipment_CheckedChanged(object sender, EventArgs e)
-    {
-        PopulateProductList(comboStore.SelectedIndex, txtShopSearch.Text);
-    }
+    private void checkShowEquipment_CheckedChanged(object sender, EventArgs e) { }
 
     private void checkPickupSettings_CheckedChanged(object sender, EventArgs e)
     {
