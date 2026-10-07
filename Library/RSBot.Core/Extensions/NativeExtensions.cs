@@ -25,6 +25,12 @@ public static class NativeExtensions
     [DllImport("user32.dll")]
     public static extern int SetWindowText(IntPtr hWnd, string text);
 
+    [DllImport("user32.dll")]
+    public static extern bool IsWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsWindowVisible(IntPtr hWnd);
+
     [DllImport("kernel32.dll")]
     public static extern bool CreateProcess /*A*/
     (

@@ -17,6 +17,17 @@ namespace RSBot.Core.Components;
 public partial class ClientManager
 {
     private static Process _process;
+
+    /// <summary>
+    ///     The client's main window. Cached because <see cref="Process.MainWindowHandle" /> skips hidden windows,
+    ///     so the handle could not be found again to show the client after hiding it.
+    /// </summary>
+    private static IntPtr _windowHandle;
+
+    /// <summary>
+    ///     Whether the client window should be visible. Applied as soon as the window exists.
+    /// </summary>
+    private static bool _visible = true;
     private static readonly string GitHubSignatureUrl =
         "https://raw.githubusercontent.com/myildirimofficial/rsbot/master/client-signatures.cfg";
 
@@ -166,6 +177,7 @@ public partial class ClientManager
                 return false;
 
             _process = sroProcess;
+            _windowHandle = IntPtr.Zero;
 
             if (!InjectClientLibrary(pi, buffer, pathLen))
             {
@@ -186,6 +198,10 @@ public partial class ClientManager
             _process.Exited += ClientProcess_Exited;
 
             EventManager.FireEvent("OnStartClient");
+
+            var startedProcess = _process;
+            _ = Task.Run(() => ApplyVisibilityWhenWindowReady(startedProcess));
+
             return true;
         }
         catch (Exception ex)
@@ -407,7 +423,7 @@ public partial class ClientManager
 
         try
         {
-            if (_process != null && _process.MainWindowHandle != IntPtr.Zero)
+            if (_process != null && !_process.HasExited)
                 _process.Kill();
         }
         catch (Exception ex)
@@ -421,8 +437,9 @@ public partial class ClientManager
     /// </summary>
     public static void SetTitle(string title)
     {
-        if (_process != null && _process.MainWindowHandle != IntPtr.Zero)
-            SetWindowText(_process.MainWindowHandle, title);
+        var handle = GetWindowHandle();
+        if (handle != IntPtr.Zero)
+            SetWindowText(handle, title);
     }
 
     /// <summary>
@@ -430,8 +447,69 @@ public partial class ClientManager
     /// </summary>
     public static void SetVisible(bool visible)
     {
-        if (_process != null && _process.MainWindowHandle != IntPtr.Zero)
-            ShowWindow(_process.MainWindowHandle, visible ? SW_SHOW : SW_HIDE);
+        _visible = visible;
+
+        // When the window does not exist yet, ApplyVisibilityWhenWindowReady applies it later
+        var handle = GetWindowHandle();
+        if (handle != IntPtr.Zero)
+            ShowWindow(handle, visible ? SW_SHOW : SW_HIDE);
+    }
+
+    /// <summary>
+    ///     Gets the client's main window, or <see cref="IntPtr.Zero" /> while it does not exist or the client exited.
+    /// </summary>
+    private static IntPtr GetWindowHandle()
+    {
+        var process = _process;
+        if (process == null)
+            return IntPtr.Zero;
+
+        try
+        {
+            if (process.HasExited)
+                return IntPtr.Zero;
+
+            if (_windowHandle != IntPtr.Zero && IsWindow(_windowHandle))
+                return _windowHandle;
+
+            process.Refresh();
+            _windowHandle = process.MainWindowHandle;
+
+            return _windowHandle;
+        }
+        catch (InvalidOperationException)
+        {
+            // The process exited between the checks
+            return IntPtr.Zero;
+        }
+    }
+
+    /// <summary>
+    ///     Waits for the client window to be created and applies the requested visibility.
+    ///     The client creates its window a while after starting and may show it again while loading,
+    ///     so a hidden client is kept hidden for a short time after the window appeared.
+    /// </summary>
+    private static async Task ApplyVisibilityWhenWindowReady(Process process)
+    {
+        var waitUntil = DateTime.Now.AddMinutes(2);
+        DateTime? enforceUntil = null;
+
+        while (DateTime.Now < waitUntil && _process == process)
+        {
+            var handle = GetWindowHandle();
+            if (handle != IntPtr.Zero)
+            {
+                enforceUntil ??= DateTime.Now.AddSeconds(30);
+
+                if (!_visible && IsWindowVisible(handle))
+                    ShowWindow(handle, SW_HIDE);
+
+                if (DateTime.Now > enforceUntil)
+                    return;
+            }
+
+            await Task.Delay(250).ConfigureAwait(false);
+        }
     }
 
     /// <summary>

@@ -282,13 +282,17 @@ internal partial class Main : DoubleBufferedControl
     /// </summary>
     private void OnStartClient()
     {
-        btnStartClient.Enabled = false;
-        btnStartClientless.Enabled = false;
-        _clientVisible = true;
-        btnClientHideShow.Enabled = true;
+        // Applied by the client manager as soon as the client window exists
+        _clientVisible = !GlobalConfig.Get<bool>("RSBot.General.HideOnStartClient");
+        ClientManager.SetVisible(_clientVisible);
 
-        if (GlobalConfig.Get<bool>("RSBot.General.HideOnStartClient"))
-            ClientManager.SetVisible(false);
+        RunOnUi(() =>
+        {
+            btnStartClient.Enabled = false;
+            btnStartClientless.Enabled = false;
+            btnClientHideShow.Enabled = true;
+            btnClientHideShow.Text = LanguageManager.GetLang(_clientVisible ? "Hide" : "Show") + " Client";
+        });
     }
 
     /// <summary>
@@ -335,7 +339,7 @@ internal partial class Main : DoubleBufferedControl
         if (!Game.Clientless)
         {
             btnClientHideShow.Enabled = true;
-            btnClientHideShow.Text = LanguageManager.GetLang("Hide") + " Client";
+            btnClientHideShow.Text = LanguageManager.GetLang(_clientVisible ? "Hide" : "Show") + " Client";
             btnStartClient.Enabled = true;
             btnStartClient.Text = LanguageManager.GetLang("Kill") + " Client";
             btnGoClientless.Enabled = true;
