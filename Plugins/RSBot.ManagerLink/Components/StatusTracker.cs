@@ -67,6 +67,8 @@ internal static class StatusTracker
             shoppingRequiresReconciliation = ShoppingManager.RequiresReconciliation,
             lastShoppingOutcome = ShoppingManager.LastOperationResult.Outcome.ToString(),
             lastShoppingError = ShoppingManager.LastOperationResult.ErrorCode,
+            casting = SkillManager.IsCasting,
+            lastBuffOutcome = SkillManager.LastBuffResult.ToString(),
         };
     }
 

@@ -192,7 +192,7 @@ public class PacketManager
         TrySendPacket(packet, destination, forwarded);
     }
 
-    private static bool TrySendPacket(Packet packet, PacketDestination destination, bool forwarded)
+    internal static bool TrySendPacket(Packet packet, PacketDestination destination, bool forwarded)
     {
         var proxy = Kernel.Proxy;
         if (proxy == null)
@@ -219,6 +219,8 @@ public class PacketManager
                         return false;
                     if (packet.Opcode == 0x7034)
                         ShoppingManager.ObserveInventoryRequest(packet);
+                    if (packet.Opcode == 0x7074)
+                        SkillManager.ObserveCastRequest(packet);
                     proxy.Server.Send(packet);
                     break;
                 default:

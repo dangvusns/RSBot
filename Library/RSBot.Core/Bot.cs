@@ -116,6 +116,7 @@ public class Bot
     /// </summary>
     public void Stop()
     {
+        SkillManager.CancelPendingCasts();
         ScriptManager.Stop();
         ShoppingManager.Stop();
         PickupManager.Stop();

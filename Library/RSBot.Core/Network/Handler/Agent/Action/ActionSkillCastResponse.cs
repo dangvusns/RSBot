@@ -2,7 +2,6 @@
 using RSBot.Core.Event;
 using RSBot.Core.Objects;
 using RSBot.Core.Objects.Spawn;
-using System.Diagnostics;
 
 namespace RSBot.Core.Network.Handler.Agent.Action;
 
@@ -66,51 +65,7 @@ internal class ActionSkillCastResponse : IPacketHandler
             return;
         }
 
-        var actionCode = packet.ReadByte();
-
-        if (Game.ClientType > GameClientType.Thailand)
-            packet.ReadByte(); // always 0x30
-
-        var action = new Objects.Action
-        {
-            Code = actionCode,
-            SkillId = packet.ReadUInt(),
-            ExecutorId = packet.ReadUInt(),
-            Id = packet.ReadUInt(),
-        };
-
-        if (Game.ClientType > GameClientType.Chinese && Game.ClientType != GameClientType.Japanese)
-            action.UnknownId = packet.ReadUInt();
-
-        action.TargetId = packet.ReadUInt();
-        if (
-            Game.ClientType == GameClientType.Turkey
-            || Game.ClientType == GameClientType.Global
-            || Game.ClientType == GameClientType.VTC_Game
-            || Game.ClientType == GameClientType.RuSro
-            || Game.ClientType == GameClientType.Korean
-            || Game.ClientType == GameClientType.Japanese
-            || Game.ClientType == GameClientType.Taiwan
-        )
-        {
-            packet.ReadByte();
-            action.Flag = (ActionStateFlag)packet.ReadByte();
-        }
-        else if (Game.ClientType == GameClientType.Rigid)
-        {
-            action.Flag = (ActionStateFlag)packet.ReadByte();
-            var flag = packet.ReadByte();
-            Debug.WriteLine("Flag:" + flag);
-        }
-        else
-        {
-            action.Flag = (ActionStateFlag)packet.ReadByte();
-        }
-
-        /*if (Game.ClientType >= GameClientType.Chinese)
-            packet.ReadByte();
-
-        action.Flag = (ActionStateFlag)packet.ReadByte();*/
+        var action = Objects.Action.ReadCastStart(packet, Game.ClientType);
         Objects.Action.RememberCast(action);
         if (action.PlayerIsExecutor)
             SkillManager.ConfirmOpener(action.TargetId, action.SkillId);

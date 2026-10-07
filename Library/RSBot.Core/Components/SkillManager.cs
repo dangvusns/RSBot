@@ -80,6 +80,93 @@ public static class SkillManager
 
     private static readonly EncounterOpeners _encounterOpeners = new();
 
+    private static readonly SemaphoreSlim _castOwnership = new(1, 1);
+    private static readonly object _castStateLock = new();
+    private static int _castGeneration;
+    private static Packet _activeCastRequest;
+    private static AwaitCallback[] _activeCastCallbacks = Array.Empty<AwaitCallback>();
+    private static CancellationTokenSource _castCancellation;
+    private static int _lastBuffResult;
+
+    public static bool IsCasting => _castOwnership.CurrentCount == 0;
+    public static SkillCastResult LastBuffResult => (SkillCastResult)Volatile.Read(ref _lastBuffResult);
+
+    // ponytail: ownership covers a local API call, not every server skill-chain hit.
+    // Retain it through full completion only when captures prove the final transition.
+    private static T WithCastOwnership<T>(Func<int, T> cast, T unavailable)
+    {
+        var generation = Volatile.Read(ref _castGeneration);
+        if (!Game.Ready || Game.Player?.State.LifeState != LifeState.Alive || !_castOwnership.Wait(0))
+            return unavailable;
+        CancellationTokenSource cancellation = null;
+        try
+        {
+            lock (_castStateLock)
+            {
+                if (generation != _castGeneration)
+                    return unavailable;
+                _castCancellation = cancellation = new CancellationTokenSource();
+            }
+            return cast(generation);
+        }
+        finally
+        {
+            lock (_castStateLock)
+            {
+                foreach (var callback in _activeCastCallbacks)
+                    callback.Cancel();
+                _activeCastCallbacks = Array.Empty<AwaitCallback>();
+                _activeCastRequest = null;
+                _castCancellation = null;
+            }
+            cancellation?.Dispose();
+            _castOwnership.Release();
+        }
+    }
+
+    internal static void CancelPendingCasts(bool resetSession = false, bool clearEncounters = true)
+    {
+        lock (_castStateLock)
+        {
+            _castGeneration++;
+            _castCancellation?.Cancel();
+            foreach (var callback in _activeCastCallbacks)
+                callback.Cancel();
+            _lastRequestedSkill = null;
+            if (clearEncounters) _encounterOpeners.Clear();
+            if (resetSession)
+            {
+                Objects.Action.ClearRecentCasts();
+                lock (_consecutiveRefusals) _consecutiveRefusals.Clear();
+            }
+        }
+    }
+
+    internal static void ObserveCastRequest(Packet request)
+    {
+        lock (_castStateLock)
+            if (_activeCastRequest != null && !ReferenceEquals(request, _activeCastRequest))
+                CancelPendingCasts(clearEncounters: false);
+    }
+
+    private static bool SendCastPacket(Packet packet, int generation, params AwaitCallback[] callbacks)
+    {
+        lock (_castStateLock)
+        {
+            if (generation != _castGeneration || !Game.Ready || Game.Player?.State.LifeState != LifeState.Alive)
+            {
+                foreach (var callback in callbacks) callback.Cancel();
+                return false;
+            }
+            _activeCastRequest = packet;
+            _activeCastCallbacks = callbacks;
+            if (callbacks.Length == 0)
+                return PacketManager.TrySendPacket(packet, PacketDestination.Server, false);
+            PacketManager.SendPacket(packet, PacketDestination.Server, callbacks);
+            return !callbacks.Any(c => c.State is AwaitCallbackState.NotSent or AwaitCallbackState.Cancelled);
+        }
+    }
+
     /// <summary>
     ///     Gets or sets the teleport skill.
     /// </summary>
@@ -109,10 +196,6 @@ public static class SkillManager
 
         EventManager.SubscribeEvent("OnLoadGameData", OnLoadGamedData);
         EventManager.SubscribeEvent("OnCastSkill", new Action<uint>(OnCastSkill));
-        EventManager.SubscribeEvent("OnStopBot", _encounterOpeners.Clear);
-        EventManager.SubscribeEvent("OnPlayerDied", _encounterOpeners.Clear);
-        EventManager.SubscribeEvent("OnTeleportStart", _encounterOpeners.Clear);
-        EventManager.SubscribeEvent("OnAgentServerDisconnected", _encounterOpeners.Clear);
 
         Log.Debug($"Initialized [SkillManager] for [{Skills.Count}] different mob rarities!");
     }
@@ -404,6 +487,8 @@ public static class SkillManager
     /// <param name="skill">The using skill</param>
     public static bool CheckSkillRequired(RefSkill skill)
     {
+        if (skill == null || Game.Player == null)
+            return false;
         if (skill.ReqCommon_Mastery1 == 1)
             return true;
 
@@ -459,6 +544,9 @@ public static class SkillManager
 
         var result = requiredItem.Equip(movingSlot);
 
+        if (_castCancellation?.IsCancellationRequested == true || !Game.Ready)
+            return false;
+
         if (movingSlot == 6 && requiredItem.Record.TwoHanded == 0)
         {
             // find and equip the shield item automatically
@@ -472,8 +560,11 @@ public static class SkillManager
     }
 
     public static bool CastSkill(SkillInfo skill, uint targetId = 0)
+        => WithCastOwnership(generation => CastSkillCore(skill, targetId, generation), false);
+
+    private static bool CastSkillCore(SkillInfo skill, uint targetId, int generation)
     {
-        if (!Game.Player.Skills.HasSkill(skill.Id))
+        if (skill == null || !Game.Player.Skills.HasSkill(skill.Id))
             return false;
 
         if (!SpawnManager.TryGetEntity<SpawnedBionic>(targetId, out var entity))
@@ -503,9 +594,7 @@ public static class SkillManager
             $"Skill Attacking to: {targetId} State: {entity.State.LifeState} Health: {entity.Health} HasHealth: {entity.HasHealth} Dst: {Math.Round(entity.DistanceToPlayer, 1)}"
         );
 
-        PacketManager.SendPacket(packet, PacketDestination.Server);
-
-        return true;
+        return SendCastPacket(packet, generation);
     }
 
     /// <summary>
@@ -515,8 +604,11 @@ public static class SkillManager
     /// <param name="targetId">The target unique identifier.</param>
     /// <returns> <c>true</c> if this successfully used the selected skill; otherwise, <c>false</c>.</returns>
     public static bool CastSkillOld(SkillInfo skill, uint targetId = 0)
+        => WithCastOwnership(generation => CastSkillOldCore(skill, targetId, generation), false);
+
+    private static bool CastSkillOldCore(SkillInfo skill, uint targetId, int generation)
     {
-        if (!Game.Player.Skills.HasSkill(skill.Id))
+        if (skill == null || !Game.Player.Skills.HasSkill(skill.Id))
             return false;
 
         if (!SpawnManager.TryGetEntity<SpawnedBionic>(targetId, out var entity))
@@ -598,14 +690,16 @@ public static class SkillManager
             $"Skill Attacking to: {targetId} State: {entity.State.LifeState} Health: {entity.Health} HasHealth: {entity.HasHealth} Dst: {Math.Round(entity.DistanceToPlayer, 1)}"
         );
 
-        PacketManager.SendPacket(packet, PacketDestination.Server, callback);
+        if (!SendCastPacket(packet, generation, callback))
+            return false;
         try
         {
-            Thread.Sleep(duration);
+            if (_castCancellation.Token.WaitHandle.WaitOne(duration))
+                return false;
 
             if (skill.Record.Basic_Activity != 1)
             {
-                callback.AwaitResponse(duration);
+                callback.AwaitResponse(duration, _castCancellation.Token);
                 return callback.IsCompleted;
             }
 
@@ -625,6 +719,19 @@ public static class SkillManager
     /// <returns>Whether the server accepted the cast.</returns>
     public static SkillCastResult CastBuff(SkillInfo skill, uint target = 0, bool awaitBuffResponse = true)
     {
+        if (skill == null || !Game.Ready || Game.Player?.State.LifeState != LifeState.Alive)
+        {
+            Volatile.Write(ref _lastBuffResult, (int)SkillCastResult.NotSent);
+            return SkillCastResult.NotSent;
+        }
+        var result = WithCastOwnership(generation => CastBuffCore(skill, target, awaitBuffResponse, generation), SkillCastResult.Busy);
+        Volatile.Write(ref _lastBuffResult, (int)result);
+        return result;
+    }
+
+    private static SkillCastResult CastBuffCore(SkillInfo skill, uint target, bool awaitBuffResponse, int generation)
+    {
+        var player = Game.Player;
         if (skill.Id == 0)
             return SkillCastResult.NotSent;
 
@@ -646,6 +753,7 @@ public static class SkillManager
         packet.WriteByte(1); //Execute
         packet.WriteByte(4); //Use Skill
         packet.WriteUInt(skill.Id);
+        uint? expectedTarget = null;
 
         // An ally buff on another player (e.g. a party member) needs that player as its target. Area buffs
         // without a target group (e.g. marches) are still sent without one.
@@ -655,8 +763,9 @@ public static class SkillManager
             || (target != 0 && skill.Record.TargetGroup_Ally)
         )
         {
+            expectedTarget = target == 0 ? player.UniqueId : target;
             packet.WriteByte(ActionTarget.Entity);
-            packet.WriteUInt(target == 0 ? Game.Player.UniqueId : target);
+            packet.WriteUInt(expectedTarget.Value);
         }
         else
         {
@@ -665,41 +774,21 @@ public static class SkillManager
 
         if (!awaitBuffResponse)
         {
-            PacketManager.SendPacket(packet, PacketDestination.Server);
-            return SkillCastResult.Unconfirmed;
+            return SendCastPacket(packet, generation) ? SkillCastResult.Unconfirmed : SkillCastResult.Cancelled;
         }
 
-        var refused = false;
-
-        // Wait for the skill cast response of this buff instead of a buff info packet,
-        // so a casted or refused buff does not block until the timeout runs out.
+        // Match acceptance against the captured caster and recipient. Anonymous errors close
+        // the wait without claiming that they identify this request.
         var castCallback = new AwaitCallback(
-            response =>
-            {
-                if (response.ReadByte() != 0x01)
-                {
-                    refused = true;
-                    return AwaitCallbackResult.Fail;
-                }
-
-                response.ReadByte(); // action code
-
-                if (Game.ClientType > GameClientType.Thailand)
-                    response.ReadByte(); // always 0x30
-
-                var castedSkillId = response.ReadUInt();
-                var executorId = response.ReadUInt();
-
-                return executorId == Game.Player.UniqueId && castedSkillId == skill.Id
-                    ? AwaitCallbackResult.Success
-                    : AwaitCallbackResult.ConditionFailed;
-            },
+            response => Objects.Action.MatchCastStart(response, Game.ClientType, skill.Id, player.UniqueId, expectedTarget),
             0xB070
         );
 
         var actionStateCallback = new AwaitCallback(
             response =>
             {
+                if (!castCallback.IsCompleted)
+                    return AwaitCallbackResult.ConditionFailed;
                 var state = response.ReadByte();
                 var recurring = response.ReadByte();
 
@@ -715,10 +804,8 @@ public static class SkillManager
         );
 
         var awaitActionState = skill.Record.Basic_Activity != 1;
-        if (awaitActionState)
-            PacketManager.SendPacket(packet, PacketDestination.Server, castCallback, actionStateCallback);
-        else
-            PacketManager.SendPacket(packet, PacketDestination.Server, castCallback);
+        SendCastPacket(packet, generation, awaitActionState
+            ? new[] { castCallback, actionStateCallback } : new[] { castCallback });
 
         var timeout =
             skill.Record.Action_CastingTime
@@ -726,21 +813,33 @@ public static class SkillManager
             + skill.Record.Action_PreparingTime
             + 1500;
 
-        castCallback.AwaitResponse(timeout);
+        castCallback.AwaitResponse(timeout, _castCancellation.Token);
 
-        var result = castCallback.IsCompleted
-            ? SkillCastResult.Accepted
-            : refused
-                ? SkillCastResult.Refused
-                : SkillCastResult.Timeout;
+        var result = castCallback.State switch
+        {
+            AwaitCallbackState.Succeeded => SkillCastResult.Accepted,
+            AwaitCallbackState.Cancelled => SkillCastResult.Cancelled,
+            AwaitCallbackState.NotSent => SkillCastResult.NotSent,
+            AwaitCallbackState.TimedOut => SkillCastResult.Timeout,
+            _ => SkillCastResult.Unconfirmed, // an anonymous refusal cannot prove which cast failed
+        };
 
         if (!awaitActionState)
-            return result;
+            return generation == Volatile.Read(ref _castGeneration) ? result : SkillCastResult.Cancelled;
 
         // Close the action state callback right away when the cast failed, so it does not linger in the callback list
-        actionStateCallback.AwaitResponse(castCallback.IsCompleted ? timeout : 1);
+        if (castCallback.IsCompleted)
+            actionStateCallback.AwaitResponse(timeout, _castCancellation.Token);
+        else
+        {
+            actionStateCallback.Cancel();
+            return result;
+        }
 
-        return result;
+        if (actionStateCallback.State == AwaitCallbackState.Cancelled)
+            return SkillCastResult.Cancelled;
+
+        return generation == Volatile.Read(ref _castGeneration) ? result : SkillCastResult.Cancelled;
     }
 
     /// <summary>
@@ -749,7 +848,12 @@ public static class SkillManager
     /// <param name="skill"></param>
     /// <param name="target"></param>
     public static void CastSkillAt(SkillInfo skill, Position target)
+        => WithCastOwnership(generation => { CastSkillAtCore(skill, target, generation); return true; }, false);
+
+    private static void CastSkillAtCore(SkillInfo skill, Position target, int generation)
     {
+        if (skill == null)
+            return;
         if (target.Region == 0 || target.DistanceToPlayer() > 100)
             return;
 
@@ -791,10 +895,10 @@ public static class SkillManager
             0xB074
         );
 
-        PacketManager.SendPacket(packet, PacketDestination.Server, callback);
+        SendCastPacket(packet, generation, callback);
 
         if (skill.Record.Basic_Activity != 1)
-            callback.AwaitResponse(1000);
+            callback.AwaitResponse(1000, _castCancellation.Token);
     }
 
     /// <summary>
@@ -804,6 +908,9 @@ public static class SkillManager
     /// <param name="targetId"></param>
     /// <returns></returns>
     public static bool CastAutoAttack()
+        => WithCastOwnership(CastAutoAttackCore, false);
+
+    private static bool CastAutoAttackCore(int generation)
     {
         var entity = Game.SelectedEntity;
         if (entity == null)
@@ -827,9 +934,7 @@ public static class SkillManager
             $"Normal Attacking to: {entity.UniqueId} State: {entity.State.LifeState} Health: {entity.Health} HasHealth: {entity.HasHealth} Dst: {Math.Round(entity.DistanceToPlayer, 1)}"
         );
 
-        PacketManager.SendPacket(packet, PacketDestination.Server);
-
-        return true;
+        return SendCastPacket(packet, generation);
     }
 
     /// <summary>
@@ -838,6 +943,9 @@ public static class SkillManager
     /// <param name="skillId">The skill identifier.</param>
     /// <param name="position">The position.</param>
     public static void CastSkillAt(uint skillId, Position position)
+        => WithCastOwnership(generation => { CastSkillAtCore(skillId, position, generation); return true; }, false);
+
+    private static void CastSkillAtCore(uint skillId, Position position, int generation)
     {
         if (!Game.Player.Skills.HasSkill(skillId))
             return;
@@ -852,7 +960,7 @@ public static class SkillManager
         packet.WriteFloat(position.ZOffset);
         packet.WriteFloat(position.YOffset);
 
-        PacketManager.SendPacket(packet, PacketDestination.Server);
+        SendCastPacket(packet, generation);
     }
 
     /// <summary>

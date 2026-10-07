@@ -13,7 +13,7 @@ public class Action
     /// <summary>
     ///     The executor of recent casts by skill instance id. The skill end packet (0xB071) names only the instance.
     /// </summary>
-    private static readonly Dictionary<uint, (uint ExecutorId, int Tick)> _recentCasts = new();
+    private static readonly Dictionary<uint, (uint ExecutorId, long Tick)> _recentCasts = new();
 
     private const int RecentCastLifetimeMs = 30_000;
     private const int RecentCastPruneCount = 512;
@@ -90,6 +90,40 @@ public class Action
     ///     <c>true</c> if [player is target]; otherwise, <c>false</c>.
     /// </value>
     public bool PlayerIsTarget => Game.Player.UniqueId == TargetId;
+
+    /// <summary>Reads a successful B070 header, after its result byte.</summary>
+    public static Action ReadCastStart(Packet packet, GameClientType clientType)
+    {
+        var action = new Action { Code = packet.ReadByte() };
+        if (clientType > GameClientType.Thailand)
+            packet.ReadByte();
+        action.SkillId = packet.ReadUInt();
+        action.ExecutorId = packet.ReadUInt();
+        action.Id = packet.ReadUInt();
+        if (clientType > GameClientType.Chinese && clientType != GameClientType.Japanese)
+            action.UnknownId = packet.ReadUInt();
+        action.TargetId = packet.ReadUInt();
+        if (clientType is GameClientType.Turkey or GameClientType.Global or GameClientType.VTC_Game
+            or GameClientType.RuSro or GameClientType.Korean or GameClientType.Japanese or GameClientType.Taiwan)
+            packet.ReadByte();
+        action.Flag = (ActionStateFlag)packet.ReadByte();
+        if (clientType == GameClientType.Rigid)
+            packet.ReadByte();
+        return action;
+    }
+
+    public static AwaitCallbackResult MatchCastStart(Packet packet, GameClientType clientType,
+        uint skillId, uint executorId, uint? targetId)
+    {
+        if (packet.Opcode != 0xB070)
+            return AwaitCallbackResult.ConditionFailed;
+        if (packet.ReadByte() != 1)
+            return AwaitCallbackResult.Fail; // refusal has no skill, caster or target identity
+        var action = ReadCastStart(packet, clientType);
+        return action.SkillId == skillId && action.ExecutorId == executorId
+            && (!targetId.HasValue || action.TargetId == targetId.Value)
+            ? AwaitCallbackResult.Success : AwaitCallbackResult.ConditionFailed;
+    }
 
     public void ReadPacket(Packet packet)
     {
@@ -187,7 +221,7 @@ public class Action
             {
                 var expired = new List<uint>();
                 foreach (var cast in _recentCasts)
-                    if (Kernel.TickCount - cast.Value.Tick > RecentCastLifetimeMs)
+                    if (Environment.TickCount64 - cast.Value.Tick > RecentCastLifetimeMs)
                         expired.Add(cast.Key);
 
                 foreach (var id in expired)
@@ -198,7 +232,7 @@ public class Action
                     _recentCasts.Clear();
             }
 
-            _recentCasts[action.Id] = (action.ExecutorId, Kernel.TickCount);
+            _recentCasts[action.Id] = (action.ExecutorId, Environment.TickCount64);
         }
     }
 
@@ -208,7 +242,19 @@ public class Action
     internal static uint GetCastExecutor(uint actionId)
     {
         lock (_recentCasts)
-            return _recentCasts.TryGetValue(actionId, out var cast) ? cast.ExecutorId : 0;
+        {
+            if (!_recentCasts.TryGetValue(actionId, out var cast))
+                return 0;
+            if (Environment.TickCount64 - cast.Tick <= RecentCastLifetimeMs)
+                return cast.ExecutorId;
+            _recentCasts.Remove(actionId);
+            return 0;
+        }
+    }
+
+    internal static void ClearRecentCasts()
+    {
+        lock (_recentCasts) _recentCasts.Clear();
     }
 
     /// <summary>

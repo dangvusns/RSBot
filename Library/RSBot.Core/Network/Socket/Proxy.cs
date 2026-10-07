@@ -332,6 +332,7 @@ public class Proxy
 
             PacketManager.CancelCallbacks();
             ShoppingManager.ResetOperations();
+            SkillManager.CancelPendingCasts(resetSession: true);
             EventManager.FireEvent("OnAgentServerDisconnected");
         }
         else if (IsConnectedToGatewayserver || _connectionTarget == ConnectionTarget.Gateway)

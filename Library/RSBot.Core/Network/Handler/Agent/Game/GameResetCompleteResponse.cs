@@ -1,4 +1,5 @@
 ﻿using RSBot.Core.Event;
+using RSBot.Core.Components;
 
 namespace RSBot.Core.Network.Handler.Agent;
 
@@ -27,6 +28,7 @@ internal class GameResetRequest : IPacketHandler
     public void Invoke(Packet packet)
     {
         Game.Ready = false;
+        SkillManager.CancelPendingCasts(resetSession: true);
         Log.Debug("Game client is loading...");
 
         if (Game.Clientless)

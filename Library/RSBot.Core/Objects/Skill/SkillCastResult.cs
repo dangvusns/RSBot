@@ -11,7 +11,7 @@ public enum SkillCastResult
     NotSent,
 
     /// <summary>
-    ///     The request was sent without waiting for the server's answer.
+    ///     Identified acceptance was not established: no wait, or an anonymous failure response.
     /// </summary>
     Unconfirmed,
 
@@ -28,5 +28,11 @@ public enum SkillCastResult
     /// <summary>
     ///     The server did not answer in time.
     /// </summary>
-    Timeout
+    Timeout,
+
+    /// <summary>Stop, a session transition or a competing manual action cancelled the wait.</summary>
+    Cancelled,
+
+    /// <summary>Another local cast owns equipment and the pending cast callbacks.</summary>
+    Busy
 }
