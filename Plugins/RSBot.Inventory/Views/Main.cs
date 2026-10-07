@@ -350,8 +350,39 @@ public partial class Main : DoubleBufferedControl
             return;
 
         var listViewItem = listViewMain.SelectedItems[0];
-        var inventoryItem = listViewItem.Tag as InventoryItem;
-        inventoryItem?.Use();
+        if (listViewItem.Tag is not InventoryItem inventoryItem)
+            return;
+
+        switch (inventoryItem.UseKind)
+        {
+            case ItemUseKind.Simple:
+                inventoryItem.Use();
+                break;
+
+            case ItemUseKind.GlobalChat:
+                var dialog = new InputDialog(
+                    "Global chat",
+                    inventoryItem.Record.GetRealName(),
+                    "Enter the message to send with this item."
+                );
+                if (dialog.ShowDialog(this) == DialogResult.OK)
+                    inventoryItem.UseGlobalChat(dialog.Value?.ToString());
+                break;
+
+            case ItemUseKind.Unknown:
+                var result = MessageBox.Show(
+                    this,
+                    "This item may need extra input the bot can not send. The server may disconnect you. Use anyway?",
+                    inventoryItem.Record.GetRealName(),
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning
+                );
+                if (result == DialogResult.Yes)
+                    inventoryItem.Use();
+                break;
+
+            // ReverseScroll, OnActivePet and OnDeadPetItem are used from the sub menus.
+        }
     }
 
     /// <summary>
@@ -465,9 +496,11 @@ public partial class Main : DoubleBufferedControl
             autoUseAccordingToPurposeToolStripMenuItem.Enabled = false;
         }
 
-        var isReverseScroll = inventoryItem.Equals(new TypeIdFilter(3, 3, 3, 3));
+        var useKind = inventoryItem.UseKind;
+        var isReverseScroll = useKind == ItemUseKind.ReverseScroll;
         useToolStripMenuItem.Visible = !isReverseScroll;
-        useToolStripMenuItem.Enabled = inventoryItem.Record.CanUse != ObjectUseType.No;
+        useToolStripMenuItem.Enabled = useKind != ItemUseKind.None;
+        BuildUseTargetMenu(inventoryItem, useKind);
         moveToLastDeathPositionToolStripMenuItem.Visible = isReverseScroll;
         moveToLastRecallPositionToolStripMenuItem.Visible = isReverseScroll;
         selectMapLocationToolStripMenuItem.Visible = isReverseScroll;
@@ -499,6 +532,52 @@ public partial class Main : DoubleBufferedControl
                 }
             }
         }
+    }
+
+    /// <summary>
+    ///     Fills the "Use" sub menu with the targets of items that are used on a pet.
+    /// </summary>
+    private void BuildUseTargetMenu(InventoryItem inventoryItem, ItemUseKind useKind)
+    {
+        useToolStripMenuItem.DropDownItems.Clear();
+
+        if (useKind == ItemUseKind.OnActivePet)
+        {
+            var pets = new RSBot.Core.Objects.Cos.Cos[]
+            {
+                Game.Player.Growth,
+                Game.Player.Fellow,
+                Game.Player.Vehicle,
+                Game.Player.JobTransport,
+                Game.Player.AbilityPet,
+            };
+
+            foreach (var pet in pets.Where(p => p != null).Distinct())
+            {
+                var petName = string.IsNullOrWhiteSpace(pet.Name) ? pet.Record?.GetRealName() : pet.Name;
+                var menuItem = new ToolStripMenuItem { Text = $"Use on {petName}" };
+                menuItem.Click += (_, _) => inventoryItem.UseFor(pet.UniqueId);
+
+                useToolStripMenuItem.DropDownItems.Add(menuItem);
+            }
+        }
+        else if (useKind == ItemUseKind.OnDeadPetItem)
+        {
+            foreach (var petItem in Game.Player.Inventory.GetItems(p => p.Record.IsPet && p.State == InventoryItemState.Dead))
+            {
+                var menuItem = new ToolStripMenuItem { Text = $"Revive {petItem.Record.GetRealName()}" };
+                menuItem.Click += (_, _) => inventoryItem.UseTo(petItem.Slot);
+
+                useToolStripMenuItem.DropDownItems.Add(menuItem);
+            }
+        }
+        else
+        {
+            return;
+        }
+
+        if (useToolStripMenuItem.DropDownItems.Count == 0)
+            useToolStripMenuItem.Enabled = false;
     }
 
     private void moveToLastRecallPositionToolStripMenuItem_Click(object sender, EventArgs e)

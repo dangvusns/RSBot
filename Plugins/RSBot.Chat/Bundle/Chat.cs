@@ -27,27 +27,10 @@ internal class Chat
 
     internal static void SendGlobalChatPacket(string message)
     {
-        var inventoryItem = Game.Player.Inventory.GetItem(new TypeIdFilter(3, 3, 3, 5)); //3, 3, 3, 22 for VIP global
+        var inventoryItem =
+            Game.Player.Inventory.GetItem(new TypeIdFilter(3, 3, 3, 5))
+            ?? Game.Player.Inventory.GetItem(new TypeIdFilter(3, 3, 3, 22)); // VIP global
 
-        if (inventoryItem != null)
-        {
-            var globalChatPacket = new Packet(0x704C);
-
-            globalChatPacket.WriteByte(inventoryItem.Slot);
-
-            if (Game.ClientType > GameClientType.Vietnam)
-            {
-                globalChatPacket.WriteInt(inventoryItem.Record.Tid);
-                globalChatPacket.WriteByte(0); //0-3 linked items. max 500 chars when 1-3
-            }
-            else
-            {
-                globalChatPacket.WriteUShort(inventoryItem.Record.Tid);
-            }
-
-            globalChatPacket.WriteConditonalString(message);
-
-            PacketManager.SendPacket(globalChatPacket, PacketDestination.Server);
-        }
+        inventoryItem?.UseGlobalChat(message);
     }
 }

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using RSBot.Core.Client.ReferenceObjects;
+using RSBot.Core.Extensions;
 using RSBot.Core.Network;
 using RSBot.Core.Objects.Inventory;
 using RSBot.Core.Objects.Item;
@@ -51,6 +52,11 @@ public class InventoryItem
     ///     The record.
     /// </value>
     public RefObjItem Record => Game.ReferenceManager.GetRefItem(ItemId);
+
+    /// <summary>
+    ///     Gets which data the item needs to be used.
+    /// </summary>
+    public ItemUseKind UseKind => Record.GetUseKind();
 
     /// <summary>
     ///     Gets or sets the opt level.
@@ -159,6 +165,13 @@ public class InventoryItem
     {
         Log.Debug($"Using item tid: 0x{Record.Tid:x2} {Record.CodeName} {Record}");
 
+        // The server disconnects on a use packet without the data these items need.
+        if (UseKind is ItemUseKind.ReverseScroll or ItemUseKind.GlobalChat or ItemUseKind.OnActivePet or ItemUseKind.OnDeadPetItem)
+        {
+            Log.Warn($"[{Record.GetRealName()}] needs a target or message, use it from the inventory tab instead.");
+            return false;
+        }
+
         var packet = new Packet(0x704C);
         packet.WriteByte(Slot);
 
@@ -206,6 +219,35 @@ public class InventoryItem
         asyncCallback.AwaitResponse(500);
 
         return asyncCallback.IsCompleted;
+    }
+
+    /// <summary>
+    ///     Uses the global chatting item to send the message
+    /// </summary>
+    /// <param name="message">The message</param>
+    public bool UseGlobalChat(string message)
+    {
+        if (UseKind != ItemUseKind.GlobalChat || string.IsNullOrWhiteSpace(message))
+            return false;
+
+        var packet = new Packet(0x704C);
+        packet.WriteByte(Slot);
+
+        if (Game.ClientType > GameClientType.Vietnam)
+        {
+            packet.WriteInt(Record.Tid);
+            packet.WriteByte(0); //0-3 linked items. max 500 chars when 1-3
+        }
+        else
+        {
+            packet.WriteUShort(Record.Tid);
+        }
+
+        packet.WriteConditonalString(message);
+
+        PacketManager.SendPacket(packet, PacketDestination.Server);
+
+        return true;
     }
 
     /// <summary>
