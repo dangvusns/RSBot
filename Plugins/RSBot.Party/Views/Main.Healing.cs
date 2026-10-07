@@ -133,7 +133,7 @@ public partial class Main
 
     private Control CreateHealRow(string text, int defaultPercent, out CheckBox check, out NumUpDown number)
     {
-        var row = new FlowLayoutPanel
+        var row = new System.Windows.Forms.FlowLayoutPanel
         {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -184,7 +184,7 @@ public partial class Main
 
     private Control CreateHealButtons(params (string Name, string Text, Action OnClick)[] buttons)
     {
-        var panel = new FlowLayoutPanel
+        var panel = new System.Windows.Forms.FlowLayoutPanel
         {
             AutoSize = true,
             Anchor = AnchorStyles.None,

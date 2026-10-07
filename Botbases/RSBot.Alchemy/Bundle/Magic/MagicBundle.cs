@@ -3,8 +3,8 @@ using System.Linq;
 using RSBot.Alchemy.Extension;
 using RSBot.Core;
 using RSBot.Core.Client.ReferenceObjects;
-using RSBot.Core.Extensions;
 using RSBot.Core.Components;
+using RefMagicOptExtension = RSBot.Core.Extensions.RefMagicOptExtension;
 using RSBot.Core.Event;
 using RSBot.Core.Objects;
 using RSBot.Core.Objects.Item;
@@ -266,12 +266,12 @@ internal class MagicBundle : IAlchemyBundle
                 .ReferenceManager.GetTranslation("UIIT_MSG_ALCHEMY_CHANGE_CATTR")
                 .JoymaxFormat(
                     newItem.Record.GetRealName(),
-                    record.GetGroupTranslation(),
+                    RefMagicOptExtension.GetGroupTranslation(record),
                     $"{oldItem.MagicOptions.FirstOrDefault(m => m.Id == changedOption.Id).Value} -> {changedOption.Value}"
                 )
             : Game
                 .ReferenceManager.GetTranslation("UIIT_MSG_ALCHEMY_APPEND_ATTR")
-                .JoymaxFormat(record.GetGroupTranslation(), newItem.Record.GetRealName());
+                .JoymaxFormat(RefMagicOptExtension.GetGroupTranslation(record), newItem.Record.GetRealName());
 
         Globals.View.AddLog(newItem.Record.GetRealName(), message);
 
