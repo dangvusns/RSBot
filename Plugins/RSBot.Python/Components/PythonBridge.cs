@@ -246,8 +246,8 @@ public static class PythonBridge
                     ["level"] = member.Level,
                     ["guild"] = member.Guild ?? string.Empty,
                     // The server sends HP and MP in tenths (0-10) packed in one byte
-                    ["hp_percent"] = (member.HealthMana >> 4) * 10,
-                    ["mp_percent"] = (member.HealthMana & 0x0F) * 10,
+                    ["hp_percent"] = member.HealthSteps * 10,
+                    ["mp_percent"] = member.ManaSteps * 10,
                     ["x"] = position.X,
                     ["y"] = position.Y,
                     ["region"] = (ushort)position.Region,

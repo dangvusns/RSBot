@@ -16,15 +16,32 @@ public class PartyMember
     public string Guild;
 
     /// <summary>
-    ///     Gets or sets the health mana.
+    ///     Gets or sets the health mana: the low nibble is HP, the high nibble MP, each in steps of 10%.
     /// </summary>
-    /// var hpmp = HealthMana.ToString("X2");
-    /// int hpPer= Convert.ToByte(hpmp[0].ToString(), 16) * 10;
-    /// int mpPer= Convert.ToByte(hpmp[1].ToString(), 16) * 10;
     /// <value>
     ///     The health mana.
     /// </value>
     public byte HealthMana;
+
+    /// <summary>
+    ///     The highest HP/MP step; the server sometimes sends 11 for full.
+    /// </summary>
+    public const int FullSteps = 10;
+
+    /// <summary>
+    ///     Gets the HP in steps of 10% (0-10).
+    /// </summary>
+    public int HealthSteps => ClampSteps(HealthMana & 0x0F);
+
+    /// <summary>
+    ///     Gets the MP in steps of 10% (0-10).
+    /// </summary>
+    public int ManaSteps => ClampSteps(HealthMana >> 4);
+
+    private static int ClampSteps(int steps)
+    {
+        return steps > FullSteps ? FullSteps : steps;
+    }
 
     /// <summary>
     ///     Gets or sets the level.
@@ -100,7 +117,7 @@ public class PartyMember
         result.Name = packet.ReadString();
         result.ObjectId = packet.ReadUInt();
         result.Level = packet.ReadByte();
-        result.HealthMana = packet.ReadByte(); //0-A|0-A -> 0%-100%|0%-100%
+        result.HealthMana = packet.ReadByte(); //MP|HP nibbles, 0-A -> 0%-100%
         result.Position = Position.FromPacketConditional(packet);
         result.Guild = packet.ReadString();
 

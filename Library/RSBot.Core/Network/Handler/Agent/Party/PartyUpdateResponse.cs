@@ -83,7 +83,7 @@ internal class PartyUpdateResponse : IPacketHandler
                         break;
 
                     case PartyMemberUpdateType.HPMP:
-                        member.HealthMana = packet.ReadByte(); //0-A|0-A -> 0%-100%|0%-100%
+                        member.HealthMana = packet.ReadByte(); //MP|HP nibbles, 0-A -> 0%-100%
                         break;
 
                     case PartyMemberUpdateType.Mastery:

@@ -167,7 +167,7 @@ internal class HealingBundle : IBundle
 
     private static int GetMemberPercent(PartyMember member)
     {
-        return (member.HealthMana >> 4) * PercentPerStep;
+        return member.HealthSteps * PercentPerStep;
     }
 
     private static bool Cast(SkillInfo skill, uint target, string reason)

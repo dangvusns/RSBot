@@ -12,9 +12,9 @@ namespace RSBot.Training.Bundle;
 internal static class InstantSkills
 {
     /// <summary>
-    ///     The party members' HP and MP come in steps of 10% (high nibble HP, low nibble MP); 10 is full.
+    ///     The party members' HP and MP come in steps of 10%; 10 is full.
     /// </summary>
-    private const int FullSteps = 10;
+    private const int FullSteps = PartyMember.FullSteps;
 
     /// <summary>
     ///     Gets a value indicating whether instant skills are only cast when needed (Party › Buffing setting).
@@ -99,11 +99,11 @@ internal static class InstantSkills
 
     private static bool IsMissing(PartyMember member, bool health, bool mana)
     {
-        return (health && member.HealthMana >> 4 < FullSteps) || (mana && (member.HealthMana & 0x0F) < FullSteps);
+        return (health && member.HealthSteps < FullSteps) || (mana && member.ManaSteps < FullSteps);
     }
 
     private static string Describe(PartyMember member)
     {
-        return $"HP {member.HealthMana >> 4}/{FullSteps} MP {member.HealthMana & 0x0F}/{FullSteps}";
+        return $"HP {member.HealthSteps}/{FullSteps} MP {member.ManaSteps}/{FullSteps}";
     }
 }
