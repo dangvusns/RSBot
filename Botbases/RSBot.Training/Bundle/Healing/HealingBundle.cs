@@ -99,6 +99,10 @@ internal class HealingBundle : IBundle
         _selfEnabled = PlayerConfig.Get(SelfEnabledKey, false);
         _selfPercent = PlayerConfig.Get(SelfPercentKey, 60);
         _skills = PlayerConfig.GetArray<uint>(SkillsKey).ToList();
+
+        Log.Debug(() =>
+            $"[Healing] member={_memberEnabled}<{_memberPercent}% group={_groupEnabled}<{_groupPercent}% self={_selfEnabled}<{_selfPercent}% skills=[{string.Join(",", _skills)}]"
+        );
     }
 
     public void Stop()
