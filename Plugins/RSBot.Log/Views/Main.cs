@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using RSBot.Core;
-using RSBot.Core.Components;
 using RSBot.Core.Event;
 using SDUI.Controls;
 
@@ -27,13 +25,12 @@ public partial class Main : DoubleBufferedControl
     {
         InitializeComponent();
         LoadConfig();
-        if (!Kernel.Debug)
-        {
-            checkDebug.Checked = false;
-            checkDebug.Visible = false;
-        }
         foreach (var check in new[] { checkEnabled, checkNormal, checkDebug, checkWarning, checkError })
-            check.CheckedChanged += (s, e) => UpdateFilters();
+            check.CheckedChanged += (s, e) =>
+            {
+                UpdateFilters();
+                SaveConfig();
+            };
         UpdateFilters();
 
         components ??= new Container();
@@ -53,69 +50,6 @@ public partial class Main : DoubleBufferedControl
             }
         };
         UpdateTimer();
-        InitializeFileSettings();
-    }
-
-    /// <summary>
-    ///     Adds the log file level and retention settings next to the filters.
-    /// </summary>
-    private void InitializeFileSettings()
-    {
-        var levels = new[] { LogLevel.Debug, LogLevel.Notify, LogLevel.Warning, LogLevel.Error };
-
-        var comboLevel = new System.Windows.Forms.ComboBox
-        {
-            DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList,
-            Width = LogicalToDeviceUnits(85),
-            Margin = new System.Windows.Forms.Padding(LogicalToDeviceUnits(4), LogicalToDeviceUnits(11), 0, 0),
-        };
-        foreach (var level in levels)
-            comboLevel.Items.Add(level);
-
-        var configuredLevel = GlobalConfig.GetEnum("RSBot.Log.File.Level", LogLevel.Warning);
-        comboLevel.SelectedItem = Array.IndexOf(levels, configuredLevel) >= 0 ? configuredLevel : LogLevel.Warning;
-        comboLevel.SelectedIndexChanged += (_, _) =>
-        {
-            GlobalConfig.Set("RSBot.Log.File.Level", comboLevel.SelectedItem.ToString());
-            LogFileWriter.ReloadSettings();
-        };
-
-        var numKeepDays = new System.Windows.Forms.NumericUpDown
-        {
-            Minimum = 0,
-            Maximum = 365,
-            Width = LogicalToDeviceUnits(55),
-            Margin = new System.Windows.Forms.Padding(LogicalToDeviceUnits(4), LogicalToDeviceUnits(11), 0, 0),
-        };
-        numKeepDays.Value = Math.Clamp(GlobalConfig.Get("RSBot.Log.File.KeepDays", 7), 0, 365);
-        numKeepDays.ValueChanged += (_, _) =>
-        {
-            GlobalConfig.Set("RSBot.Log.File.KeepDays", (int)numKeepDays.Value);
-            LogFileWriter.ReloadSettings();
-        };
-
-        System.Windows.Forms.Label createLabel(string text) =>
-            new()
-            {
-                AutoSize = true,
-                Text = text,
-                BackColor = Color.Transparent,
-                Margin = new System.Windows.Forms.Padding(LogicalToDeviceUnits(8), LogicalToDeviceUnits(15), 0, 0),
-            };
-
-        var panelFile = new System.Windows.Forms.FlowLayoutPanel
-        {
-            Dock = System.Windows.Forms.DockStyle.Right,
-            AutoSize = true,
-            WrapContents = false,
-            BackColor = Color.Transparent,
-        };
-        panelFile.Controls.Add(createLabel("Log file:"));
-        panelFile.Controls.Add(comboLevel);
-        panelFile.Controls.Add(createLabel("Keep days:"));
-        panelFile.Controls.Add(numKeepDays);
-
-        panel1.Controls.Add(panelFile);
     }
 
     private void UpdateFilters()
@@ -130,6 +64,9 @@ public partial class Main : DoubleBufferedControl
             levels |= 1 << (int)LogLevel.Fatal;
         }
         _enabledLevels = levels;
+
+        // Debug lines are only built while someone shows or writes them
+        RSBot.Core.Log.ShowDebug = checkEnabled.Checked && checkDebug.Checked;
     }
 
     public void AppendLog(string message, LogLevel level = LogLevel.Notify)
@@ -208,11 +145,24 @@ public partial class Main : DoubleBufferedControl
     private void LoadConfig()
     {
         checkEnabled.Checked = GlobalConfig.Get("RSBot.Log.logEnabled", true);
+        checkDebug.Checked = GlobalConfig.Get("RSBot.Log.ShowDebug", false);
+        checkNormal.Checked = GlobalConfig.Get("RSBot.Log.ShowNormal", true);
+        checkWarning.Checked = GlobalConfig.Get("RSBot.Log.ShowWarning", true);
+        checkError.Checked = GlobalConfig.Get("RSBot.Log.ShowError", true);
+    }
+
+    private void SaveConfig()
+    {
+        GlobalConfig.Set("RSBot.Log.logEnabled", checkEnabled.Checked);
+        GlobalConfig.Set("RSBot.Log.ShowDebug", checkDebug.Checked);
+        GlobalConfig.Set("RSBot.Log.ShowNormal", checkNormal.Checked);
+        GlobalConfig.Set("RSBot.Log.ShowWarning", checkWarning.Checked);
+        GlobalConfig.Set("RSBot.Log.ShowError", checkError.Checked);
     }
 
     private void checkEnabled_CheckedChanged(object sender, EventArgs e)
     {
-        GlobalConfig.Set("RSBot.Log.logEnabled", checkEnabled.Checked.ToString());
+        // Saved with the other filters
     }
 
     private void btnReset_Click(object sender, EventArgs e)

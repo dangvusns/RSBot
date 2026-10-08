@@ -21,10 +21,15 @@ public class Log
     private static int _repeatCount;
 
     /// <summary>
+    ///     Gets or sets a value indicating whether the Log tab shows debug lines.
+    /// </summary>
+    public static bool ShowDebug { get; set; }
+
+    /// <summary>
     ///     Gets a value indicating whether debug lines are shown or written anywhere.
     ///     Debug calls return early when not, so their text is never built.
     /// </summary>
-    public static bool IsDebugEnabled => LogFileWriter.IsWritten(LogLevel.Debug);
+    public static bool IsDebugEnabled => ShowDebug || LogFileWriter.IsWritten(LogLevel.Debug);
 
     /// <summary>
     ///     Replaces the format item in a specified string with the string
