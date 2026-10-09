@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using RSBot.Core;
 using RSBot.Core.Event;
@@ -9,6 +10,13 @@ namespace RSBot.Protection.Components.Town;
 
 public class DeadHandler : AbstractTownHandler
 {
+    private const int MaxResurrectAttempts = 5;
+
+    /// <summary>
+    ///     Increased on every death so an older, still waiting handler run stops.
+    /// </summary>
+    private static int _deathId;
+
     /// <summary>
     ///     Initializes this instance.
     /// </summary>
@@ -34,12 +42,12 @@ public class DeadHandler : AbstractTownHandler
         if (!Kernel.Bot.Running)
             return;
 
+        var deathId = Interlocked.Increment(ref _deathId);
+
         if (Game.Player.Level < 10)
         {
             await Task.Delay(5000);
-            var upPacket = new Packet(0x3053);
-            upPacket.WriteByte(2);
-            PacketManager.SendPacket(upPacket, PacketDestination.Server);
+            await Resurrect(2, deathId);
             return;
         }
 
@@ -66,11 +74,38 @@ public class DeadHandler : AbstractTownHandler
 
         await Task.Delay(timeOut * 1000);
 
-        if (Game.Player.State.LifeState != LifeState.Dead)
-            return;
+        await Resurrect(1, deathId);
+    }
 
-        var packet = new Packet(0x3053);
-        packet.WriteByte(1);
-        PacketManager.SendPacket(packet, PacketDestination.Server); //Only works if not teleporting at that moment
+    /// <summary>
+    ///     Sends the resurrect request until the player is alive; a request sent while teleporting is lost.
+    /// </summary>
+    /// <param name="preferred">1 = specified (return) point, 2 = present point.</param>
+    /// <param name="deathId">The death this run belongs to.</param>
+    private static async Task Resurrect(byte preferred, int deathId)
+    {
+        for (var attempt = 1; attempt <= MaxResurrectAttempts; attempt++)
+        {
+            if (deathId != _deathId || !Kernel.Bot.Running || Game.Player.State.LifeState != LifeState.Dead)
+                return;
+
+            // Only PvP/CTF deaths (present point offered, normal not) forbid the usual choice.
+            var options = Game.Player.ResurrectOptions;
+            var type = options != 0 && (options & 4) == 0 && (options & preferred) == 0
+                ? (byte)((options & 1) != 0 ? 1 : 2)
+                : preferred;
+
+            if (attempt > 1)
+                Log.Warn($"Still dead, resending resurrect request ({attempt}/{MaxResurrectAttempts}).");
+
+            var packet = new Packet(0x3053);
+            packet.WriteByte(type);
+            PacketManager.SendPacket(packet, PacketDestination.Server);
+
+            await Task.Delay(5000);
+        }
+
+        if (deathId == _deathId && Kernel.Bot.Running && Game.Player.State.LifeState == LifeState.Dead)
+            Log.Warn($"Could not resurrect after {MaxResurrectAttempts} attempts.");
     }
 }

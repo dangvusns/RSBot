@@ -12,19 +12,9 @@ public partial class Main
 
     private void InitializeBuffingLayout()
     {
-        // The full sentence does not fit the narrow column; the tooltip keeps the details
-        checkInstantSkillsWhenNeeded.Text = "Heal / MP skills only when needed";
-        new ToolTip().SetToolTip(
-            checkInstantSkillsWhenNeeded,
-            "Instant skills (heal, MP) of your own buff list are cast only when\nyour or a member's HP/MP is not full."
-        );
-
-        foreach (var check in new[] { checkHideLowerLevelSkills, checkInstantSkillsWhenNeeded })
-        {
-            check.AutoSize = false;
-            check.TextChanged += (s, e) => UpdateBuffingLayout();
-            check.FontChanged += (s, e) => UpdateBuffingLayout();
-        }
+        checkHideLowerLevelSkills.AutoSize = false;
+        checkHideLowerLevelSkills.TextChanged += (s, e) => UpdateBuffingLayout();
+        checkHideLowerLevelSkills.FontChanged += (s, e) => UpdateBuffingLayout();
 
         listPartyBuffSkills.ClientSizeChanged += (s, e) => UpdateBuffingLayout();
         DpiChangedAfterParent += (s, e) => UpdateBuffingLayout();
@@ -43,11 +33,10 @@ public partial class Main
             int Pixels(int value) => (int)Math.Ceiling(value * DeviceDpi / 96f);
 
             // SDUI check boxes keep a 30 px height at any DPI
-            var rowHeight = Math.Max(Pixels(26), checkInstantSkillsWhenNeeded.Font.Height + Pixels(10));
+            var rowHeight = Math.Max(Pixels(26), checkHideLowerLevelSkills.Font.Height + Pixels(10));
             checkHideLowerLevelSkills.Height = rowHeight;
-            checkInstantSkillsWhenNeeded.Height = rowHeight;
 
-            var height = rowHeight * 2 + Pixels(8);
+            var height = rowHeight + Pixels(8);
             if (panel5.Height != height)
                 panel5.Height = height;
 

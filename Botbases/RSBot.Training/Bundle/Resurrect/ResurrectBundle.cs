@@ -102,7 +102,7 @@ internal class ResurrectBundle : IBundle
             return false;
 
         // Not CanBeCasted: it also blocks a skill for its own duration after a cast
-        if (skill?.Record == null || skill.HasCooldown || Game.Player.Mana < skill.Record.Consume_MP)
+        if (skill?.Record == null || skill.HasCooldown || !skill.HasEnoughResources)
             return false;
 
         var resRadius = PlayerConfig.Get<ushort>("RSBot.Skills.numResRadius", 100);

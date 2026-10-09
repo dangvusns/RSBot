@@ -392,7 +392,6 @@ public partial class Main : DoubleBufferedControl
         checkBoxAttackLeaderTarget.Checked = PlayerConfig.Get("RSBot.Party.AttackLeaderTarget", false);
 
         checkAcceptIfBotStopped.Checked = Bundle.Container.AutoParty.Config.AcceptIfBotIsStopped;
-        checkInstantSkillsWhenNeeded.Checked = PlayerConfig.Get("RSBot.Party.Buffing.InstantSkillsWhenNeeded", true);
         checkHideLowerLevelSkills.Checked = PlayerConfig.Get("RSBot.Party.Buffing.HideLowerLevelSkills", false);
         checkBoxListenMasterCommands.Checked = Bundle.Container.Commands.Config.ListenOnlyMaster;
         checkBoxListenCommandsOnlyList.Checked = Bundle.Container.Commands.Config.ListenFromList;
@@ -962,15 +961,6 @@ public partial class Main : DoubleBufferedControl
 
             lvPartyMatching.Items.AddRange(lvItems.ToArray());
         }
-    }
-
-    private void checkInstantSkillsWhenNeeded_CheckedChanged(object sender, EventArgs e)
-    {
-        if (!_applySettings)
-            return;
-
-        PlayerConfig.Set("RSBot.Party.Buffing.InstantSkillsWhenNeeded", checkInstantSkillsWhenNeeded.Checked);
-        PlayerConfig.Save();
     }
 
     private void checkHideLowerLevelSkills_CheckedChanged(object sender, EventArgs e)

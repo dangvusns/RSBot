@@ -61,6 +61,7 @@ internal class EntityUpdateStateResponse : IPacketHandler
                 if (uniqueId == Game.Player.UniqueId && entity.State.LifeState == LifeState.Dead)
                 {
                     SkillManager.CancelPendingCasts(resetSession: true);
+                    Game.Player.ResurrectOptions = 0;
                     EventManager.FireEvent("OnPlayerDied");
                 }
 

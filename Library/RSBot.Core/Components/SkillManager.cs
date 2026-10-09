@@ -381,6 +381,9 @@ public static class SkillManager
         //var weaponRange = 0;
         var closestSkill = default(SkillInfo);
 
+        // Snapshot: ActiveBuffs is filled from the packet thread. Skills already on the target (e.g. DoTs) are skipped.
+        var targetBuffIds = entity.State.ActiveBuffs.ToArray().Where(b => b != null).Select(b => b.Id).ToHashSet();
+
         if (entity.State.HitState != ActionHitStateFlag.KnockDown)
         {
             var opener = GetOpener(entity.UniqueId, rarity);
@@ -409,7 +412,7 @@ public static class SkillManager
                     continue;
 
                 var selectedSkill = Skills[rarity][_lastIndex];
-                if (!selectedSkill.CanBeCasted || IsOpener(rarity, selectedSkill))
+                if (!selectedSkill.CanBeCasted || IsOpener(rarity, selectedSkill) || targetBuffIds.Contains(selectedSkill.Id))
                     continue;
 
                 closestSkill = selectedSkill;
@@ -428,7 +431,7 @@ public static class SkillManager
             for (var i = 0; i < Skills[rarity].Count; i++)
             {
                 var s = Skills[rarity][i];
-                if (!s.CanBeCasted || IsOpener(rarity, s))
+                if (!s.CanBeCasted || IsOpener(rarity, s) || targetBuffIds.Contains(s.Id))
                     continue;
 
                 var difference = Math.Abs(

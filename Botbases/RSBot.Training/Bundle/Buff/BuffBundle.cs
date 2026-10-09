@@ -97,10 +97,8 @@ internal class BuffBundle : IBundle
                     continue;
                 }
 
-                // Shows whether the "only when needed" setting picked the right moments
-                InstantSkills.IsNeededBySelfOrParty(buff, out var reason);
                 var result = buff.CastBuff();
-                Log.Debug($"[Buff] {buff.Record?.GetRealName()} ({reason}): {result}");
+                Log.Debug($"[Buff] {buff.Record?.GetRealName()}: {result}");
             }
         }
         finally
@@ -136,8 +134,8 @@ internal class BuffBundle : IBundle
         if (buff.HasCooldown)
             return "skipped: cooldown";
 
-        if (Game.Player.Mana < buff.Record.Consume_MP)
-            return $"skipped: MP < {buff.Record.Consume_MP}";
+        if (!buff.HasEnoughResources)
+            return "skipped: not enough HP/MP";
 
         if (buff.CanNotBeCasted)
             return "skipped: duration lock";
@@ -147,10 +145,6 @@ internal class BuffBundle : IBundle
 
         if (!SkillManager.IsBuffAllowedNow(buff))
             return "skipped: strong-target only";
-
-        // An instant heal (e.g. Group Healing) leaves no buff; cast it when someone it heals is not full
-        if (!buff.HasDuration && !InstantSkills.IsNeededBySelfOrParty(buff, out var notNeeded))
-            return $"skipped: not needed ({notNeeded})";
 
         return null;
     }

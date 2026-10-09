@@ -195,10 +195,37 @@ public class SkillInfo
             if (HasCooldown)
                 return false;
 
-            if (Game.Player.Mana < Record.Consume_MP)
+            if (!HasEnoughResources)
                 return false;
 
             if (CanNotBeCasted)
+                return false;
+
+            return true;
+        }
+    }
+
+    /// <summary>
+    ///     Gets a value indicating whether the player can pay the skill's HP/MP and HP%/MP% costs.
+    /// </summary>
+    public bool HasEnoughResources
+    {
+        get
+        {
+            var player = Game.Player;
+            if (player.Mana < Record.Consume_MP)
+                return false;
+
+            // The server refuses HP-cost casts that would leave the caster at 0 HP.
+            if (Record.Consume_HP > 0 && player.Health <= Record.Consume_HP)
+                return false;
+
+            if (Record.Consume_HPRatio > 0 && player.MaximumHealth > 0 &&
+                Record.Consume_HPRatio > player.Health * 100L / player.MaximumHealth)
+                return false;
+
+            if (Record.Consume_MPRatio > 0 && player.MaximumMana > 0 &&
+                Record.Consume_MPRatio > player.Mana * 100L / player.MaximumMana)
                 return false;
 
             return true;

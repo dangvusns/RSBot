@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using RSBot.Core.Components;
 using RSBot.Core.Event;
 using RSBot.Core.Objects;
@@ -77,10 +78,12 @@ internal class EntityUpdateStatusResponse : IPacketHandler
                 if (effectValue == BadEffect.None)
                     continue;
 
-                byte effectLevel;
+                var bit = BitOperations.TrailingZeroCount((uint)effectValue);
 
                 if ((effectCurrent & effectValue) > BadEffect.Zombie)
-                    effectLevel = packet.ReadByte(); //EffectLevel
+                    Game.Player.BadEffectLevels[bit] = packet.ReadByte(); //EffectLevel
+                else
+                    Game.Player.BadEffectLevels[bit] = 0;
 
                 if ((effectStarted & effectValue) == effectValue)
                     Log.Warn($"You are under {effectValue} status.");
@@ -302,6 +305,17 @@ internal class EntityUpdateStatusResponse : IPacketHandler
         if ((updateFlag & EntityUpdateStatusFlag.MP) == EntityUpdateStatusFlag.MP)
             packet.ReadUInt();
 
-        if ((updateFlag & EntityUpdateStatusFlag.BadEffect) == EntityUpdateStatusFlag.BadEffect) { }
+        if ((updateFlag & EntityUpdateStatusFlag.BadEffect) == EntityUpdateStatusFlag.BadEffect)
+        {
+            var effectCurrent = (BadEffect)packet.ReadUInt();
+
+            foreach (BadEffect effectValue in Enum.GetValues(typeof(BadEffect)))
+            {
+                if (effectValue != BadEffect.None && (effectCurrent & effectValue) > BadEffect.Zombie)
+                    packet.ReadByte(); //EffectLevel
+            }
+
+            bionic.BadEffect = effectCurrent;
+        }
     }
 }

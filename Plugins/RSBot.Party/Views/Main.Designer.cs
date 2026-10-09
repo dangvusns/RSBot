@@ -153,7 +153,6 @@
             menuItemRefreshBuffs = new System.Windows.Forms.ToolStripMenuItem();
             panel5 = new SDUI.Controls.Panel();
             checkHideLowerLevelSkills = new SDUI.Controls.CheckBox();
-            checkInstantSkillsWhenNeeded = new SDUI.Controls.CheckBox();
             tabMain.SuspendLayout();
             tabCurrentParty.SuspendLayout();
             contextParty.SuspendLayout();
@@ -1836,7 +1835,6 @@
             panel5.BackColor = System.Drawing.Color.Transparent;
             panel5.Border = new System.Windows.Forms.Padding(0, 1, 0, 0);
             panel5.BorderColor = System.Drawing.Color.Transparent;
-            panel5.Controls.Add(checkInstantSkillsWhenNeeded);
             panel5.Controls.Add(checkHideLowerLevelSkills);
             panel5.Dock = System.Windows.Forms.DockStyle.Bottom;
             panel5.Location = new System.Drawing.Point(2, 470);
@@ -1865,25 +1863,6 @@
             checkHideLowerLevelSkills.UseVisualStyleBackColor = false;
             //checkHideLowerLevelSkills.Visible = false;
             checkHideLowerLevelSkills.CheckedChanged += checkHideLowerLevelSkills_CheckedChanged;
-            // 
-            // checkInstantSkillsWhenNeeded
-            // 
-            checkInstantSkillsWhenNeeded.AutoSize = true;
-            checkInstantSkillsWhenNeeded.BackColor = System.Drawing.Color.Transparent;
-            checkInstantSkillsWhenNeeded.Checked = true;
-            checkInstantSkillsWhenNeeded.CheckState = System.Windows.Forms.CheckState.Checked;
-            checkInstantSkillsWhenNeeded.Depth = 0;
-            checkInstantSkillsWhenNeeded.Dock = System.Windows.Forms.DockStyle.Top;
-            checkInstantSkillsWhenNeeded.Location = new System.Drawing.Point(12, 32);
-            checkInstantSkillsWhenNeeded.Margin = new System.Windows.Forms.Padding(0);
-            checkInstantSkillsWhenNeeded.MouseLocation = new System.Drawing.Point(-1, -1);
-            checkInstantSkillsWhenNeeded.Name = "checkInstantSkillsWhenNeeded";
-            checkInstantSkillsWhenNeeded.Ripple = true;
-            checkInstantSkillsWhenNeeded.Size = new System.Drawing.Size(318, 32);
-            checkInstantSkillsWhenNeeded.TabIndex = 11;
-            checkInstantSkillsWhenNeeded.Text = "Instant skills (heal, MP) only when HP/MP is not full";
-            checkInstantSkillsWhenNeeded.UseVisualStyleBackColor = false;
-            checkInstantSkillsWhenNeeded.CheckedChanged += checkInstantSkillsWhenNeeded_CheckedChanged;
             // 
             // Main
             // 
@@ -2001,7 +1980,6 @@
         private SDUI.Controls.ListView selectedMemberBuffs;
         private System.Windows.Forms.ColumnHeader columnHeader1;
         private SDUI.Controls.CheckBox checkHideLowerLevelSkills;
-        private SDUI.Controls.CheckBox checkInstantSkillsWhenNeeded;
         private System.Windows.Forms.ColumnHeader columnLimit;
         private SDUI.Controls.ListView listViewPartyMembers;
         private System.Windows.Forms.ColumnHeader chPlayerName;

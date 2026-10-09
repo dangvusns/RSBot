@@ -122,11 +122,11 @@ public class RefSkill : IReference<uint>
     public WeaponType ReqCast_Weapon1;
     public WeaponType ReqCast_Weapon2;
 
-    //public short Consume_HP;
+    public short Consume_HP;
     public short Consume_MP;
 
-    //public short Consume_HPRatio;
-    //public short Consume_MPRatio;
+    public short Consume_HPRatio;
+    public short Consume_MPRatio;
     //public byte Consume_HWAN;
     //public byte UI_SkillTab;
     //public byte UI_SkillPage;
@@ -221,10 +221,10 @@ public class RefSkill : IReference<uint>
         parser.TryParse(50, out ReqCast_Weapon1);
         parser.TryParse(51, out ReqCast_Weapon2);
 
-        //Consume_HP = short.Parse(data[52]);
+        parser.TryParse(52, out Consume_HP);
         parser.TryParse(53, out Consume_MP);
-        //Consume_HPRatio = short.Parse(data[54]);
-        //Consume_MPRatio = short.Parse(data[55]);
+        parser.TryParse(54, out Consume_HPRatio);
+        parser.TryParse(55, out Consume_MPRatio);
         //Consume_HWAN = byte.Parse(data[56]);
 
         //UI_SkillTab = byte.Parse(data[57]);

@@ -41,11 +41,6 @@ internal class PartyBuffingBundle : IBundle
     private readonly Dictionary<(string Member, uint Skill), (int Count, int Tick)> _pendingCasts = new();
 
     /// <summary>
-    ///     The instant skills whose params were already logged.
-    /// </summary>
-    private readonly HashSet<uint> _loggedInstantSkills = new();
-
-    /// <summary>
     ///     Initialize the instance of <seealso cref="PartyBuffingBundle" />
     /// </summary>
     public PartyBuffingBundle()
@@ -141,11 +136,7 @@ internal class PartyBuffingBundle : IBundle
                     continue;
                 }
 
-                string instantReason = null;
-                if (!skill.HasDuration && !NeedsInstantSkill(skill, member.Name, out instantReason))
-                    continue;
-
-                if (skill.HasCooldown || Game.Player.Mana < skill.Record.Consume_MP)
+                if (skill.HasCooldown || !skill.HasEnoughResources)
                     continue;
 
                 if (_pendingCasts.TryGetValue(key, out var pending) && pending.Count >= MAX_FAILED_CASTS)
@@ -180,33 +171,12 @@ internal class PartyBuffingBundle : IBundle
                 // A refused cast (e.g. not enough MP) did not reach the member, so it is not counted
                 var result = skill.CastBuff(member.UniqueId);
 
-                // Shows whether the "only when needed" setting picked the right moments
-                if (instantReason != null)
-                    Log.Debug($"[Party buffing] {skill.Record?.GetRealName()} -> {member.Name} ({instantReason}): {result}");
                 if (result != SkillCastResult.Accepted || !skill.HasDuration)
                     continue;
 
                 _pendingCasts[key] = (pending.Count + 1, Kernel.TickCount);
             }
         }
-    }
-
-    /// <summary>
-    ///     Gets a value indicating whether an instant skill (no duration, e.g. a heal or MP transfer) should be cast on the member.
-    /// </summary>
-    /// <param name="skill">The instant skill.</param>
-    /// <param name="memberName">The member's name.</param>
-    private bool NeedsInstantSkill(SkillInfo skill, string memberName, out string reason)
-    {
-        if (_loggedInstantSkills.Add(skill.Id))
-        {
-            skill.TryGetRestoredStats(out var health, out var mana);
-            Log.Debug(
-                $"[Party buffing] {skill.Record?.GetRealName()} has no duration; restores HP={health} MP={mana} (params: {string.Join(",", skill.Record?.Params ?? new List<int>())})"
-            );
-        }
-
-        return InstantSkills.IsNeededFor(skill, memberName, out reason);
     }
 
     /// <summary>
@@ -235,7 +205,6 @@ internal class PartyBuffingBundle : IBundle
         }
 
         _pendingCasts.Clear();
-        _loggedInstantSkills.Clear();
         _refreshing = false;
     }
 

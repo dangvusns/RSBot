@@ -151,6 +151,17 @@ public class Player : SpawnedBionic
     public int Mana { get; set; }
 
     /// <summary>
+    ///     Gets the level of each active bad effect, indexed by the bit number of <see cref="BadEffect" />.
+    ///     Only modern statuses (above Zombie) have a level; others stay 0.
+    /// </summary>
+    public byte[] BadEffectLevels { get; } = new byte[32];
+
+    /// <summary>
+    ///     Gets or sets the resurrect options offered by the server (0x3011) for the current death; 0 if none.
+    /// </summary>
+    public byte ResurrectOptions { get; set; }
+
+    /// <summary>
     ///     Gets or sets the automatic inverst experience.
     /// </summary>
     /// <value>
@@ -927,7 +938,10 @@ public class Player : SpawnedBionic
         if (elapsed < 20050)
             return false;
 
-        var slotItem = Inventory.GetItem(p => p.Record.IsPurificationPill || p.Record.IsAbnormalPotion);
+        var pills = Inventory.GetItems(p => p.Record.IsPurificationPill || p.Record.IsAbnormalPotion);
+
+        // Servers without pill cure data (Param1 = 0) keep the old "first pill" behaviour.
+        var slotItem = pills.Any(p => p.Record.Param1 != 0) ? GetBestPurificationPill(pills) : pills.FirstOrDefault();
         if (slotItem == null)
             return false;
 
@@ -936,6 +950,42 @@ public class Player : SpawnedBionic
             _lastPurificationPillTick = Kernel.TickCount;
 
         return result;
+    }
+
+    /// <summary>
+    ///     Picks the smallest pill whose cure level (Param2) covers the strongest curable status;
+    ///     if none is strong enough, the strongest one. Param1 is the bitmask of statuses the pill cures.
+    /// </summary>
+    private InventoryItem GetBestPurificationPill(IEnumerable<InventoryItem> pills)
+    {
+        var best = default(InventoryItem);
+        var bestCovers = false;
+
+        foreach (var pill in pills)
+        {
+            var covers = (uint)pill.Record.Param1 & (uint)BadEffect;
+            if (covers == 0)
+                continue;
+
+            var need = 0;
+            for (var bit = 0; bit < 32; bit++)
+                if ((covers & (1u << bit)) != 0)
+                    need = Math.Max(need, BadEffectLevels[bit]);
+
+            var cureLevel = pill.Record.Param2;
+            var pillCovers = cureLevel >= need;
+
+            if (best == null
+                || (pillCovers && !bestCovers)
+                || (pillCovers && cureLevel < best.Record.Param2)
+                || (!pillCovers && !bestCovers && cureLevel > best.Record.Param2))
+            {
+                best = pill;
+                bestCovers = pillCovers;
+            }
+        }
+
+        return best;
     }
 
     /// <summary>
