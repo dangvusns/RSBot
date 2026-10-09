@@ -123,7 +123,8 @@
     System.Drawing.Color.Black
     };
             label22.GradientAnimation = false;
-            label22.Location = new System.Drawing.Point(7, 582);
+            label22.Location = new System.Drawing.Point(7, 600);
+            label22.AutoSize = true;
             label22.Margin = new System.Windows.Forms.Padding(7, 5, 0, 0);
             label22.Name = "label22";
             label22.Size = new System.Drawing.Size(330, 20);
@@ -380,7 +381,7 @@
             // 
             // checkUniqueNearby
             // 
-            checkUniqueNearby.AutoSize = false;
+            checkUniqueNearby.AutoSize = true;
             checkUniqueNearby.BackColor = System.Drawing.Color.Transparent;
             checkUniqueNearby.Depth = 0;
             checkUniqueNearby.Location = new System.Drawing.Point(175, 139);
@@ -444,7 +445,7 @@
             // 
             // checkPetTransferSupplies
             // 
-            checkPetTransferSupplies.AutoSize = false;
+            checkPetTransferSupplies.AutoSize = true;
             checkPetTransferSupplies.BackColor = System.Drawing.Color.Transparent;
             checkPetTransferSupplies.Depth = 0;
             checkPetTransferSupplies.Location = new System.Drawing.Point(320, 108);
@@ -454,13 +455,13 @@
             checkPetTransferSupplies.Ripple = false;
             checkPetTransferSupplies.Size = new System.Drawing.Size(255, 30);
             checkPetTransferSupplies.TabIndex = 40;
-            checkPetTransferSupplies.Text = "Move pots, pills, arrows from pick pet";
+            checkPetTransferSupplies.Text = "Take supplies from pick pet";
             checkPetTransferSupplies.UseVisualStyleBackColor = false;
             checkPetTransferSupplies.CheckedChanged += settings_CheckedChanged;
             // 
             // checkPetTransferWhenFull
             // 
-            checkPetTransferWhenFull.AutoSize = false;
+            checkPetTransferWhenFull.AutoSize = true;
             checkPetTransferWhenFull.BackColor = System.Drawing.Color.Transparent;
             checkPetTransferWhenFull.Depth = 0;
             checkPetTransferWhenFull.Location = new System.Drawing.Point(320, 138);
@@ -470,7 +471,7 @@
             checkPetTransferWhenFull.Ripple = false;
             checkPetTransferWhenFull.Size = new System.Drawing.Size(255, 30);
             checkPetTransferWhenFull.TabIndex = 41;
-            checkPetTransferWhenFull.Text = "Empty a full pick pet into inventory";
+            checkPetTransferWhenFull.Text = "Empty pick pet when full";
             checkPetTransferWhenFull.UseVisualStyleBackColor = false;
             checkPetTransferWhenFull.CheckedChanged += settings_CheckedChanged;
             // 

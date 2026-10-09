@@ -187,8 +187,8 @@
             // 
             // SplashScreen
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(11F, 28F);
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             BackColor = System.Drawing.Color.FromArgb(0, 0, 0, 0);
             BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             ClientSize = new System.Drawing.Size(521, 276);

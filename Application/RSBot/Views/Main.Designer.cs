@@ -476,8 +476,8 @@ namespace RSBot.Views
             // 
             // Main
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
-            AutoScaleMode = AutoScaleMode.Font;
+            AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
+            AutoScaleMode = AutoScaleMode.Dpi;
             ClientSize = new System.Drawing.Size(1255, 832);
             ControlBox = false;
             Controls.Add(windowPageControl);

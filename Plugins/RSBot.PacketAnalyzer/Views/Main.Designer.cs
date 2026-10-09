@@ -937,6 +937,8 @@ namespace RSBot.PacketAnalyzer.Views
             Controls.Add(tabSide);
             Controls.Add(panelMarker);
             Controls.Add(panelTop);
+            AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             Name = "Main";
             Size = new System.Drawing.Size(1000, 576);
             panelTop.ResumeLayout(false);

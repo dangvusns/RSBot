@@ -817,7 +817,7 @@
             groupBox5.Padding = new System.Windows.Forms.Padding(3, 13, 3, 4);
             groupBox5.Radius = 10;
             groupBox5.ShadowDepth = 0;
-            groupBox5.Size = new System.Drawing.Size(410, 197);
+            groupBox5.Size = new System.Drawing.Size(410, 215);
             groupBox5.TabIndex = 24;
             groupBox5.TabStop = false;
             groupBox5.Text = "Server Pending";
@@ -850,7 +850,7 @@
     System.Drawing.Color.Black
     };
             label3.GradientAnimation = false;
-            label3.Location = new System.Drawing.Point(334, 108);
+            label3.Location = new System.Drawing.Point(151, 136);
             label3.Name = "label3";
             label3.Size = new System.Drawing.Size(82, 20);
             label3.TabIndex = 39;
@@ -861,7 +861,7 @@
             numQueueLeft.BackColor = System.Drawing.Color.Transparent;
             numQueueLeft.Font = new System.Drawing.Font("Segoe UI", 9.25F);
             numQueueLeft.ForeColor = System.Drawing.Color.FromArgb(0, 0, 0);
-            numQueueLeft.Location = new System.Drawing.Point(235, 103);
+            numQueueLeft.Location = new System.Drawing.Point(52, 131);
             numQueueLeft.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             numQueueLeft.Maximum = new decimal(new int[] { 9999, 0, 0, 0 });
             numQueueLeft.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
@@ -908,7 +908,7 @@
             // 
             btnShowPending.AutoSize = true;
             btnShowPending.Color = System.Drawing.Color.Transparent;
-            btnShowPending.Location = new System.Drawing.Point(33, 149);
+            btnShowPending.Location = new System.Drawing.Point(33, 171);
             btnShowPending.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnShowPending.Name = "btnShowPending";
             btnShowPending.Radius = 6;
@@ -923,7 +923,7 @@
             // 
             gbxSoundNotification.BackColor = System.Drawing.Color.Transparent;
             gbxSoundNotification.Controls.Add(btnSoundSettingSetup);
-            gbxSoundNotification.Location = new System.Drawing.Point(445, 576);
+            gbxSoundNotification.Location = new System.Drawing.Point(445, 594);
             gbxSoundNotification.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             gbxSoundNotification.Name = "gbxSoundNotification";
             gbxSoundNotification.Padding = new System.Windows.Forms.Padding(3, 11, 3, 4);
@@ -950,8 +950,8 @@
             // 
             // Main
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             AutoScroll = true;
             Controls.Add(gbxSoundNotification);
             Controls.Add(groupBox5);
@@ -967,7 +967,7 @@
             Font = new System.Drawing.Font("Segoe UI", 9F);
             Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             Name = "Main";
-            Size = new System.Drawing.Size(869, 576);
+            Size = new System.Drawing.Size(869, 688);
             groupBox4.ResumeLayout(false);
             groupBox4.PerformLayout();
             groupBox3.ResumeLayout(false);

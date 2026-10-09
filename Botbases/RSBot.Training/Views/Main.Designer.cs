@@ -109,7 +109,7 @@
             // 
             groupBox2.BackColor = System.Drawing.Color.Transparent;
             groupBox2.Controls.Add(lvAvoidance);
-            groupBox2.Location = new System.Drawing.Point(23, 273);
+            groupBox2.Location = new System.Drawing.Point(23, 284);
             groupBox2.Name = "groupBox2";
             groupBox2.Padding = new System.Windows.Forms.Padding(2, 7, 2, 3);
             groupBox2.Radius = 10;
@@ -502,7 +502,7 @@
             groupBoxArea.Padding = new System.Windows.Forms.Padding(3, 10, 3, 3);
             groupBoxArea.Radius = 10;
             groupBoxArea.ShadowDepth = 0;
-            groupBoxArea.Size = new System.Drawing.Size(221, 250);
+            groupBoxArea.Size = new System.Drawing.Size(221, 262);
             groupBoxArea.TabIndex = 0;
             groupBoxArea.TabStop = false;
             groupBoxArea.Text = "Area";
@@ -910,7 +910,7 @@
             Controls.Add(groupBoxBerserk);
             Font = new System.Drawing.Font("Segoe UI", 9F);
             Name = "Main";
-            Size = new System.Drawing.Size(772, 491);
+            Size = new System.Drawing.Size(772, 506);
             Load += Main_Load;
             groupBox2.ResumeLayout(false);
             ctxAvoidance.ResumeLayout(false);

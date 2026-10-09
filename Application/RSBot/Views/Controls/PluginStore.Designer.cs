@@ -131,7 +131,7 @@
             labelStatus.GradientAnimation = false;
             labelStatus.Location = new System.Drawing.Point(634, 14);
             labelStatus.Name = "labelStatus";
-            labelStatus.Size = new System.Drawing.Size(496, 27);
+            labelStatus.Size = new System.Drawing.Size(351, 27);
             labelStatus.TabIndex = 5;
             labelStatus.Text = "Ready to load plugins from repository...";
             // 
@@ -149,8 +149,8 @@
             // 
             // PluginStore
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             Controls.Add(flowPanelWeb);
             Controls.Add(panelWebTop);
             Name = "PluginStore";

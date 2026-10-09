@@ -200,7 +200,7 @@
             // 
             // checkSwapArea
             // 
-            this.checkSwapArea.AutoSize = false;
+            this.checkSwapArea.AutoSize = true;
             this.checkSwapArea.BackColor = System.Drawing.Color.Transparent;
             this.checkSwapArea.Depth = 0;
             this.checkSwapArea.Location = new System.Drawing.Point(12, 3);
@@ -219,7 +219,7 @@
             this.numSwapAreaSeconds.BackColor = System.Drawing.Color.Transparent;
             this.numSwapAreaSeconds.Font = new System.Drawing.Font("Segoe UI", 9.25F);
             this.numSwapAreaSeconds.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.numSwapAreaSeconds.Location = new System.Drawing.Point(318, 6);
+            this.numSwapAreaSeconds.Location = new System.Drawing.Point(340, 6);
             this.numSwapAreaSeconds.Maximum = new decimal(new int[] { 3600, 0, 0, 0 });
             this.numSwapAreaSeconds.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             this.numSwapAreaSeconds.MinimumSize = new System.Drawing.Size(80, 25);
@@ -232,7 +232,7 @@
             // labelSwapSeconds
             // 
             this.labelSwapSeconds.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.labelSwapSeconds.Location = new System.Drawing.Point(404, 8);
+            this.labelSwapSeconds.Location = new System.Drawing.Point(426, 8);
             this.labelSwapSeconds.Name = "labelSwapSeconds";
             this.labelSwapSeconds.Size = new System.Drawing.Size(120, 20);
             this.labelSwapSeconds.TabIndex = 2;
@@ -241,8 +241,8 @@
             // TrainingAreasDialog
             // 
             this.AcceptButton = this.buttonAccept;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.buttonCancel;
             this.ClientSize = new System.Drawing.Size(615, 354);
             this.ControlBox = false;

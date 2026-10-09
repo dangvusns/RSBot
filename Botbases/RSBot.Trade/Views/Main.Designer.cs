@@ -296,7 +296,7 @@
             lvRouteList.Margin = new System.Windows.Forms.Padding(2);
             lvRouteList.MultiSelect = false;
             lvRouteList.Name = "lvRouteList";
-            lvRouteList.Size = new System.Drawing.Size(952, 258);
+            lvRouteList.Size = new System.Drawing.Size(952, 248);
             lvRouteList.TabIndex = 1;
             lvRouteList.UseCompatibleStateImageBehavior = false;
             lvRouteList.View = System.Windows.Forms.View.Details;
@@ -354,10 +354,6 @@
             // tabPageSettings
             // 
             tabPageSettings.BackColor = System.Drawing.Color.White;
-            tabPageSettings.Controls.Add(checkAttackThiefPlayers);
-            tabPageSettings.Controls.Add(checkAttackThiefNpc);
-            tabPageSettings.Controls.Add(checkCounterAttack);
-            tabPageSettings.Controls.Add(checkProtectTransport);
             tabPageSettings.Controls.Add(groupBox1);
             tabPageSettings.Controls.Add(groupBox2);
             tabPageSettings.Location = new System.Drawing.Point(4, 28);
@@ -373,7 +369,7 @@
             checkAttackThiefPlayers.AutoSize = true;
             checkAttackThiefPlayers.BackColor = System.Drawing.Color.Transparent;
             checkAttackThiefPlayers.Depth = 0;
-            checkAttackThiefPlayers.Location = new System.Drawing.Point(51, 56);
+            checkAttackThiefPlayers.Location = new System.Drawing.Point(35, 37);
             checkAttackThiefPlayers.Margin = new System.Windows.Forms.Padding(0);
             checkAttackThiefPlayers.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAttackThiefPlayers.Name = "checkAttackThiefPlayers";
@@ -389,7 +385,7 @@
             checkAttackThiefNpc.AutoSize = true;
             checkAttackThiefNpc.BackColor = System.Drawing.Color.Transparent;
             checkAttackThiefNpc.Depth = 0;
-            checkAttackThiefNpc.Location = new System.Drawing.Point(51, 89);
+            checkAttackThiefNpc.Location = new System.Drawing.Point(35, 70);
             checkAttackThiefNpc.Margin = new System.Windows.Forms.Padding(0);
             checkAttackThiefNpc.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAttackThiefNpc.Name = "checkAttackThiefNpc";
@@ -405,7 +401,7 @@
             checkCounterAttack.AutoSize = true;
             checkCounterAttack.BackColor = System.Drawing.Color.Transparent;
             checkCounterAttack.Depth = 0;
-            checkCounterAttack.Location = new System.Drawing.Point(51, 120);
+            checkCounterAttack.Location = new System.Drawing.Point(35, 101);
             checkCounterAttack.Margin = new System.Windows.Forms.Padding(0);
             checkCounterAttack.MouseLocation = new System.Drawing.Point(-1, -1);
             checkCounterAttack.Name = "checkCounterAttack";
@@ -421,7 +417,7 @@
             checkProtectTransport.AutoSize = true;
             checkProtectTransport.BackColor = System.Drawing.Color.Transparent;
             checkProtectTransport.Depth = 0;
-            checkProtectTransport.Location = new System.Drawing.Point(51, 155);
+            checkProtectTransport.Location = new System.Drawing.Point(35, 136);
             checkProtectTransport.Margin = new System.Windows.Forms.Padding(0);
             checkProtectTransport.MouseLocation = new System.Drawing.Point(-1, -1);
             checkProtectTransport.Name = "checkProtectTransport";
@@ -539,6 +535,10 @@
             // groupBox2
             // 
             groupBox2.BackColor = System.Drawing.Color.Transparent;
+            groupBox2.Controls.Add(checkAttackThiefPlayers);
+            groupBox2.Controls.Add(checkAttackThiefNpc);
+            groupBox2.Controls.Add(checkCounterAttack);
+            groupBox2.Controls.Add(checkProtectTransport);
             groupBox2.Controls.Add(separator2);
             groupBox2.Controls.Add(checkCastBuffs);
             groupBox2.Controls.Add(checkWaitForHunter);

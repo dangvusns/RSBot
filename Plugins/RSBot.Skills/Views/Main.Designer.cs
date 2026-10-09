@@ -146,6 +146,7 @@
             // 
             checkUseSkillsInOrder.BackColor = System.Drawing.Color.Transparent;
             checkUseSkillsInOrder.Depth = 0;
+            checkUseSkillsInOrder.AutoSize = true;
             checkUseSkillsInOrder.Location = new System.Drawing.Point(289, 242);
             checkUseSkillsInOrder.Margin = new System.Windows.Forms.Padding(0);
             checkUseSkillsInOrder.MouseLocation = new System.Drawing.Point(-1, -1);
@@ -1154,8 +1155,8 @@
             // 
             // Main
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             Controls.Add(tabControl2);
             Controls.Add(tabControl1);
             Font = new System.Drawing.Font("Segoe UI", 9F);

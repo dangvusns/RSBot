@@ -172,6 +172,8 @@
             // 
             Controls.Add(txtLog);
             Controls.Add(panel1);
+            AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             Name = "Main";
             Size = new System.Drawing.Size(719, 459);
             panel1.ResumeLayout(false);

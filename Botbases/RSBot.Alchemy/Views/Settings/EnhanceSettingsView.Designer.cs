@@ -349,7 +349,8 @@ namespace RSBot.Alchemy.Views.Settings
             // 
             // EnhanceSettingsView
             // 
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
+            AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             Controls.Add(numMaxEnhancement);
             Controls.Add(lblLuckyPowderCount);
             Controls.Add(checkStopLuckyPowder);

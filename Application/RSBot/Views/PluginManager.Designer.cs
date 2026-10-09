@@ -33,8 +33,8 @@ namespace RSBot.Views
             // 
             // PluginManager
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
-            AutoScaleMode = AutoScaleMode.Font;
+            AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
+            AutoScaleMode = AutoScaleMode.Dpi;
             BackColor = System.Drawing.Color.FromArgb(0, 0, 0, 0);
             ClientSize = new System.Drawing.Size(877, 611);
             ControlBox = false;

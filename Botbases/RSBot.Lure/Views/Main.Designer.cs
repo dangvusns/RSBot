@@ -556,7 +556,7 @@
             numPartyMember.BackColor = System.Drawing.Color.Transparent;
             numPartyMember.Font = new System.Drawing.Font("Segoe UI", 9.25F);
             numPartyMember.ForeColor = System.Drawing.Color.FromArgb(0, 0, 0);
-            numPartyMember.Location = new System.Drawing.Point(257, 257);
+            numPartyMember.Location = new System.Drawing.Point(290, 257);
             numPartyMember.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             numPartyMember.Maximum = new decimal(new int[] { 8, 0, 0, 0 });
             numPartyMember.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
@@ -652,7 +652,7 @@
             numPartyMemberDead.BackColor = System.Drawing.Color.Transparent;
             numPartyMemberDead.Font = new System.Drawing.Font("Segoe UI", 9.25F);
             numPartyMemberDead.ForeColor = System.Drawing.Color.FromArgb(0, 0, 0);
-            numPartyMemberDead.Location = new System.Drawing.Point(257, 215);
+            numPartyMemberDead.Location = new System.Drawing.Point(290, 215);
             numPartyMemberDead.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             numPartyMemberDead.Maximum = new decimal(new int[] { 8, 0, 0, 0 });
             numPartyMemberDead.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
@@ -713,8 +713,8 @@
             // 
             // Main
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             Controls.Add(groupBox3);
             Controls.Add(groupBox1);
             Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);

@@ -51,7 +51,7 @@
             buttonEquipment = new SDUI.Controls.Button();
             buttonAvatars = new SDUI.Controls.Button();
             buttonGrabpet = new SDUI.Controls.Button();
-            topPanel = new SDUI.Controls.Panel();
+            topPanel = new SDUI.Controls.FlowLayoutPanel();
             buttonSpecialty = new SDUI.Controls.Button();
             buttonGuildStorage = new SDUI.Controls.Button();
             buttonFellowPet = new SDUI.Controls.Button();
@@ -228,6 +228,7 @@
             // 
             checkAutoSort.BackColor = System.Drawing.Color.Transparent;
             checkAutoSort.Depth = 0;
+            checkAutoSort.AutoSize = true;
             checkAutoSort.Location = new System.Drawing.Point(636, 7);
             checkAutoSort.Margin = new System.Windows.Forms.Padding(0);
             checkAutoSort.MouseLocation = new System.Drawing.Point(-1, -1);
@@ -257,6 +258,7 @@
             // 
             buttonInventory.Color = System.Drawing.Color.Transparent;
             buttonInventory.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            buttonInventory.AutoSize = true;
             buttonInventory.Location = new System.Drawing.Point(9, 8);
             buttonInventory.Name = "buttonInventory";
             buttonInventory.Radius = 6;
@@ -271,6 +273,7 @@
             // 
             buttonEquipment.Color = System.Drawing.Color.Transparent;
             buttonEquipment.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            buttonEquipment.AutoSize = true;
             buttonEquipment.Location = new System.Drawing.Point(77, 8);
             buttonEquipment.Name = "buttonEquipment";
             buttonEquipment.Radius = 6;
@@ -285,6 +288,7 @@
             // 
             buttonAvatars.Color = System.Drawing.Color.Transparent;
             buttonAvatars.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            buttonAvatars.AutoSize = true;
             buttonAvatars.Location = new System.Drawing.Point(245, 8);
             buttonAvatars.Name = "buttonAvatars";
             buttonAvatars.Radius = 6;
@@ -299,6 +303,7 @@
             // 
             buttonGrabpet.Color = System.Drawing.Color.Transparent;
             buttonGrabpet.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            buttonGrabpet.AutoSize = true;
             buttonGrabpet.Location = new System.Drawing.Point(308, 8);
             buttonGrabpet.Name = "buttonGrabpet";
             buttonGrabpet.Radius = 6;
@@ -314,16 +319,18 @@
             topPanel.BackColor = System.Drawing.Color.Transparent;
             topPanel.Border = new System.Windows.Forms.Padding(0, 0, 0, 1);
             topPanel.BorderColor = System.Drawing.Color.Transparent;
-            topPanel.Controls.Add(buttonSpecialty);
-            topPanel.Controls.Add(buttonGuildStorage);
-            topPanel.Controls.Add(buttonGrabpet);
             topPanel.Controls.Add(buttonInventory);
+            topPanel.Controls.Add(buttonEquipment);
+            topPanel.Controls.Add(buttonJobEquipment);
+            topPanel.Controls.Add(buttonAvatars);
+            topPanel.Controls.Add(buttonGrabpet);
             topPanel.Controls.Add(buttonFellowPet);
             topPanel.Controls.Add(buttonJobTransport);
+            topPanel.Controls.Add(buttonSpecialty);
             topPanel.Controls.Add(buttonStorage);
-            topPanel.Controls.Add(buttonJobEquipment);
-            topPanel.Controls.Add(buttonEquipment);
-            topPanel.Controls.Add(buttonAvatars);
+            topPanel.Controls.Add(buttonGuildStorage);
+            topPanel.AutoSize = true;
+            topPanel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             topPanel.Dock = System.Windows.Forms.DockStyle.Top;
             topPanel.Location = new System.Drawing.Point(0, 0);
             topPanel.Name = "topPanel";
@@ -337,6 +344,7 @@
             // 
             buttonSpecialty.Color = System.Drawing.Color.Transparent;
             buttonSpecialty.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            buttonSpecialty.AutoSize = true;
             buttonSpecialty.Location = new System.Drawing.Point(553, 8);
             buttonSpecialty.Name = "buttonSpecialty";
             buttonSpecialty.Radius = 6;
@@ -351,6 +359,7 @@
             // 
             buttonGuildStorage.Color = System.Drawing.Color.Transparent;
             buttonGuildStorage.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            buttonGuildStorage.AutoSize = true;
             buttonGuildStorage.Location = new System.Drawing.Point(684, 8);
             buttonGuildStorage.Name = "buttonGuildStorage";
             buttonGuildStorage.Radius = 6;
@@ -365,6 +374,7 @@
             // 
             buttonFellowPet.Color = System.Drawing.Color.Transparent;
             buttonFellowPet.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            buttonFellowPet.AutoSize = true;
             buttonFellowPet.Location = new System.Drawing.Point(373, 8);
             buttonFellowPet.Name = "buttonFellowPet";
             buttonFellowPet.Radius = 6;
@@ -379,6 +389,7 @@
             // 
             buttonJobTransport.Color = System.Drawing.Color.Transparent;
             buttonJobTransport.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            buttonJobTransport.AutoSize = true;
             buttonJobTransport.Location = new System.Drawing.Point(463, 8);
             buttonJobTransport.Name = "buttonJobTransport";
             buttonJobTransport.Radius = 6;
@@ -393,6 +404,7 @@
             // 
             buttonStorage.Color = System.Drawing.Color.Transparent;
             buttonStorage.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            buttonStorage.AutoSize = true;
             buttonStorage.Location = new System.Drawing.Point(625, 8);
             buttonStorage.Name = "buttonStorage";
             buttonStorage.Radius = 6;
@@ -407,6 +419,7 @@
             // 
             buttonJobEquipment.Color = System.Drawing.Color.Transparent;
             buttonJobEquipment.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            buttonJobEquipment.AutoSize = true;
             buttonJobEquipment.Location = new System.Drawing.Point(152, 8);
             buttonJobEquipment.Name = "buttonJobEquipment";
             buttonJobEquipment.Radius = 6;
@@ -448,7 +461,7 @@
         private SDUI.Controls.Button buttonEquipment;
         private SDUI.Controls.Button buttonAvatars;
         private SDUI.Controls.Button buttonGrabpet;
-        private SDUI.Controls.Panel topPanel;
+        private SDUI.Controls.FlowLayoutPanel topPanel;
         private SDUI.Controls.Button buttonSpecialty;
         private SDUI.Controls.Button buttonGuildStorage;
         private SDUI.Controls.Button buttonJobTransport;

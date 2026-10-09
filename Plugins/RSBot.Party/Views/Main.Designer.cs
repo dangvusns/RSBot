@@ -418,6 +418,7 @@
             checkCurrentAutoShareEXP.BackColor = System.Drawing.Color.Transparent;
             checkCurrentAutoShareEXP.Depth = 0;
             checkCurrentAutoShareEXP.Enabled = false;
+            checkCurrentAutoShareEXP.AutoSize = true;
             checkCurrentAutoShareEXP.Location = new System.Drawing.Point(16, 39);
             checkCurrentAutoShareEXP.Margin = new System.Windows.Forms.Padding(0);
             checkCurrentAutoShareEXP.MouseLocation = new System.Drawing.Point(-1, -1);

@@ -38,8 +38,8 @@
             // 
             // JobTransport
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             MaximumSize = new System.Drawing.Size(277, 93);
             MinimumSize = new System.Drawing.Size(277, 93);
