@@ -8,12 +8,14 @@ namespace RSBot.Views.Controls.Cos;
 [ToolboxItem(false)]
 public partial class Fellow : CosControlBase
 {
+    private UiEventSubscriptions _uiEvents;
     /// <summary>
     ///     Initializes a new instance of the <see cref="Fellow" /> class.
     /// </summary>
     public Fellow()
     {
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(MiniCosControl);
         SubscribeEvents();
 
         MiniCosControl.Hgp.Visible = false;
@@ -24,11 +26,11 @@ public partial class Fellow : CosControlBase
     /// </summary>
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnFellowLevelUp", OnFellowLevelUp);
-        EventManager.SubscribeEvent("OnFellowExperienceUpdate", OnFellowExperienceUpdate);
-        EventManager.SubscribeEvent("OnFellowSatietyUpdate", OnFellowSatietyUpdate);
-        EventManager.SubscribeEvent("OnFellowNameChange", OnFellowNameChange);
-        EventManager.SubscribeEvent("OnFellowHealthUpdate", OnFellowHealthUpdate);
+        _uiEvents.Subscribe("OnFellowLevelUp", OnFellowLevelUp, coalesce: true);
+        _uiEvents.Subscribe("OnFellowExperienceUpdate", OnFellowExperienceUpdate, coalesce: true);
+        _uiEvents.Subscribe("OnFellowSatietyUpdate", OnFellowSatietyUpdate, coalesce: true);
+        _uiEvents.Subscribe("OnFellowNameChange", OnFellowNameChange, coalesce: true);
+        _uiEvents.Subscribe("OnFellowHealthUpdate", OnFellowHealthUpdate, coalesce: true);
     }
 
     /// <summary>

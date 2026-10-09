@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using RSBot.Core.Event;
 using RSBot.Core.Network;
 using RSBot.PacketAnalyzer.Components;
 using SDUI;
@@ -28,6 +29,7 @@ public partial class Main : DoubleBufferedControl
     private bool _loading;
     private bool _injectConfirmed;
     private string _lastStatus;
+    private readonly UiEventSubscriptions _ui;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="Main" /> class.
@@ -35,20 +37,27 @@ public partial class Main : DoubleBufferedControl
     public Main()
     {
         InitializeComponent();
+        _ui = new UiEventSubscriptions(this);
         ScaleForDpi();
 
         PacketHub.Initialize();
         LoadSettings();
         ApplyTheme();
 
-        ColorScheme.ThemeChanged += (_, _) => ApplyTheme();
+        ColorScheme.ThemeChanged += OnThemeChanged;
 
         timerRefresh.Start();
 
         // Capture packets for the list only while it can be seen
         VisibleChanged += (_, _) => PacketHub.ViewActive = Visible;
-        Disposed += (_, _) => PacketHub.ViewActive = false;
+        Disposed += (_, _) =>
+        {
+            PacketHub.ViewActive = false;
+            ColorScheme.ThemeChanged -= OnThemeChanged;
+        };
     }
+
+    private void OnThemeChanged(object sender, EventArgs e) => _ui.Post(ApplyTheme, "theme");
 
     private PacketFilter EditedFilter =>
         comboFilterScope.SelectedIndex == 1 ? PacketHub.RecordFilter : PacketHub.ViewFilter;
@@ -161,7 +170,7 @@ public partial class Main : DoubleBufferedControl
 
     private void timerRefresh_Tick(object sender, EventArgs e)
     {
-        if (!Visible)
+        if (!Visible || !Enabled || FindForm()?.WindowState == FormWindowState.Minimized)
             return;
 
         UpdateStatus();

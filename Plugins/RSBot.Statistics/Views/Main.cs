@@ -60,25 +60,22 @@ public partial class Main : DoubleBufferedControl
         var calculators = CalculatorRegistry.Calculators;
         calculators.Reverse();
 
-        Invoke(() =>
+        foreach (var calculator in calculators)
         {
-            foreach (var calculator in calculators)
+            var checkBox = new CheckBox
             {
-                var checkBox = new CheckBox
-                {
-                    Dock = DockStyle.Top,
-                    Text = calculator.Label,
-                    Name = calculator.Name,
-                };
+                Dock = DockStyle.Top,
+                Text = calculator.Label,
+                Name = calculator.Name,
+            };
 
-                checkBox.CheckedChanged += Filter_CheckedChanged;
+            checkBox.CheckedChanged += Filter_CheckedChanged;
 
-                if (calculator.UpdateType == UpdateType.Live)
-                    panelLiveFilters.Controls.Add(checkBox);
-                else
-                    panelStaticFilters.Controls.Add(checkBox);
-            }
-        });
+            if (calculator.UpdateType == UpdateType.Live)
+                panelLiveFilters.Controls.Add(checkBox);
+            else
+                panelStaticFilters.Controls.Add(checkBox);
+        }
     }
 
     /// <summary>
@@ -167,7 +164,7 @@ public partial class Main : DoubleBufferedControl
     /// <exception cref="System.NotImplementedException"></exception>
     private void RefreshTimer_Elapsed(object sender, EventArgs e)
     {
-        if (!Visible || !Enabled || IsDisposed) return;
+        if (!Visible || !Enabled || IsDisposed || FindForm()?.WindowState == FormWindowState.Minimized) return;
         try
         {
             UpdateStatistics();

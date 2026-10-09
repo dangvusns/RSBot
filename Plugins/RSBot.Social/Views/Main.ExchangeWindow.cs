@@ -222,8 +222,8 @@ public partial class Main
 
     private void SubscribeExchangeEvents()
     {
-        EventManager.SubscribeEvent("OnExchangeRequest", () => OnUi(UpdateRequestRow));
-        EventManager.SubscribeEvent("OnStartExchange", () => OnUi(() =>
+        _uiEvents.Subscribe("OnExchangeRequest", () => OnUi(UpdateRequestRow));
+        _uiEvents.Subscribe("OnStartExchange", () => OnUi(() =>
         {
             _exchangeConfirmed = false;
             _exchangePartnerConfirmed = false;
@@ -232,27 +232,27 @@ public partial class Main
             UpdateRequestRow();
             UpdateExchangeState();
         }));
-        EventManager.SubscribeEvent("OnUpdateExchangeItems", () => OnUi(() =>
+        _uiEvents.Subscribe("OnUpdateExchangeItems", () => OnUi(() =>
         {
             // The offer changed after the error, so the error no longer explains the state
             _lastExchangeError = null;
             UpdateExchangeState();
         }));
-        EventManager.SubscribeEvent("OnExchangeConfirmed", () => OnUi(() =>
+        _uiEvents.Subscribe("OnExchangeConfirmed", () => OnUi(() =>
         {
             _exchangeConfirmed = true;
             UpdateExchangeState();
         }));
-        EventManager.SubscribeEvent("OnExchangePartnerConfirmed", () => OnUi(() =>
+        _uiEvents.Subscribe("OnExchangePartnerConfirmed", () => OnUi(() =>
         {
             _exchangePartnerConfirmed = true;
             UpdateExchangeState();
         }));
-        EventManager.SubscribeEvent("OnApproveExchange", () => OnUi(EndExchange));
-        EventManager.SubscribeEvent("OnExchangeOperationFailed", new Action<string>(message => OnUi(() => ShowExchangeError(message))));
-        EventManager.SubscribeEvent("OnExchangeApproveFailed", new Action<ushort>(code =>
+        _uiEvents.Subscribe("OnApproveExchange", () => OnUi(EndExchange));
+        _uiEvents.Subscribe("OnExchangeOperationFailed", new Action<string>(message => OnUi(() => ShowExchangeError(message))));
+        _uiEvents.Subscribe("OnExchangeApproveFailed", new Action<ushort>(code =>
             OnUi(() => ShowExchangeError(string.Format(TextFor("ExchangeApproveFailed", "Could not approve: {0}."), ExchangeErrors.Describe(code))))));
-        EventManager.SubscribeEvent("OnExchangeCanceledReason", new Action<ushort>(code =>
+        _uiEvents.Subscribe("OnExchangeCanceledReason", new Action<ushort>(code =>
             OnUi(() =>
             {
                 _lastExchangeError ??= string.Format(TextFor("ExchangeCanceledReason", "The exchange was canceled: {0}."), ExchangeErrors.Describe(code));
@@ -261,22 +261,13 @@ public partial class Main
                 if (Game.Player?.Exchange == null)
                     UpdateExchangeState();
             })));
-        EventManager.SubscribeEvent("OnCancelExchange", () => OnUi(EndExchange));
+        _uiEvents.Subscribe("OnCancelExchange", () => OnUi(EndExchange));
     }
 
     /// <summary>
     ///     Exchange events are raised on the network thread.
     /// </summary>
-    private void OnUi(Action action)
-    {
-        if (IsDisposed || !IsHandleCreated)
-            return;
-
-        if (InvokeRequired)
-            BeginInvoke(action);
-        else
-            action();
-    }
+    private void OnUi(Action action) => _uiEvents.Post(action);
 
     private void EndExchange()
     {

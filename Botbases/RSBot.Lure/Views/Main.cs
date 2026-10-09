@@ -14,6 +14,8 @@ namespace RSBot.Lure.Views;
 [ToolboxItem(false)]
 public partial class Main : DoubleBufferedControl
 {
+    private readonly UiEventSubscriptions _uiEvents;
+
     private const int ScriptRecorderOwnerId = 1000;
 
     private bool _configLocked;
@@ -21,12 +23,13 @@ public partial class Main : DoubleBufferedControl
     public Main()
     {
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
         SubscribeEvents();
     }
 
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnSaveScript", new Action<int, string>(OnSaveScript));
+        _uiEvents.Subscribe("OnSaveScript", new Action<int, string>(OnSaveScript));
     }
 
     private void OnSaveScript(int ownerId, string path)

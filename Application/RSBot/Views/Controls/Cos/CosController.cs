@@ -16,6 +16,7 @@ namespace RSBot.Views.Controls.Cos;
 [ToolboxItem(true)]
 public partial class CosController : DoubleBufferedControl
 {
+    private UiEventSubscriptions _uiEvents;
     private readonly Dictionary<string, CosControlBase> _cachedControls;
     private int _selectedIndex;
 
@@ -23,8 +24,9 @@ public partial class CosController : DoubleBufferedControl
     {
         SetStyle(ControlStyles.AllPaintingInWmPaint, true);
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
 
-        CheckForIllegalCrossThreadCalls = false;
+
         Visible = false;
 
         _cachedControls = new Dictionary<string, CosControlBase>();
@@ -36,15 +38,20 @@ public partial class CosController : DoubleBufferedControl
     /// </summary>
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnSummonCos", new Action<CosBase>(OnSummonCos));
-        EventManager.SubscribeEvent("OnTerminateCos", new Action<CosBase>(OnTerminateCos));
-        EventManager.SubscribeEvent("OnAgentServerDisconnected", OnAgentServerDisconnected);
+        _uiEvents.Subscribe("OnSummonCos", new Action<CosBase>(OnSummonCos));
+        _uiEvents.Subscribe("OnTerminateCos", new Action<CosBase>(OnTerminateCos));
+        _uiEvents.Subscribe("OnAgentServerDisconnected", OnAgentServerDisconnected);
     }
 
     private void OnAgentServerDisconnected()
     {
         panel.Controls.Clear();
         panelTopCenter.Controls.Clear();
+        foreach (var control in _cachedControls.Values)
+        {
+            control.MiniCosControl.Dispose();
+            control.Dispose();
+        }
         _cachedControls.Clear();
         _selectedIndex = 0;
         Visible = false;
@@ -139,10 +146,7 @@ public partial class CosController : DoubleBufferedControl
             ReOrder();
         });
 
-        if (panel.InvokeRequired)
-            panel.Invoke(action);
-        else
-            action();
+        action();
     }
 
     private void TryRemoveControlFromPanel<T>()
@@ -165,10 +169,7 @@ public partial class CosController : DoubleBufferedControl
             ReOrder();
         });
 
-        if (InvokeRequired)
-            panel.Invoke(action);
-        else
-            action();
+        action();
     }
 
     private void ReOrder()

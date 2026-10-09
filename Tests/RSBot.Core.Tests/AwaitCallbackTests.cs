@@ -79,6 +79,42 @@ public class AwaitCallbackTests
     }
 
     [Fact]
+    public void SynchronousWaitDoesNotPumpUiMessages()
+    {
+        Exception failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                using var control = new System.Windows.Forms.Control();
+                control.CreateControl();
+                var reentered = false;
+                control.BeginInvoke(new System.Action(() => reentered = true));
+                SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+
+                var before = PacketManager.PendingCallbackCount;
+                var callback = new AwaitCallback(null, 0xB034);
+                Register(callback);
+                callback.AwaitResponse(50);
+
+                Assert.False(reentered);
+                Assert.Equal(AwaitCallbackState.TimedOut, callback.State);
+                Assert.Equal(before, PacketManager.PendingCallbackCount);
+                System.Windows.Forms.Application.DoEvents();
+                Assert.True(reentered);
+            }
+            catch (Exception ex)
+            {
+                failure = ex;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        Assert.True(thread.Join(TimeSpan.FromSeconds(5)));
+        Assert.Null(failure);
+    }
+
+    [Fact]
     public void UnrelatedResponseDoesNotCloseCallbackAndSuccessCannotBeCancelled()
     {
         var callback = new AwaitCallback(p => p.ReadByte() == 1

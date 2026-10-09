@@ -16,6 +16,7 @@ namespace RSBot.General.Views;
 
 public partial class PendingWindow : UIWindowBase
 {
+    private readonly UiEventSubscriptions _uiEvents;
     /// <summary>
     ///     The Queue Notify Index
     /// </summary>
@@ -34,10 +35,14 @@ public partial class PendingWindow : UIWindowBase
     public PendingWindow()
     {
         InitializeComponent();
-        CheckForIllegalCrossThreadCalls = false;
+        _uiEvents = new UiEventSubscriptions(this);
         Text = "Pending";
 
-        EventManager.SubscribeEvent("OnClock", OnClock);
+        _uiEvents.Subscribe("OnClock", UpdateWaitingTime, coalesce: true);
+        Disposed += (_, _) =>
+        {
+            StopClientlessQueueTask();
+        };
     }
 
     public void ShowAtTop(IWin32Window owner)
@@ -61,6 +66,13 @@ public partial class PendingWindow : UIWindowBase
         var timestamp = packet.ReadInt();
         var begin = packet.ReadUShort();
 
+        View.Instance.RunOnUi(() => ApplyUpdate(begin, end, timestamp));
+    }
+
+    private void ApplyUpdate(ushort begin, ushort end, int timestamp)
+    {
+        if (IsDisposed || Disposing)
+            return;
         Log.StatusLang("PendingQueue", Serverlist.Joining?.Name, begin, end);
         labelPending.Text = $"{begin} / {end}";
         PrintTime(labelAvgWaitingTime, timestamp);
@@ -146,7 +158,7 @@ public partial class PendingWindow : UIWindowBase
         }
     }
 
-    private void OnClock()
+    private void UpdateWaitingTime()
     {
         if (!AutoLogin.Pending || !Visible)
             return;

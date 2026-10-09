@@ -44,7 +44,7 @@ internal class AgentNotifyResponse : IPacketHandler
 
                 string realName = obj.GetRealName();
 
-                View.Instance.UniqueText.Write(LanguageManager.GetLang("UniqueAppeared", realName));
+                View.Instance.AppendUniqueMessage(LanguageManager.GetLang("UniqueAppeared", realName));
 
                 // Play sound.
                 Game.Player.NotificationSounds.PlayUniqueAppeared(realName);
@@ -63,11 +63,11 @@ internal class AgentNotifyResponse : IPacketHandler
                 // If name equals "???" then "[%s] has disappeared." is displayed.
                 if (characterName == "???")
                 {
-                    View.Instance.UniqueText.Write($"{obj.GetRealName()} has disappeared.");
+                    View.Instance.AppendUniqueMessage($"{obj.GetRealName()} has disappeared.");
                     return;
                 }
 
-                View.Instance.UniqueText.Write(
+                View.Instance.AppendUniqueMessage(
                     LanguageManager.GetLang("UniqueKilled", characterName, obj.GetRealName())
                 );
 

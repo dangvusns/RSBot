@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using RSBot.Core;
+using RSBot.Core.Event;
 using RSBot.Core.Client.ReferenceObjects;
 using RSBot.Core.Components;
 using RSBot.Core.Components.Tracing;
@@ -24,6 +25,7 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
     /// </summary>
     private const string TraceConfigPrefix = "RSBot.Party.Trace.";
 
+    private readonly UiEventSubscriptions _uiEvents;
     private readonly List<Action> _translations = new();
     private SDUI.Controls.Button _sendWhisper;
     private System.Windows.Forms.Label _lblRecipient;
@@ -55,8 +57,8 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
     /// </summary>
     public Main()
     {
-        CheckForIllegalCrossThreadCalls = false;
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
 
         BuildPlayersTab();
         BuildGuildTab();

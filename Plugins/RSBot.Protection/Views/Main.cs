@@ -14,9 +14,12 @@ namespace RSBot.Protection.Views;
 [ToolboxItem(false)]
 public partial class Main : DoubleBufferedControl
 {
+    private readonly UiEventSubscriptions _uiEvents;
+
     public Main()
     {
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
         InitializeResponsiveLayout();
         SubscribeEvents();
     }
@@ -26,13 +29,13 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnLoadCharacter", OnLoadCharacter);
+        _uiEvents.Subscribe("OnLoadCharacter", OnLoadCharacter);
 
-        EventManager.SubscribeEvent("OnSkillLearned", new Action<SkillInfo>(OnSkillLearned));
-        EventManager.SubscribeEvent("OnSkillUpgraded", new Action<SkillInfo, SkillInfo>(OnSkillUpgraded));
+        _uiEvents.Subscribe("OnSkillLearned", new Action<SkillInfo>(OnSkillLearned), coalesce: true);
+        _uiEvents.Subscribe("OnSkillUpgraded", new Action<SkillInfo, SkillInfo>(OnSkillUpgraded));
 
-        EventManager.SubscribeEvent("OnIncreaseStrength", OnIncreaseStat);
-        EventManager.SubscribeEvent("OnIncreaseIntelligence", OnIncreaseStat);
+        _uiEvents.Subscribe("OnIncreaseStrength", OnIncreaseStat, coalesce: true);
+        _uiEvents.Subscribe("OnIncreaseIntelligence", OnIncreaseStat, coalesce: true);
     }
 
     /// <summary>

@@ -371,6 +371,9 @@ internal sealed class MainForm : Form
 
     private void RefreshGrid()
     {
+        if (WindowState == FormWindowState.Minimized)
+            return;
+
         foreach (DataGridViewRow row in _grid.Rows)
         {
             if (row.Tag is not BotInstance instance)
@@ -384,28 +387,33 @@ internal sealed class MainForm : Form
             Set(row, "character", status?.CharName ?? instance.Account.Character);
 
             var state = row.Cells["state"];
-            state.Value = DescribeState(instance);
-            state.Style.ForeColor = status == null ? Theme.Muted
+            var stateText = DescribeState(instance);
+            var stateColor = status == null ? Theme.Muted
                 : status.State == "Running" ? Theme.Good
                 : Theme.Text;
-            state.ToolTipText = string.Join(
+            if (status == null && !instance.Account.CanReadPassword)
+            {
+                stateText = "Cần nhập lại mật khẩu";
+                stateColor = Theme.Orange;
+            }
+            Set(row, "state", stateText);
+            if (state.Style.ForeColor != stateColor)
+                state.Style.ForeColor = stateColor;
+            var toolTip = string.Join(
                 Environment.NewLine,
                 new[] { instance.LastError, instance.RestartInfo }.Where(t => t != null)
             );
-
-            if (status == null && !instance.Account.CanReadPassword)
-            {
-                state.Value = "Cần nhập lại mật khẩu";
-                state.Style.ForeColor = Theme.Orange;
-            }
+            if (state.ToolTipText != toolTip)
+                state.ToolTipText = toolTip;
 
             // The bars are drawn in Grid_CellPainting; the text only changes the cell so it is repainted
             Set(row, "hpmp", inGame ? $"{status.Hp}/{status.MaxHp}/{status.Mp}/{status.MaxMp}" : Empty);
             Set(row, "online", status != null ? FormatDuration(status.UptimeSeconds) : Empty);
             var (greenText, greenColor) = DescribeGreenHour(status);
             var greenHour = row.Cells["greenhour"];
-            greenHour.Value = greenText;
-            greenHour.Style.ForeColor = greenColor;
+            Set(row, "greenhour", greenText);
+            if (greenHour.Style.ForeColor != greenColor)
+                greenHour.Style.ForeColor = greenColor;
             Set(row, "gold", inGame ? status.Gold.ToString("N0") : Empty);
             Set(row, "goldPicked", status != null ? status.GoldPicked.ToString("N0") : Empty);
             Set(row, "elixirs", status != null ? status.ElixirsPicked.ToString("N0") : Empty);

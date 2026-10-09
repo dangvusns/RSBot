@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
 using RSBot.Core;
 using RSBot.Core.Client.ReferenceObjects;
@@ -24,7 +25,8 @@ public partial class Main : DoubleBufferedControl
     /// <summary>
     ///     <inheritdoc />
     /// </summary>
-    private readonly object _lock;
+    private int _inventoryDirty = 1;
+    private System.Windows.Forms.Timer _inventoryTimer;
 
     /// <summary>
     ///     The items used at the training place, parsed once per list rebuild.
@@ -47,13 +49,13 @@ public partial class Main : DoubleBufferedControl
     ///     <inheritdoc />
     /// </summary>
     private int _selectedIndex;
+    private int _renderedIndex = -1;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="Main" /> class.
     /// </summary>
     public Main()
     {
-        _lock = new object();
         InitializeComponent();
         SubscribeEvents();
 
@@ -64,6 +66,25 @@ public partial class Main : DoubleBufferedControl
         buttonInventory.Color = backColor;
 
         InitializeDetailsPanel();
+        components ??= new Container();
+        _inventoryTimer = new System.Windows.Forms.Timer(components) { Interval = 250 };
+        _inventoryTimer.Tick += (_, _) =>
+        {
+            if (!Visible || !Enabled || FindForm()?.WindowState == FormWindowState.Minimized) return;
+            if (Game.Player != null && Interlocked.Exchange(ref _inventoryDirty, 0) != 0)
+                ApplyInventoryList();
+        };
+        _inventoryTimer.Start();
+        Disposed += (_, _) =>
+        {
+            EventManager.UnsubscribeEvent("OnLoadCharacter", (Action)OnLoadCharacter);
+            EventManager.UnsubscribeEvent("OnUpdateInventoryItem", (Action<byte>)OnUpdateInventoryItem);
+            EventManager.UnsubscribeEvent("OnUseItem", (Action<byte>)OnUpdateInventoryItem);
+            EventManager.UnsubscribeEvent("OnInventoryUpdate", (Action)UpdateInventoryList);
+            _boldItemFont?.Dispose();
+            _itemDetailsTitleFont?.Dispose();
+            _itemDetails.Font.Dispose();
+        };
     }
 
     /// <summary>
@@ -165,48 +186,14 @@ public partial class Main : DoubleBufferedControl
     ///     Calling when update inventory item
     /// </summary>
     /// <param name="slot"></param>
-    private void OnUpdateInventoryItem(byte slot)
-    {
-        if (!Visible)
-            return;
-
-        var key = slot.ToString();
-        if (!listViewMain.Items.ContainsKey(key))
-            return;
-
-        lock (_lock)
-        {
-            var inventoryItem = Game.Player.Inventory.GetItemAt(slot);
-            if (inventoryItem == null)
-                return;
-
-            var listViewItem = listViewMain.Items[key];
-
-            var name = inventoryItem.Record.GetRealName();
-            if (inventoryItem.OptLevel > 0)
-                name += " (+" + inventoryItem.OptLevel + ")";
-
-            listViewItem.SubItems[0].Text = name;
-            listViewItem.SubItems[1].Text = inventoryItem.Amount.ToString();
-
-            if (inventoryItem.Record.IsEquip)
-                listViewItem.SubItems[2].Text = inventoryItem.Record.GetRarityName();
-
-            listViewItem.LoadItemImageAsync(inventoryItem.Record);
-            if (_selectedIndex == 0)
-            {
-                listViewItem.Tag = inventoryItem;
-
-                if (listViewItem.Selected)
-                    ShowItemDetails(inventoryItem);
-            }
-        }
-    }
+    private void OnUpdateInventoryItem(byte slot) => UpdateInventoryList();
 
     /// <summary>
     ///     Updates the inventory list.
     /// </summary>
-    public void UpdateInventoryList()
+    public void UpdateInventoryList() => Interlocked.Exchange(ref _inventoryDirty, 1);
+
+    private void ApplyInventoryList()
     {
         if (!Visible)
             return;
@@ -216,9 +203,12 @@ public partial class Main : DoubleBufferedControl
         if (Game.Player == null)
             return;
 
-        lock (_lock)
+        var selectedKey = _renderedIndex == _selectedIndex && listViewMain.SelectedItems.Count == 1
+            ? listViewMain.SelectedItems[0].Name : null;
+        _renderedIndex = _selectedIndex;
+        listViewMain.BeginUpdate();
+        try
         {
-            listViewMain.BeginUpdate();
             listViewMain.Items.Clear();
             ShowItemDetails(null);
 
@@ -276,7 +266,6 @@ public partial class Main : DoubleBufferedControl
 
                     if (!Game.Player.HasActiveAbilityPet)
                     {
-                        listViewMain.EndUpdate();
                         return;
                     }
 
@@ -295,7 +284,6 @@ public partial class Main : DoubleBufferedControl
 
                     if (Game.Player.Storage == null)
                     {
-                        listViewMain.EndUpdate();
                         return;
                     }
 
@@ -313,7 +301,6 @@ public partial class Main : DoubleBufferedControl
 
                     if (Game.Player.GuildStorage == null)
                     {
-                        listViewMain.EndUpdate();
                         return;
                     }
 
@@ -331,7 +318,6 @@ public partial class Main : DoubleBufferedControl
 
                     if (Game.Player.JobTransport == null)
                     {
-                        listViewMain.EndUpdate();
                         return;
                     }
 
@@ -352,7 +338,6 @@ public partial class Main : DoubleBufferedControl
 
                     if (Game.Player.Job2SpecialtyBag == null)
                     {
-                        listViewMain.EndUpdate();
                         return;
                     }
 
@@ -371,7 +356,6 @@ public partial class Main : DoubleBufferedControl
 
                     if (Game.Player.Job2 == null)
                     {
-                        listViewMain.EndUpdate();
                         return;
                     }
 
@@ -389,7 +373,6 @@ public partial class Main : DoubleBufferedControl
 
                     if (!Game.Player.HasActiveFellowPet)
                     {
-                        listViewMain.EndUpdate();
                         return;
                     }
 
@@ -405,6 +388,16 @@ public partial class Main : DoubleBufferedControl
                     break;
             }
 
+            if (selectedKey != null && listViewMain.Items.ContainsKey(selectedKey))
+                listViewMain.Items[selectedKey].Selected = true;
+        }
+        catch (InvalidOperationException)
+        {
+            // Inventory can change while its live collection is enumerated; retry the next visible tick.
+            UpdateInventoryList();
+        }
+        finally
+        {
             listViewMain.EndUpdate();
         }
     }
@@ -455,7 +448,7 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     /// <param name="sender">The source of the event.</param>
     /// <param name="e">The <see cref="System.EventArgs" /> instance containing the event data.</param>
-    private void buttonUseItem_Click(object sender, EventArgs e)
+    private async void buttonUseItem_Click(object sender, EventArgs e)
     {
         if (listViewMain.SelectedIndices.Count != 1)
             return;
@@ -467,7 +460,7 @@ public partial class Main : DoubleBufferedControl
         switch (inventoryItem.UseKind)
         {
             case ItemUseKind.Simple:
-                inventoryItem.Use();
+                await RunItemActionAsync(() => inventoryItem.Use());
                 break;
 
             case ItemUseKind.GlobalChat:
@@ -489,7 +482,7 @@ public partial class Main : DoubleBufferedControl
                     MessageBoxIcon.Warning
                 );
                 if (result == DialogResult.Yes)
-                    inventoryItem.Use();
+                    await RunItemActionAsync(() => inventoryItem.Use());
                 break;
 
             // ReverseScroll, OnActivePet and OnDeadPetItem are used from the sub menus.
@@ -550,7 +543,7 @@ public partial class Main : DoubleBufferedControl
         UpdateInventoryList();
     }
 
-    private void dropToolStripMenuItem_Click(object sender, EventArgs e)
+    private async void dropToolStripMenuItem_Click(object sender, EventArgs e)
     {
         if (listViewMain.SelectedIndices.Count != 1)
             return;
@@ -561,7 +554,8 @@ public partial class Main : DoubleBufferedControl
             return;
 
         var cos = _selectedIndex == 3;
-        inventoryItem?.Drop(cos, Game.Player.AbilityPet?.UniqueId);
+        var petId = Game.Player.AbilityPet?.UniqueId;
+        await RunItemActionAsync(() => inventoryItem.Drop(cos, petId));
     }
 
     private void contextMenuStrip_Opening(object sender, CancelEventArgs e)
@@ -634,9 +628,9 @@ public partial class Main : DoubleBufferedControl
 
                     var menuItem = new ToolStripMenuItem { Text = mapName };
 
-                    menuItem.Click += (itemSender, itemEvent) =>
+                    menuItem.Click += async (itemSender, itemEvent) =>
                     {
-                        inventoryItem.UseTo(7, item.Value.ID);
+                        await RunItemActionAsync(() => inventoryItem.UseTo(7, item.Value.ID));
                     };
 
                     selectMapLocationToolStripMenuItem.DropDownItems.Add(menuItem);
@@ -677,7 +671,7 @@ public partial class Main : DoubleBufferedControl
             foreach (var petItem in Game.Player.Inventory.GetItems(p => p.Record.IsPet && p.State == InventoryItemState.Dead))
             {
                 var menuItem = new ToolStripMenuItem { Text = $"Revive {petItem.Record.GetRealName()}" };
-                menuItem.Click += (_, _) => inventoryItem.UseTo(petItem.Slot);
+                menuItem.Click += async (_, _) => await RunItemActionAsync(() => inventoryItem.UseTo(petItem.Slot));
 
                 useToolStripMenuItem.DropDownItems.Add(menuItem);
             }
@@ -691,7 +685,7 @@ public partial class Main : DoubleBufferedControl
             useToolStripMenuItem.Enabled = false;
     }
 
-    private void moveToLastRecallPositionToolStripMenuItem_Click(object sender, EventArgs e)
+    private async void moveToLastRecallPositionToolStripMenuItem_Click(object sender, EventArgs e)
     {
         if (listViewMain.SelectedIndices.Count != 1)
             return;
@@ -701,10 +695,10 @@ public partial class Main : DoubleBufferedControl
         if (inventoryItem == null)
             return;
 
-        inventoryItem.UseTo(2);
+        await RunItemActionAsync(() => inventoryItem.UseTo(2));
     }
 
-    private void moveToLastDeathPositionToolStripMenuItem_Click(object sender, EventArgs e)
+    private async void moveToLastDeathPositionToolStripMenuItem_Click(object sender, EventArgs e)
     {
         if (listViewMain.SelectedIndices.Count != 1)
             return;
@@ -714,7 +708,7 @@ public partial class Main : DoubleBufferedControl
         if (inventoryItem == null)
             return;
 
-        inventoryItem.UseTo(3);
+        await RunItemActionAsync(() => inventoryItem.UseTo(3));
     }
 
     private void moveToPetToolStripMenuItem_Click(object sender, EventArgs e)
@@ -767,9 +761,22 @@ public partial class Main : DoubleBufferedControl
         PacketManager.SendPacket(packet, PacketDestination.Server);
     }
 
-    private void btnSort_Click(object sender, EventArgs e)
+    private static async Task RunItemActionAsync(System.Action action)
     {
-        Task.Run(() => Game.Player?.Inventory?.Sort());
+        try
+        {
+            await Task.Run(action);
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex);
+        }
+    }
+
+    private async void btnSort_Click(object sender, EventArgs e)
+    {
+        var inventory = Game.Player?.Inventory;
+        await RunItemActionAsync(() => inventory?.Sort());
     }
 
     private void checkAutoSort_CheckedChanged(object sender, EventArgs e)

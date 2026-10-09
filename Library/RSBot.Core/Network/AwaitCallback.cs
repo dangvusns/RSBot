@@ -187,22 +187,7 @@ public class AwaitCallback
         using var registration = cancellationToken.Register(Cancel);
         var task = _completionSource.Task;
 
-        if (SynchronizationContext.Current != null)
-        {
-            // UI thread: pump messages to keep interface responsive
-            var deadline = Environment.TickCount64 + milliseconds;
-            while (!task.IsCompleted && Environment.TickCount64 < deadline)
-            {
-                System.Windows.Forms.Application.DoEvents();
-                if (!task.IsCompleted)
-                    Thread.Sleep(1);
-            }
-        }
-        else
-        {
-            // Background thread: efficient blocking wait
-            task.Wait(milliseconds);
-        }
+        task.Wait(milliseconds);
 
         if (!task.IsCompleted)
         {

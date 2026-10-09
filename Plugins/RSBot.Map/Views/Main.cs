@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
+using System.Threading.Tasks;
 using RSBot.Core;
 using RSBot.Core.Client;
 using RSBot.Core.Client.ReferenceObjects;
@@ -23,10 +24,16 @@ namespace RSBot.Map.Views;
 [ToolboxItem(false)]
 public partial class Main : DoubleBufferedControl
 {
+    private readonly UiEventSubscriptions _uiEvents;
+
     /// <summary>
     ///     The grid size
     /// </summary>
     private const int GridSize = 3;
+    // These fixed map colors are cached for the process lifetime and used only on the UI thread.
+    private static readonly Dictionary<int, SolidBrush> _circleBrushes = new();
+    private static readonly Dictionary<int, Pen> _circlePens = new();
+    private static readonly Pen _destinationPen = new(Color.BlanchedAlmond, 1) { DashStyle = DashStyle.Dot };
 
     /// <summary>
     ///     The Sector Image Size
@@ -120,12 +127,13 @@ public partial class Main : DoubleBufferedControl
     public Main()
     {
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
         if (DesignMode)
             return;
 
         _cachedImages ??= new();
 
-        EventManager.SubscribeEvent("OnEnterGame", OnEnterGame);
+        _uiEvents.Subscribe("OnEnterGame", OnEnterGame);
 
         bufferedGraphicsContext = BufferedGraphicsManager.Current;
         bufferedGraphicsContext.MaximumBuffer = new Size(mapCanvas.Width + 1, mapCanvas.Height + 1);
@@ -323,13 +331,16 @@ public partial class Main : DoubleBufferedControl
             var x = GetMapX(position);
             var y = GetMapY(position);
 
-            using var brush = new SolidBrush(color);
+            var colorKey = color.ToArgb();
+            if (!_circleBrushes.TryGetValue(colorKey, out var brush))
+                _circleBrushes[colorKey] = brush = new SolidBrush(color);
 
             var diameterF = diameter * _scale;
             var point = new PointF(x - diameterF / 2, y - diameterF / 2);
 
             gfx.FillEllipse(brush, new RectangleF(point, new SizeF(diameterF, diameterF)));
-            using var pen = new Pen(color);
+            if (!_circlePens.TryGetValue(colorKey, out var pen))
+                _circlePens[colorKey] = pen = new Pen(color);
             gfx.DrawEllipse(pen, new RectangleF(point, new SizeF(diameterF, diameterF)));
         }
         catch { }
@@ -347,9 +358,7 @@ public partial class Main : DoubleBufferedControl
             if (Game.Player.Movement.HasDestination)
             {
                 graphics.SmoothingMode = SmoothingMode.HighQuality;
-                using var pen = new Pen(Color.BlanchedAlmond, 1);
-                pen.DashStyle = DashStyle.Dot;
-                DrawLineAt(graphics, Game.Player.Movement.Source, Game.Player.Movement.Destination, pen);
+                DrawLineAt(graphics, Game.Player.Movement.Source, Game.Player.Movement.Destination, _destinationPen);
 
                 DrawCircleAt(graphics, Game.Player.Movement.Destination, Color.PaleGreen, 4);
                 graphics.SmoothingMode = SmoothingMode.HighSpeed;
@@ -684,7 +693,7 @@ public partial class Main : DoubleBufferedControl
         if (Game.Player == null)
             return;
 
-        if (!Visible)
+        if (!Visible || !Enabled || FindForm()?.WindowState == FormWindowState.Minimized)
             return;
 
         if (Kernel.Debug)
@@ -730,7 +739,7 @@ public partial class Main : DoubleBufferedControl
         return mapCanvas.Height / 2f + (gamePosition.Y - Game.Player.Movement.Source.Y) * _scale * -1.0f;
     }
 
-    private void mapCanvas_MouseClick(object sender, MouseEventArgs e)
+    private async void mapCanvas_MouseClick(object sender, MouseEventArgs e)
     {
         if (!Game.Ready)
             return;
@@ -755,7 +764,15 @@ public partial class Main : DoubleBufferedControl
             position.YOffset -= ySectors * 1920f;
         }
 
-        Game.Player.MoveTo(position, false);
+        var player = Game.Player;
+        try
+        {
+            await Task.Run(() => player.MoveTo(position, false));
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex);
+        }
     }
 
     private void checkEnableCollisions_CheckedChanged(object sender, EventArgs e)
@@ -813,8 +830,11 @@ public partial class Main : DoubleBufferedControl
     /// <summary>
     /// Ticker Event for auto select unique
     /// </summary>
-    private void timerUniqueChecker_Tick(object sender, EventArgs e)
+    private async void timerUniqueChecker_Tick(object sender, EventArgs e)
     {
+        if (!Visible || !Enabled || FindForm()?.WindowState == FormWindowState.Minimized)
+            return;
+
         if (Game.Player == null)
             return;
 
@@ -871,6 +891,21 @@ public partial class Main : DoubleBufferedControl
                 out var uniqueEntity
             )
         )
-            uniqueEntity.TrySelect();
+        {
+            timerUniqueChecker.Stop();
+            try
+            {
+                await Task.Run(() => uniqueEntity.TrySelect());
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex);
+            }
+            finally
+            {
+                if (!IsDisposed && !Disposing && IsHandleCreated && _autoSelectUnqiue)
+                    timerUniqueChecker.Start();
+            }
+        }
     }
 }

@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using RSBot.Core.Event;
 using RSBot.Python.Components;
 using SDUI;
 
@@ -24,15 +25,15 @@ public class Main : SDUI.Controls.DoubleBufferedControl
     private readonly TabPage _pagePlugins;
     private readonly ListView _listPlugins;
     private readonly System.Windows.Forms.TextBox _txtLog;
-    private readonly List<Action> _pendingUiActions = new();
+    private readonly UiEventSubscriptions _ui;
     private readonly ConcurrentQueue<string> _pendingLogLines = new();
     private readonly System.Windows.Forms.Timer _logTimer;
 
     private bool _refreshing;
-    private bool _pendingFlushed;
 
     public Main()
     {
+        _ui = new UiEventSubscriptions(this);
         _tabs = new System.Windows.Forms.TabControl { Dock = DockStyle.Fill };
         _pagePlugins = new TabPage("Plugins") { UseVisualStyleBackColor = false, Padding = new Padding(Px(6)) };
 
@@ -100,16 +101,22 @@ public class Main : SDUI.Controls.DoubleBufferedControl
         Controls.Add(_tabs);
 
         ApplyTheme();
-        ColorScheme.ThemeChanged += (_, _) => ApplyTheme();
-
-        HandleCreated += (_, _) => FlushPendingUiActions();
+        ColorScheme.ThemeChanged += OnThemeChanged;
 
         // Lines are added in batches; appending them one by one re-renders the text box for every line
         _logTimer = new System.Windows.Forms.Timer { Interval = 250 };
         _logTimer.Tick += (_, _) => FlushLog();
         _logTimer.Start();
-        Disposed += (_, _) => _logTimer.Dispose();
+        VisibleChanged += (_, _) => _logTimer.Enabled = Visible && Enabled;
+        EnabledChanged += (_, _) => _logTimer.Enabled = Visible && Enabled;
+        Disposed += (_, _) =>
+        {
+            ColorScheme.ThemeChanged -= OnThemeChanged;
+            _logTimer.Dispose();
+        };
     }
+
+    private void OnThemeChanged(object sender, EventArgs e) => _ui.Post(ApplyTheme, "theme");
 
     private int Px(int value)
     {
@@ -138,45 +145,7 @@ public class Main : SDUI.Controls.DoubleBufferedControl
     /// </summary>
     public void RunOnUi(Action action)
     {
-        if (IsDisposed)
-            return;
-
-        // Until the queued actions were handed to the window, new ones queue behind them to keep the order
-        lock (_pendingUiActions)
-        {
-            if (!_pendingFlushed)
-            {
-                _pendingUiActions.Add(action);
-                return;
-            }
-        }
-
-        if (!InvokeRequired)
-        {
-            Safe(action);
-            return;
-        }
-
-        try
-        {
-            BeginInvoke(new Action(() => Safe(action)));
-        }
-        catch (InvalidOperationException)
-        {
-            // The window is closing
-        }
-    }
-
-    private void FlushPendingUiActions()
-    {
-        lock (_pendingUiActions)
-        {
-            foreach (var action in _pendingUiActions)
-                BeginInvoke(new Action(() => Safe(action)));
-
-            _pendingUiActions.Clear();
-            _pendingFlushed = true;
-        }
+        _ui.Post(() => Safe(action));
     }
 
     private static void Safe(Action action)
@@ -206,7 +175,8 @@ public class Main : SDUI.Controls.DoubleBufferedControl
 
     private void FlushLog()
     {
-        if (_pendingLogLines.IsEmpty || IsDisposed)
+        if (_pendingLogLines.IsEmpty || IsDisposed || !Visible || !Enabled
+            || FindForm()?.WindowState == FormWindowState.Minimized)
             return;
 
         var batch = new System.Text.StringBuilder();

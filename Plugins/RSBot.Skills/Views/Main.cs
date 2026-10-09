@@ -13,7 +13,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using CheckBox = SDUI.Controls.CheckBox;
 using ListViewExtensions = RSBot.Core.Extensions.ListViewExtensions;
@@ -23,10 +23,12 @@ namespace RSBot.Skills.Views;
 [ToolboxItem(false)]
 public partial class Main : DoubleBufferedControl
 {
+    private readonly UiEventSubscriptions _uiEvents;
+
     private System.Windows.Forms.Timer _buffTimer;
     private readonly HashSet<System.Windows.Forms.ListView> _coolingLists = new();
     private readonly System.Windows.Forms.ListView[] _cooldownViews;
-    private readonly List<(string Name, Delegate Handler)> _subscriptions = new();
+    private bool _learningMastery;
 
     /// <summary>
     ///     Shown behind the name of an opener skill in the attack skill list.
@@ -44,6 +46,7 @@ public partial class Main : DoubleBufferedControl
     public Main()
     {
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
         SubscribeEvents();
         _cooldownViews = new System.Windows.Forms.ListView[] { listActiveBuffs, listAttackingSkills, listBuffs, listSkills };
         checkAcceptResurrectionPartyOnly.Enabled = checkAcceptResurrection.Checked;
@@ -59,7 +62,7 @@ public partial class Main : DoubleBufferedControl
         _lock = new object();
 
         // Start periodic invalidation for active-buff overlays
-        _buffTimer = new() { Interval = 100 };
+        _buffTimer = new() { Interval = 500 };
         _buffTimer.Tick += BuffTimer_Tick;
         VisibleChanged += (s, e) => { if (!IsDisposed && !Disposing) _buffTimer.Enabled = Visible && Enabled; };
         EnabledChanged += (s, e) => { if (!IsDisposed && !Disposing) _buffTimer.Enabled = Visible && Enabled; };
@@ -84,9 +87,7 @@ public partial class Main : DoubleBufferedControl
         {
             _buffTimer.Stop();
             _buffTimer.Dispose();
-            foreach (var subscription in _subscriptions)
-                EventManager.UnsubscribeEvent(subscription.Name, subscription.Handler);
-            _subscriptions.Clear();
+
         };
     }
 
@@ -98,8 +99,16 @@ public partial class Main : DoubleBufferedControl
 
     private void SubscribeViewEvent(string name, Delegate handler)
     {
-        _subscriptions.Add((name, handler));
-        EventManager.SubscribeEvent(name, handler);
+        switch (handler)
+        {
+            case System.Action action: _uiEvents.Subscribe(name, action); break;
+            case Action<SkillInfo> action: _uiEvents.Subscribe(name, action); break;
+            case Action<MasteryInfo> action: _uiEvents.Subscribe(name, action); break;
+            case Action<SkillInfo, SkillInfo> action: _uiEvents.Subscribe(name, action); break;
+            case Action<uint, uint> action: _uiEvents.Subscribe(name, action); break;
+            case Action<uint, ItemPerk> action: _uiEvents.Subscribe(name, action); break;
+            default: throw new ArgumentException("Unsupported UI event handler", nameof(handler));
+        }
     }
 
     private void SubscribeEvents()
@@ -111,20 +120,20 @@ public partial class Main : DoubleBufferedControl
         SubscribeViewEvent("OnWithdrawSkill", new Action<SkillInfo, SkillInfo>(OnWithdrawSkill));
         SubscribeViewEvent("OnLearnSkillMastery", new Action<MasteryInfo>(OnLearnSkillMastery));
 
-        // Active-buff list mutations are marshalled to the UI thread: events fire on the network
-        // thread, and BuffTimer_Tick enumerating the list concurrently throws inside ListView.
-        // Without a window handle they are skipped, the list is rebuilt from the state once the handle exists:
-        // changing it from the network thread while the handle is created leaves the native list out of sync.
-        SubscribeViewEvent("OnAddBuff", new Action<SkillInfo>(b => RunOnActiveBuffList(() => OnAddBuff(b))));
-        SubscribeViewEvent("OnRemoveBuff", new Action<SkillInfo>(b => RunOnActiveBuffList(() => OnRemoveBuff(b))));
+        // Buff bursts rebuild once on the UI timer, from the current player state.
+        _uiEvents.Subscribe<SkillInfo>("OnAddBuff", _ =>
+            _uiEvents.Post(RebuildActiveBuffs, nameof(RebuildActiveBuffs)));
+        _uiEvents.Subscribe<SkillInfo>("OnRemoveBuff", _ =>
+            _uiEvents.Post(RebuildActiveBuffs, nameof(RebuildActiveBuffs)));
         SubscribeViewEvent("OnResurrectionRequest", OnResurrectionRequest);
         SubscribeViewEvent("OnExpSpUpdate", OnSpUpdated);
-        SubscribeViewEvent("OnAddItemPerk",
-            new Action<uint, uint>((t, k) => RunOnActiveBuffList(() => OnAddItemPerk(t, k))));
-        SubscribeViewEvent("OnRemoveItemPerk",
-            new Action<uint, ItemPerk>((t, p) => RunOnActiveBuffList(() => OnRemoveItemPerk(t, p))));
+        _uiEvents.Subscribe<uint, uint>("OnAddItemPerk", (_, _) =>
+            _uiEvents.Post(RebuildActiveBuffs, nameof(RebuildActiveBuffs)));
+        _uiEvents.Subscribe<uint, ItemPerk>("OnRemoveItemPerk", (_, _) =>
+            _uiEvents.Post(RebuildActiveBuffs, nameof(RebuildActiveBuffs)));
 
-        listActiveBuffs.HandleCreated += (s, e) => RebuildActiveBuffs();
+        listActiveBuffs.HandleCreated += (s, e) =>
+            _uiEvents.Post(RebuildActiveBuffs, nameof(RebuildActiveBuffs));
     }
 
     /// <summary>
@@ -132,9 +141,6 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     private void RunOnActiveBuffList(System.Action action)
     {
-        if (!listActiveBuffs.IsHandleCreated)
-            return;
-
         RunOnUiThread(action);
     }
 
@@ -177,24 +183,7 @@ public partial class Main : DoubleBufferedControl
         }
     }
 
-    private void RunOnUiThread(System.Action action)
-    {
-        if (IsDisposed || Disposing)
-            return;
-
-        if (!IsHandleCreated || !InvokeRequired)
-        {
-            action();
-            return;
-        }
-
-        try
-        {
-            BeginInvoke(action);
-        }
-        catch (ObjectDisposedException) { }
-        catch (InvalidOperationException) { }
-    }
+    private void RunOnUiThread(System.Action action) => _uiEvents.Post(action);
 
     /// <summary>
     ///     Called when [remove item perk].
@@ -243,30 +232,41 @@ public partial class Main : DoubleBufferedControl
     /// <summary>
     ///     Will be triggered if EXP/SP were gained. Increases the selected mastery level (if available)
     /// </summary>
-    private void OnSpUpdated()
+    private async void OnSpUpdated()
     {
-        if (_selectedMastery == null || !checkLearnMastery.Checked)
+        if (_learningMastery || _selectedMastery == null || !checkLearnMastery.Checked)
             return;
 
-        while (_selectedMastery.Level + numMasteryGap.Value < Game.Player.Level)
+        _learningMastery = true;
+        try
         {
-            if (!checkLearnMasteryBotStopped.Checked && !Kernel.Bot.Running)
-                break;
-
-            var nextMasteryLevel = Game.ReferenceManager.GetRefLevel((byte)(_selectedMastery.Level + 1));
-
-            if (nextMasteryLevel.Exp_M > Game.Player.SkillPoints)
+            while (!IsDisposed && !Disposing && _selectedMastery != null && checkLearnMastery.Checked
+                && _selectedMastery.Level + numMasteryGap.Value < Game.Player.Level)
             {
-                Log.Debug(
-                    $"Auto. upping mastery cancelled due to insufficient skill points. Required: {nextMasteryLevel.Exp_M}"
-                );
+                if (!checkLearnMasteryBotStopped.Checked && !Kernel.Bot.Running)
+                    break;
 
-                break;
+                var mastery = _selectedMastery;
+                var nextLevel = Game.ReferenceManager.GetRefLevel((byte)(mastery.Level + 1));
+                if (nextLevel.Exp_M > Game.Player.SkillPoints)
+                {
+                    Log.Debug($"Auto. upping mastery cancelled due to insufficient skill points. Required: {nextLevel.Exp_M}");
+                    break;
+                }
+
+                Log.Notify($"Auto. train mastery [{mastery.Record.Name} to lv. {nextLevel}");
+                var masteryId = mastery.Record.ID;
+                await Task.Run(() => LearnMasteryHandler.LearnMastery(masteryId));
+                await Task.Delay(500);
             }
-
-            Log.Notify($"Auto. train mastery [{_selectedMastery.Record.Name} to lv. {nextMasteryLevel}");
-            LearnMasteryHandler.LearnMastery(_selectedMastery.Record.ID);
-            Thread.Sleep(500);
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex);
+        }
+        finally
+        {
+            _learningMastery = false;
         }
     }
 
@@ -1015,7 +1015,7 @@ public partial class Main : DoubleBufferedControl
     private void OnSkillLearned(SkillInfo learnedSkill)
     {
         Log.NotifyLang("SkillLearned", learnedSkill.Record.GetRealName());
-        LoadSkills();
+        _uiEvents.Post(LoadSkills, nameof(LoadSkills));
     }
 
     /// <summary>
@@ -1049,8 +1049,10 @@ public partial class Main : DoubleBufferedControl
     private void OnLearnSkillMastery(MasteryInfo info)
     {
         Log.NotifyLang("MasteryUpgraded", info.Record.Name);
-
-        LoadSkills();
+        // Automatic learning must see the new level even while the skill lists are hidden.
+        if (_selectedMastery?.Record.ID == info.Id)
+            _selectedMastery.Level = info.Level;
+        _uiEvents.Post(LoadSkills, nameof(LoadSkills));
     }
 
     /// <summary>
@@ -1432,7 +1434,7 @@ public partial class Main : DoubleBufferedControl
         itemForm.Show();
     }
 
-    private void useToolStripMenuItem_Click(object sender, EventArgs e)
+    private async void useToolStripMenuItem_Click(object sender, EventArgs e)
     {
         if (listSkills.SelectedItems.Count <= 0)
             return;
@@ -1443,7 +1445,14 @@ public partial class Main : DoubleBufferedControl
         if (skillInfo.IsAttack)
             return;
 
-        skillInfo.Cast(buff: true);
+        try
+        {
+            await Task.Run(() => skillInfo.Cast(buff: true));
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex);
+        }
     }
 
     private void skillContextMenu_Opening(object sender, CancelEventArgs e)
@@ -1461,7 +1470,7 @@ public partial class Main : DoubleBufferedControl
             useToPartyMemberToolStripMenuItem.DropDown.Items.Add(
                 member.Name,
                 null,
-                (menuItemSender, _2) =>
+                async (menuItemSender, _2) =>
                 {
                     try
                     {
@@ -1482,9 +1491,13 @@ public partial class Main : DoubleBufferedControl
                         if (member == null)
                             return;
 
-                        skillInfo.Cast(member.Player.UniqueId, true);
+                        var targetId = member.Player.UniqueId;
+                        await Task.Run(() => skillInfo.Cast(targetId, true));
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Fatal(ex);
+                    }
                 }
             );
         }

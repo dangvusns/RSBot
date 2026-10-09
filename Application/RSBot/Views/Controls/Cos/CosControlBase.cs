@@ -22,6 +22,7 @@ public class CosControlBase : DoubleBufferedControl
         MiniCosControl = new MiniCosControl();
         MiniCosControl.Dock = System.Windows.Forms.DockStyle.Left;
         InitializeComponent();
+        Disposed += (_, _) => MiniCosControl.Dispose();
     }
 
     public MiniCosControl MiniCosControl { get; }

@@ -7,14 +7,16 @@ namespace RSBot.Views.Controls.Cos;
 [ToolboxItem(false)]
 public partial class Transport : CosControlBase
 {
+    private UiEventSubscriptions _uiEvents;
     /// <summary>
     ///     Initializes a new instance of the <see cref="Transport" /> class.
     /// </summary>
     public Transport()
     {
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(MiniCosControl);
         ScaleFrom96Dpi();
-        CheckForIllegalCrossThreadCalls = false;
+
 
         SubscribeEvents();
         MiniCosControl.Satiety.Visible = false;
@@ -52,7 +54,7 @@ public partial class Transport : CosControlBase
     /// </summary>
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnUpdateTransportHealth", OnUpdateTransportHealth);
+        _uiEvents.Subscribe("OnUpdateTransportHealth", OnUpdateTransportHealth, coalesce: true);
     }
 
     /// <summary>

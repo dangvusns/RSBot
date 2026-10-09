@@ -8,12 +8,14 @@ namespace RSBot.Views.Controls.Cos;
 [ToolboxItem(false)]
 public partial class Growth : CosControlBase
 {
+    private UiEventSubscriptions _uiEvents;
     /// <summary>
     ///     Initializes a new instance of the <see cref="Growth" /> class.
     /// </summary>
     public Growth()
     {
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(MiniCosControl);
         ScaleFrom96Dpi();
         SubscribeEvents();
         MiniCosControl.Satiety.Visible = false;
@@ -24,11 +26,11 @@ public partial class Growth : CosControlBase
     /// </summary>
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnGrowthLevelUp", OnGrowthLevelUp);
-        EventManager.SubscribeEvent("OnGrowthExperienceUpdate", OnGrowthExperienceUpdate);
-        EventManager.SubscribeEvent("OnGrowthHungerUpdate", OnGrowthHungerUpdate);
-        EventManager.SubscribeEvent("OnGrowthNameChange", OnGrowthNameChange);
-        EventManager.SubscribeEvent("OnGrowthHealthUpdate", OnGrowthHealthUpdate);
+        _uiEvents.Subscribe("OnGrowthLevelUp", OnGrowthLevelUp, coalesce: true);
+        _uiEvents.Subscribe("OnGrowthExperienceUpdate", OnGrowthExperienceUpdate, coalesce: true);
+        _uiEvents.Subscribe("OnGrowthHungerUpdate", OnGrowthHungerUpdate, coalesce: true);
+        _uiEvents.Subscribe("OnGrowthNameChange", OnGrowthNameChange, coalesce: true);
+        _uiEvents.Subscribe("OnGrowthHealthUpdate", OnGrowthHealthUpdate, coalesce: true);
     }
 
     /// <summary>

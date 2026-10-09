@@ -36,7 +36,7 @@ public partial class Main : UIWindow
     private readonly ToolStripStatusLabel _connectionStatus = new();
     private readonly ToolStripStatusLabel _botStatus = new();
     private readonly ToolStripStatusLabel _uiFeedback = new();
-    private readonly List<(string Name, Delegate Handler)> _subscriptions = new();
+    private UiEventSubscriptions _uiEvents;
     private System.Windows.Forms.Timer _statusTimer;
     private ToolTip _startToolTip;
     private volatile string _latestStatusText;
@@ -56,7 +56,7 @@ public partial class Main : UIWindow
         InitializeComponent();
         InitializeStatusUi();
         InitializeResponsiveLayout();
-        CheckForIllegalCrossThreadCalls = false;
+        _uiEvents = new UiEventSubscriptions(this);
         SystemEvents.UserPreferenceChanged += SystemEvents_UserPreferenceChanged;
         RegisterEvents();
 
@@ -80,6 +80,11 @@ public partial class Main : UIWindow
     /// <param name="sender">The sender</param>
     /// <param name="e">The event args</param>
     private void SystemEvents_UserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
+    {
+        _uiEvents.Post(ApplySystemTheme, "systemTheme");
+    }
+
+    private void ApplySystemTheme()
     {
         if (BackColor.IsDark() == WindowsHelper.IsDark())
             return;
@@ -123,29 +128,20 @@ public partial class Main : UIWindow
     /// </summary>
     private void RegisterEvents()
     {
-        SubscribeViewEvent("OnChangeStatusText", new Action<string>(OnChangeStatusText));
-        SubscribeViewEvent("OnShowBotWindow", OnShowBotWindow);
-        SubscribeViewEvent("OnLoadPlugins", OnLoadPlugins);
-        SubscribeViewEvent("OnLoadDivisionInfo", new Action<DivisionInfo>(OnLoadDivisionInfo));
-        SubscribeViewEvent("OnLoadBotbases", OnLoadBotbases);
-        SubscribeViewEvent("OnLoadCharacter", OnLoadCharacter);
-        SubscribeViewEvent("OnAgentServerDisconnected", OnAgentServerDisconnected);
-        SubscribeViewEvent("OnShowScriptRecorder", new Action<int, bool>(OnShowScriptRecorder));
-        SubscribeViewEvent("OnAddSidebarElement", new Action<Control>(OnAddSidebarElement));
-        SubscribeViewEvent("OnPluginEnabled", new Action<IPlugin>(OnPluginStateChanged));
-        SubscribeViewEvent("OnPluginDisabled", new Action<IPlugin>(OnPluginStateChanged));
-        SubscribeViewEvent("OnPluginLoaded", new Action<IPlugin>(OnPluginLoaded));
-        SubscribeViewEvent("OnPluginUnloaded", new Action<IPlugin>(OnPluginUnloaded));
-        SubscribeViewEvent("OnPluginListChanged", OnPluginListChanged);
-    }
-
-    private void SubscribeViewEvent(string name, Action handler) =>
-        SubscribeViewEvent(name, (Delegate)handler);
-
-    private void SubscribeViewEvent(string name, Delegate handler)
-    {
-        _subscriptions.Add((name, handler));
-        EventManager.SubscribeEvent(name, handler);
+        _uiEvents.Subscribe("OnChangeStatusText", new Action<string>(OnChangeStatusText), coalesce: true);
+        _uiEvents.Subscribe("OnShowBotWindow", OnShowBotWindow);
+        _uiEvents.Subscribe("OnLoadPlugins", OnLoadPlugins);
+        _uiEvents.Subscribe("OnLoadDivisionInfo", new Action<DivisionInfo>(OnLoadDivisionInfo));
+        _uiEvents.Subscribe("OnLoadBotbases", OnLoadBotbases);
+        _uiEvents.Subscribe("OnLoadCharacter", OnLoadCharacter);
+        _uiEvents.Subscribe("OnAgentServerDisconnected", OnAgentServerDisconnected);
+        _uiEvents.Subscribe("OnShowScriptRecorder", new Action<int, bool>(OnShowScriptRecorder));
+        _uiEvents.Subscribe("OnAddSidebarElement", new Action<Control>(OnAddSidebarElement));
+        _uiEvents.Subscribe("OnPluginEnabled", new Action<IPlugin>(OnPluginStateChanged));
+        _uiEvents.Subscribe("OnPluginDisabled", new Action<IPlugin>(OnPluginStateChanged));
+        _uiEvents.Subscribe("OnPluginLoaded", new Action<IPlugin>(OnPluginLoaded));
+        _uiEvents.Subscribe("OnPluginUnloaded", new Action<IPlugin>(OnPluginUnloaded));
+        _uiEvents.Subscribe("OnPluginListChanged", OnPluginListChanged);
     }
 
     private static string UiText(string key, string fallback) =>
@@ -171,9 +167,6 @@ public partial class Main : UIWindow
         _statusTimer.Start();
         Disposed += (s, e) =>
         {
-            foreach (var subscription in _subscriptions)
-                EventManager.UnsubscribeEvent(subscription.Name, subscription.Handler);
-            _subscriptions.Clear();
             SystemEvents.UserPreferenceChanged -= SystemEvents_UserPreferenceChanged;
         };
         RefreshStatusUi();

@@ -7,9 +7,11 @@ namespace RSBot.Views.Controls.Cos;
 [ToolboxItem(false)]
 public partial class JobTransport : CosControlBase
 {
+    private UiEventSubscriptions _uiEvents;
     public JobTransport()
     {
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(MiniCosControl);
 
         SubscribeEvents();
         MiniCosControl.Satiety.Visible = false;
@@ -47,7 +49,7 @@ public partial class JobTransport : CosControlBase
     /// </summary>
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnUpdateJobTransportHealth", OnUpdateJobTransportHealth);
+        _uiEvents.Subscribe("OnUpdateJobTransportHealth", OnUpdateJobTransportHealth, coalesce: true);
     }
 
     /// <summary>

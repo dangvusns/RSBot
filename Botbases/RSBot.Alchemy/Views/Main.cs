@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Windows.Forms;
 using RSBot.Alchemy.Bot;
@@ -16,6 +17,9 @@ namespace RSBot.Alchemy.Views;
 [ToolboxItem(false)]
 public partial class Main : DoubleBufferedControl
 {
+    private readonly UiEventSubscriptions _uiEvents;
+    private readonly ConcurrentQueue<(string ItemName, string Message)> _pendingLogs = new();
+
     #region Constructor
 
     /// <summary>
@@ -23,15 +27,15 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     public Main()
     {
-        CheckForIllegalCrossThreadCalls = false;
 
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
         SetStyle(
             ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer,
             true
         );
 
-        EventManager.SubscribeEvent(
+        _uiEvents.Subscribe(
             "OnLoadCharacter",
             () =>
             {
@@ -42,7 +46,7 @@ public partial class Main : DoubleBufferedControl
             }
         );
 
-        EventManager.SubscribeEvent("OnAlchemy", new Action<AlchemyType>(OnAlchemy));
+        _uiEvents.Subscribe("OnAlchemy", new Action<AlchemyType>(OnAlchemy));
 
         _enhanceSettingsView = new EnhanceSettingsView { Visible = true, Dock = DockStyle.Fill };
         _magicOptionsSettingsView = new MagicOptionsSettingsView { Visible = false, Dock = DockStyle.Fill };
@@ -228,16 +232,29 @@ public partial class Main : DoubleBufferedControl
     /// <param name="message"></param>
     public void AddLog(string itemName, string message)
     {
-        var item = new ListViewItem(itemName);
-
-        item.SubItems.Add(message);
-
-        lvLog.Items.Add(item);
-
-        //Scroll to bottom of the list
-        lvLog.Items[lvLog.Items.Count - 1].EnsureVisible();
-
         Log.Notify($"[Alchemy] [{itemName}]: {message}");
+        _pendingLogs.Enqueue((itemName, message));
+        _uiEvents.Post(FlushLogs, nameof(FlushLogs));
+    }
+
+    private void FlushLogs()
+    {
+        lvLog.BeginUpdate();
+        try
+        {
+            while (_pendingLogs.TryDequeue(out var entry))
+            {
+                var item = new ListViewItem(entry.ItemName);
+                item.SubItems.Add(entry.Message);
+                lvLog.Items.Add(item);
+            }
+            if (lvLog.Items.Count > 0)
+                lvLog.Items[lvLog.Items.Count - 1].EnsureVisible();
+        }
+        finally
+        {
+            lvLog.EndUpdate();
+        }
     }
 
     #endregion Methods
@@ -251,7 +268,7 @@ public partial class Main : DoubleBufferedControl
     /// <param name="e"></param>
     private void linkRefreshItemList_Click(object sender, EventArgs e)
     {
-        Invoke(ReloadItemList);
+        _uiEvents.Post(ReloadItemList);
     }
 
     /// <summary>
@@ -271,8 +288,14 @@ public partial class Main : DoubleBufferedControl
         if (SelectedItem == null)
             return;
 
-        Invoke(() => PopulateAttributes(SelectedItem));
-        Invoke(() => PopulateMagicOptions(SelectedItem));
+        var item = SelectedItem;
+        _uiEvents.Post(() =>
+        {
+            if (SelectedItem != item)
+                return;
+            PopulateAttributes(item);
+            PopulateMagicOptions(item);
+        });
 
         lblDegree.Text = SelectedItem.Record.Degree.ToString();
         lblOptLevel.Text = $"+{SelectedItem.OptLevel}";

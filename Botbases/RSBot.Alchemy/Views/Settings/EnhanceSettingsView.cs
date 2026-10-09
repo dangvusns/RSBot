@@ -15,6 +15,8 @@ namespace RSBot.Alchemy.Views.Settings;
 [ToolboxItem(false)]
 public partial class EnhanceSettingsView : DoubleBufferedControl
 {
+    private readonly UiEventSubscriptions _uiEvents;
+
     #region Member
 
     private InventoryItem _selectedItem;
@@ -28,14 +30,14 @@ public partial class EnhanceSettingsView : DoubleBufferedControl
     /// </summary>
     public EnhanceSettingsView()
     {
-        CheckForIllegalCrossThreadCalls = false;
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
         SetStyle(
             ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer,
             true
         );
 
-        EventManager.SubscribeEvent("OnEnterGame", SubscribeMainFormEvents);
+        _uiEvents.Subscribe("OnEnterGame", SubscribeMainFormEvents);
     }
 
     #endregion Constructor
@@ -71,6 +73,8 @@ public partial class EnhanceSettingsView : DoubleBufferedControl
         if (Globals.View == null)
             return;
 
+        Globals.View.EngineChanged -= View_EngineChanged;
+        Globals.View.ItemChanged -= View_ItemChanged;
         Globals.View.EngineChanged += View_EngineChanged;
         Globals.View.ItemChanged += View_ItemChanged;
     }

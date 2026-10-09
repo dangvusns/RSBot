@@ -17,6 +17,8 @@ namespace RSBot.Training.Views;
 [ToolboxItem(false)]
 public partial class Main : DoubleBufferedControl
 {
+    private readonly UiEventSubscriptions _uiEvents;
+
     private const int ScriptRecorderOwnerId = 2000;
 
     #region Fields
@@ -33,6 +35,8 @@ public partial class Main : DoubleBufferedControl
     public Main()
     {
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
+        timerGrabByAbilityPet.Interval = 1000;
         InitializeAutoPathControls();
         SubscribeEvents();
 
@@ -53,9 +57,9 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnLoadCharacter", OnLoadCharacter);
-        EventManager.SubscribeEvent("OnSetTrainingArea", OnSetTrainingArea);
-        EventManager.SubscribeEvent("OnSaveScript", new Action<int, string>(OnSaveScript));
+        _uiEvents.Subscribe("OnLoadCharacter", OnLoadCharacter);
+        _uiEvents.Subscribe("OnSetTrainingArea", OnSetTrainingArea);
+        _uiEvents.Subscribe("OnSaveScript", new Action<int, string>(OnSaveScript));
     }
 
     /// <summary>
@@ -153,12 +157,6 @@ public partial class Main : DoubleBufferedControl
     {
         if (IsDisposed || Disposing)
             return;
-
-        if (InvokeRequired)
-        {
-            BeginInvoke(new System.Action(OnSetTrainingArea));
-            return;
-        }
 
         // Event handlers run in subscription order (or in parallel off the packet thread), so the botbase may not
         // have reloaded yet. Reload here, otherwise the UI shows the previous area and txtRadius_TextChanged writes
@@ -396,7 +394,8 @@ public partial class Main : DoubleBufferedControl
 
     private void timerGrabByAbilityPet_Tick(object sender, EventArgs e)
     {
-        if (Kernel.Bot.Running || !Game.Ready)
+        if (!Visible || !Enabled || FindForm()?.WindowState == FormWindowState.Minimized
+            || Kernel.Bot.Running || !Game.Ready)
             return;
 
         // The config is loaded on entering the game, which can come after this timer's first tick

@@ -37,8 +37,11 @@ internal class GatewayLoginResponse : IPacketHandler
         {
             Log.NotifyLang("AuthGetewaySuccess");
             AutoLogin.Pending = false;
-            View.PendingWindow?.Hide();
-            View.PendingWindow?.StopClientlessQueueTask();
+            View.Instance.RunOnUi(() =>
+            {
+                View.PendingWindow?.Hide();
+                View.PendingWindow?.StopClientlessQueueTask();
+            });
 
             if (Game.ClientType == GameClientType.Japanese)
             {
@@ -103,18 +106,11 @@ internal class GatewayLoginResponse : IPacketHandler
                 var count = packet.ReadUShort();
                 var timestamp = packet.ReadInt();
 
-                Task.Run(() =>
+                View.Instance.RunOnUi(() =>
                 {
-                    var main = Application.OpenForms
-                            .OfType<Form>()
-                            .FirstOrDefault();
-
-                    main?.BeginInvoke(() =>
-                    {
-                        View.PendingWindow.Start(count, timestamp);
-                        if (!GlobalConfig.Get<bool>("RSBot.General.AutoHidePendingWindow"))
-                            View.PendingWindow.ShowAtTop(View.Instance);
-                    });
+                    View.PendingWindow.Start(count, timestamp);
+                    if (!GlobalConfig.Get<bool>("RSBot.General.AutoHidePendingWindow"))
+                        View.PendingWindow.ShowAtTop(View.Instance);
                 });
 
                 break;

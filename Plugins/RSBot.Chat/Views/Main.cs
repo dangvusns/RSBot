@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 using RSBot.Core;
 using RSBot.Core.Event;
@@ -19,19 +20,28 @@ public partial class Main : DoubleBufferedControl
 
     // Chat arrives on network threads; lines are buffered per box and written by a UI timer in batches.
     private readonly Dictionary<RichTextBox, StringBuilder> _pending = new();
-    private readonly Timer _flushTimer;
+    private readonly System.Windows.Forms.Timer _flushTimer;
+    private int _settingsDirty;
+    private volatile bool _disposed;
 
     public Main()
     {
-        CheckForIllegalCrossThreadCalls = false;
         InitializeComponent();
 
         components ??= new Container();
-        _flushTimer = new Timer(components) { Interval = 250 };
+        _flushTimer = new System.Windows.Forms.Timer(components) { Interval = 250 };
         _flushTimer.Tick += (s, e) => FlushPending();
         _flushTimer.Start();
 
         SubscribeEvents();
+        VisibleChanged += (_, _) => _flushTimer.Enabled = Visible && Enabled;
+        EnabledChanged += (_, _) => _flushTimer.Enabled = Visible && Enabled;
+        Disposed += (_, _) =>
+        {
+            _disposed = true;
+            EventManager.UnsubscribeEvent("OnEnterGame", OnEnterGame);
+            lock (_pending) _pending.Clear();
+        };
     }
 
     /// <summary>
@@ -68,6 +78,8 @@ public partial class Main : DoubleBufferedControl
     /// <param name="type">The type.</param>
     public void AppendMessage(string message, string sender, ChatType type)
     {
+        if (_disposed)
+            return;
         RichTextBox target = type switch
         {
             ChatType.Academy => txtAcademy,
@@ -85,8 +97,21 @@ public partial class Main : DoubleBufferedControl
             return;
 
         var line = $"[{DateTime.Now:HH:mm:ss}]\t({sender}): {message}{Environment.NewLine}";
+        AppendPending(target, line);
+    }
+
+    public void AppendUniqueMessage(string message)
+    {
+        if (!_disposed)
+            AppendPending(UniqueText, $"[{DateTime.Now:HH:mm:ss}]\t{message}{Environment.NewLine}");
+    }
+
+    private void AppendPending(RichTextBox target, string line)
+    {
         lock (_pending)
         {
+            if (_disposed)
+                return;
             if (!_pending.TryGetValue(target, out var buffer))
                 _pending[target] = buffer = new StringBuilder();
 
@@ -98,8 +123,11 @@ public partial class Main : DoubleBufferedControl
 
     private void FlushPending()
     {
-        if (IsDisposed || FindForm()?.WindowState == FormWindowState.Minimized)
+        if (!Visible || !Enabled || IsDisposed || FindForm()?.WindowState == FormWindowState.Minimized)
             return;
+
+        if (Interlocked.Exchange(ref _settingsDirty, 0) != 0)
+            txtRecievePrivate.Text = PlayerConfig.Get<string>("RSBot.Chat.LastWhisper");
 
         List<KeyValuePair<RichTextBox, string>> batch;
         lock (_pending)
@@ -109,8 +137,10 @@ public partial class Main : DoubleBufferedControl
 
             batch = new List<KeyValuePair<RichTextBox, string>>(_pending.Count);
             foreach (var entry in _pending)
-                batch.Add(new(entry.Key, entry.Value.ToString()));
-            _pending.Clear();
+                if (entry.Key.Visible)
+                    batch.Add(new(entry.Key, entry.Value.ToString()));
+            foreach (var entry in batch)
+                _pending.Remove(entry.Key);
         }
 
         foreach (var (box, text) in batch)
@@ -138,7 +168,7 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     private void OnEnterGame()
     {
-        txtRecievePrivate.Text = PlayerConfig.Get<string>("RSBot.Chat.LastWhisper");
+        Interlocked.Exchange(ref _settingsDirty, 1);
     }
 
     /// <summary>

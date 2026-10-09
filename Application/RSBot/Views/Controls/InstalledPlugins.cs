@@ -16,11 +16,13 @@ namespace RSBot.Views.Controls
 {
     public partial class InstalledPlugins : UserControl
     {
+        private UiEventSubscriptions _uiEvents;
         public InstalledPlugins()
         {
             InitializeComponent();
+            _uiEvents = new UiEventSubscriptions(this);
 
-            EventManager.SubscribeEvent("OnPluginListChanged", LoadLocalPlugins);
+            _uiEvents.Subscribe("OnPluginListChanged", LoadLocalPlugins, coalesce: true);
         }
 
         internal void LoadLocalPlugins()

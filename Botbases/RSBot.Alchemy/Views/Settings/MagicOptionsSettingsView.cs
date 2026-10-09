@@ -20,6 +20,8 @@ namespace RSBot.Alchemy.Views.Settings;
 [ToolboxItem(false)]
 public partial class MagicOptionsSettingsView : DoubleBufferedControl
 {
+    private readonly UiEventSubscriptions _uiEvents;
+
     #region Members
 
     private bool _reloadConfig;
@@ -33,11 +35,11 @@ public partial class MagicOptionsSettingsView : DoubleBufferedControl
     /// </summary>
     public MagicOptionsSettingsView()
     {
-        CheckForIllegalCrossThreadCalls = false;
 
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
 
-        EventManager.SubscribeEvent("OnEnterGame", SubscribeMainFormEvents);
+        _uiEvents.Subscribe("OnEnterGame", SubscribeMainFormEvents);
     }
 
     #endregion Constructor
@@ -59,6 +61,8 @@ public partial class MagicOptionsSettingsView : DoubleBufferedControl
     {
         if (Globals.View != null)
         {
+            Globals.View.ItemChanged -= View_ItemChanged;
+            Globals.View.EngineChanged -= View_EngineChanged;
             Globals.View.ItemChanged += View_ItemChanged;
             Globals.View.EngineChanged += View_EngineChanged;
         }

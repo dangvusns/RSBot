@@ -21,6 +21,8 @@ namespace RSBot.General.Views;
 [ToolboxItem(false)]
 internal partial class Main : DoubleBufferedControl
 {
+    private readonly UiEventSubscriptions _uiEvents;
+
     private bool _clientVisible;
 
     /// <summary>
@@ -33,9 +35,9 @@ internal partial class Main : DoubleBufferedControl
     /// </summary>
     public Main()
     {
-        CheckForIllegalCrossThreadCalls = false;
 
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
         SubscribeEvents();
 
         //btnStartClient.SetUseAsync(true);
@@ -47,20 +49,20 @@ internal partial class Main : DoubleBufferedControl
     /// </summary>
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnLoadVersionInfo", new Action<VersionInfo>(OnLoadVersionInfo));
-        EventManager.SubscribeEvent("OnAgentServerConnected", OnAgentServerConnected);
-        EventManager.SubscribeEvent("OnAgentServerDisconnected", OnAgentServerDisconnected);
-        EventManager.SubscribeEvent("OnGatewayServerDisconnected", OnGatewayServerDisconnected);
-        EventManager.SubscribeEvent("OnClientConnected", OnClientConnected);
-        EventManager.SubscribeEvent("OnEnterGame", OnEnterGame);
-        EventManager.SubscribeEvent("OnStartClient", OnStartClient);
-        EventManager.SubscribeEvent("OnExitClient", OnExitClient);
-        EventManager.SubscribeEvent("OnCharacterListReceived", OnCharacterListReceived);
-        EventManager.SubscribeEvent("OnInitialized", OnInitialized);
-        EventManager.SubscribeEvent("OnProfileChanged", OnProfileChanged);
-        EventManager.SubscribeEvent("OnManagerSetClientVisible", new Action<bool>(OnManagerSetClientVisible));
-        EventManager.SubscribeEvent("OnManagerGoClientless", OnManagerGoClientless);
-        EventManager.SubscribeEvent("OnManagerGoClient", OnManagerGoClient);
+        _uiEvents.Subscribe("OnLoadVersionInfo", new Action<VersionInfo>(OnLoadVersionInfo));
+        _uiEvents.Subscribe("OnAgentServerConnected", OnAgentServerConnected);
+        _uiEvents.Subscribe("OnAgentServerDisconnected", OnAgentServerDisconnected);
+        _uiEvents.Subscribe("OnGatewayServerDisconnected", OnGatewayServerDisconnected);
+        _uiEvents.Subscribe("OnClientConnected", OnClientConnected);
+        _uiEvents.Subscribe("OnEnterGame", OnEnterGame);
+        _uiEvents.Subscribe("OnStartClient", OnStartClient);
+        _uiEvents.Subscribe("OnExitClient", OnExitClient);
+        _uiEvents.Subscribe("OnCharacterListReceived", OnCharacterListReceived);
+        _uiEvents.Subscribe("OnInitialized", OnInitialized);
+        _uiEvents.Subscribe("OnProfileChanged", OnProfileChanged);
+        _uiEvents.Subscribe("OnManagerSetClientVisible", new Action<bool>(OnManagerSetClientVisible));
+        _uiEvents.Subscribe("OnManagerGoClientless", OnManagerGoClientless);
+        _uiEvents.Subscribe("OnManagerGoClient", OnManagerGoClient);
     }
 
     private void OnProfileChanged()
@@ -74,60 +76,71 @@ internal partial class Main : DoubleBufferedControl
     /// </summary>
     private async void OnGatewayServerDisconnected()
     {
-        AutoLogin.Pending = false;
-        View.PendingWindow?.Hide();
-        View.PendingWindow?.StopClientlessQueueTask();
-
-        if (Kernel.Proxy.IsConnectedToAgentserver || Kernel.Proxy.IsSwitchingToAgentserver)
-            return;
-
-        var wasClientless = Game.Clientless;
-
-        // In client mode a closed client means the user exited it; only relogin if it is still open.
-        var shouldRelogin = GlobalConfig.Get<bool>("RSBot.General.EnableAutomatedLogin")
-            && (wasClientless || ClientManager.IsRunning);
-
-        Game.Clientless = false;
-        ResetLoginButtons();
-        Log.StatusLang("Ready");
-        Kernel.Proxy.Shutdown();
-
-        // The login server dropped us before we reached the game (server down, full, session limit...).
-        if (!shouldRelogin)
-            return;
-
-        btnStartClient.Enabled = false;
-        btnStartClientless.Enabled = false;
-
-        if (!await ReloginGuard.WaitForAttemptAsync())
+        try
         {
+            AutoLogin.Pending = false;
+            View.PendingWindow?.Hide();
+            View.PendingWindow?.StopClientlessQueueTask();
+
+            if (Kernel.Proxy.IsConnectedToAgentserver || Kernel.Proxy.IsSwitchingToAgentserver)
+                return;
+
+            var wasClientless = Game.Clientless;
+
+            // In client mode a closed client means the user exited it; only relogin if it is still open.
+            var shouldRelogin = GlobalConfig.Get<bool>("RSBot.General.EnableAutomatedLogin")
+                && (wasClientless || ClientManager.IsRunning);
+
+            Game.Clientless = false;
             ResetLoginButtons();
-            return;
+            Log.StatusLang("Ready");
+            Kernel.Proxy.Shutdown();
+
+            // The login server dropped us before we reached the game (server down, full, session limit...).
+            if (!shouldRelogin)
+                return;
+
+            btnStartClient.Enabled = false;
+            btnStartClientless.Enabled = false;
+
+            if (!await ReloginGuard.WaitForAttemptAsync())
+            {
+                ResetLoginButtons();
+                return;
+            }
+
+            if (Kernel.Proxy.IsConnectedToAgentserver || Kernel.Proxy.IsConnectedToGatewayserver)
+                return;
+
+            if (!await HandleRegionalAuth())
+            {
+                Log.Warn("Regional auth failed! Automatic relogin stopped.");
+                ResetLoginButtons();
+                return;
+            }
+
+            if (wasClientless)
+            {
+                Game.Clientless = true;
+                await Task.Run(Game.Start);
+                return;
+            }
+
+            ClientManager.Kill();
+            await StartClientProcess().ConfigureAwait(false);
         }
 
-        if (Kernel.Proxy.IsConnectedToAgentserver || Kernel.Proxy.IsConnectedToGatewayserver)
-            return;
 
-        if (!await HandleRegionalAuth())
+        catch (Exception ex)
         {
-            Log.Warn("Regional auth failed! Automatic relogin stopped.");
-            ResetLoginButtons();
-            return;
+            Log.Fatal(ex);
         }
-
-        if (wasClientless)
-        {
-            Game.Clientless = true;
-            Game.Start();
-            return;
-        }
-
-        ClientManager.Kill();
-        await StartClientProcess().ConfigureAwait(false);
     }
 
     private void ResetLoginButtons()
     {
+        if (IsDisposed || Disposing)
+            return;
         btnStartClient.Enabled = true;
         btnStartClientless.Enabled = true;
         btnStartClientless.Text = LanguageManager.GetLang("Start") + " Clientless";
@@ -188,14 +201,14 @@ internal partial class Main : DoubleBufferedControl
                 await Task.Delay(5000);
                 if (Kernel.LaunchMode == "client")
                 {
-                    BeginInvoke(new Action(() =>
+                    RunOnUi(new Action(() =>
                     {
                         btnStartClient_Click(btnStartClient, EventArgs.Empty);
                     }));
                 }
                 else if (Kernel.LaunchMode == "clientless")
                 {
-                    BeginInvoke(new Action(() =>
+                    RunOnUi(new Action(() =>
                     {
                         btnStartClientless_Click(btnStartClientless, EventArgs.Empty);
                     }));
@@ -263,18 +276,25 @@ internal partial class Main : DoubleBufferedControl
     /// </summary>
     private async Task StartClientProcess()
     {
-        btnStartClient.Enabled = false;
-        Game.Start();
-
-        await Task.Run(async () =>
+        try
         {
-            var startedResult = await ClientManager.Start();
-            if (!startedResult)
+            btnStartClient.Enabled = false;
+            await Task.Run(Game.Start);
+
+            await Task.Run(async () =>
             {
-                OnExitClient();
-                Log.WarnLang("ClientStartingError");
-            }
-        });
+                var startedResult = await ClientManager.Start();
+                if (!startedResult)
+                {
+                    _uiEvents.Post(OnExitClient);
+                    Log.WarnLang("ClientStartingError");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex);
+        }
     }
 
     /// <summary>
@@ -336,27 +356,48 @@ internal partial class Main : DoubleBufferedControl
     /// </summary>
     private async void OnEnterGame()
     {
-        if (!Game.Clientless)
+        try
         {
-            btnClientHideShow.Enabled = true;
-            btnClientHideShow.Text = LanguageManager.GetLang(_clientVisible ? "Hide" : "Show") + " Client";
-            btnStartClient.Enabled = true;
-            btnStartClient.Text = LanguageManager.GetLang("Kill") + " Client";
-            btnGoClientless.Enabled = true;
+            if (!Game.Clientless)
+            {
+                btnClientHideShow.Enabled = true;
+                btnClientHideShow.Text = LanguageManager.GetLang(_clientVisible ? "Hide" : "Show") + " Client";
+                btnStartClient.Enabled = true;
+                btnStartClient.Text = LanguageManager.GetLang("Kill") + " Client";
+                btnGoClientless.Enabled = true;
+            }
+
+            //Wait for the game to be ready!
+            while (!Game.Ready)
+            {
+                if (IsDisposed || Disposing)
+                    return;
+                await Task.Delay(100);
+            }
+
+            var startBot = GlobalConfig.Get<bool>("RSBot.General.StartBot");
+            var useReturnScroll = GlobalConfig.Get<bool>("RSBot.General.UseReturnScroll");
+
+            if (useReturnScroll)
+            {
+                var player = Game.Player;
+                try
+                {
+                    await Task.Run(() => player.UseReturnScroll());
+                }
+                catch (Exception ex)
+                {
+                    Log.Fatal(ex);
+                }
+            }
+
+            if (startBot)
+                Kernel.Bot.Start();
         }
-
-        //Wait for the game to be ready!
-        while (!Game.Ready)
-            await Task.Delay(100);
-
-        var startBot = GlobalConfig.Get<bool>("RSBot.General.StartBot");
-        var useReturnScroll = GlobalConfig.Get<bool>("RSBot.General.UseReturnScroll");
-
-        if (useReturnScroll)
-            Game.Player.UseReturnScroll();
-
-        if (startBot)
-            Kernel.Bot.Start();
+        catch (Exception ex)
+        {
+            Log.Fatal(ex);
+        }
     }
 
     /// <summary>
@@ -382,53 +423,62 @@ internal partial class Main : DoubleBufferedControl
     /// </summary>
     private async void OnAgentServerDisconnected()
     {
-        Kernel.Bot.Stop();
-
-        var userAuthenticated = await HandleRegionalAuth();
-
-        // Skiped: Cuz managing from ClientlessManager
-        if (Game.Clientless && userAuthenticated)
-            return;
-
-        // If user disconnected with manual from clientless, we dont need open the client automatically again.
-        //if (!Kernel.Proxy.ClientConnected)
-        //return;
-
-        ClientManager.Kill();
-
-        if (GlobalConfig.Get<bool>("RSBot.General.EnableAutomatedLogin"))
+        try
         {
-            btnStartClient.Enabled = false;
-            btnStartClientless.Enabled = false;
+            Kernel.Bot.Stop();
 
-            // The guard drops duplicate disconnect events and backs off on repeated failures.
-            if (!await ReloginGuard.WaitForAttemptAsync())
-            {
-                ResetLoginButtons();
+            var userAuthenticated = await HandleRegionalAuth();
+            if (IsDisposed || Disposing)
                 return;
-            }
 
-            if (!await HandleRegionalAuth())
-            {
-                Log.Warn("Regional auth failed! Automatic relogin stopped.");
-                ResetLoginButtons();
+            // Skiped: Cuz managing from ClientlessManager
+            if (Game.Clientless && userAuthenticated)
                 return;
-            }
 
-            await StartClientProcess().ConfigureAwait(false);
-            return;
-        }
+            // If user disconnected with manual from clientless, we dont need open the client automatically again.
+            //if (!Kernel.Proxy.ClientConnected)
+            //return;
 
-        btnGoClientless.Enabled = false;
-        btnStartClient.Enabled = true;
-        btnStartClientless.Enabled = true;
+            ClientManager.Kill();
 
-        if (_startClientAfterDisconnect)
-        {
-            _startClientAfterDisconnect = false;
+            if (GlobalConfig.Get<bool>("RSBot.General.EnableAutomatedLogin"))
+            {
+                btnStartClient.Enabled = false;
+                btnStartClientless.Enabled = false;
 
-            if (userAuthenticated)
+                // The guard drops duplicate disconnect events and backs off on repeated failures.
+                if (!await ReloginGuard.WaitForAttemptAsync())
+                {
+                    ResetLoginButtons();
+                    return;
+                }
+
+                if (!await HandleRegionalAuth())
+                {
+                    Log.Warn("Regional auth failed! Automatic relogin stopped.");
+                    ResetLoginButtons();
+                    return;
+                }
+
                 await StartClientProcess().ConfigureAwait(false);
+                return;
+            }
+
+            btnGoClientless.Enabled = false;
+            btnStartClient.Enabled = true;
+            btnStartClientless.Enabled = true;
+
+            if (_startClientAfterDisconnect)
+            {
+                _startClientAfterDisconnect = false;
+
+                if (userAuthenticated)
+                    await StartClientProcess().ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex);
         }
     }
 
@@ -622,7 +672,7 @@ internal partial class Main : DoubleBufferedControl
     /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
     private async void btnStartClientless_Click(object sender, EventArgs e)
     {
-        await Task.Run(async () =>
+        try
         {
             if (!Game.Clientless)
             {
@@ -644,10 +694,12 @@ internal partial class Main : DoubleBufferedControl
                 btnStartClientless.Text = LanguageManager.GetLang("Disconnect");
 
                 var userAuthenticated = await HandleRegionalAuth();
+                if (IsDisposed || Disposing)
+                    return;
 
                 if (userAuthenticated)
                 {
-                    Game.Start();
+                    await Task.Run(Game.Start);
                 }
             }
             else
@@ -672,7 +724,11 @@ internal partial class Main : DoubleBufferedControl
 
                 Kernel.Proxy.Shutdown();
             }
-        });
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex);
+        }
     }
 
     /// <summary>
@@ -682,26 +738,37 @@ internal partial class Main : DoubleBufferedControl
     /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
     private async void btnStartClient_Click(object sender, EventArgs e)
     {
-        if (!Game.Clientless && Kernel.Proxy != null && Kernel.Proxy.IsConnectedToAgentserver)
+        try
         {
-            var extraStr = LanguageManager.GetLang("KillClientWarnMsgBoxSplit1");
-            if (!GlobalConfig.Get<bool>("RSBot.General.StayConnected"))
-                extraStr = LanguageManager.GetLang("KillClientWarnMsgBoxSplit2");
+            if (!Game.Clientless && Kernel.Proxy != null && Kernel.Proxy.IsConnectedToAgentserver)
+            {
+                var extraStr = LanguageManager.GetLang("KillClientWarnMsgBoxSplit1");
+                if (!GlobalConfig.Get<bool>("RSBot.General.StayConnected"))
+                    extraStr = LanguageManager.GetLang("KillClientWarnMsgBoxSplit2");
 
-            var title = LanguageManager.GetLang("Warning");
-            var content = LanguageManager.GetLang("KillClientWarnMsgBoxContent", extraStr);
+                var title = LanguageManager.GetLang("Warning");
+                var content = LanguageManager.GetLang("KillClientWarnMsgBoxContent", extraStr);
 
-            if (MessageBox.Show(content, title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
-                ClientManager.Kill();
+                if (MessageBox.Show(content, title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                    ClientManager.Kill();
 
-            return;
+                return;
+            }
+
+            var userAuthenticated = await HandleRegionalAuth();
+            if (IsDisposed || Disposing)
+                return;
+
+            if (userAuthenticated)
+            {
+                await StartClientProcess();
+            }
         }
 
-        var userAuthenticated = await HandleRegionalAuth();
 
-        if (userAuthenticated)
+        catch (Exception ex)
         {
-            await StartClientProcess();
+            Log.Fatal(ex);
         }
     }
 
@@ -787,20 +854,7 @@ internal partial class Main : DoubleBufferedControl
     /// <summary>
     ///     Runs the action on the UI thread. Uses the bot window when this tab has no handle yet.
     /// </summary>
-    private void RunOnUi(Action action)
-    {
-        if (IsHandleCreated)
-        {
-            BeginInvoke(action);
-            return;
-        }
-
-        var form = Application.OpenForms.Cast<Form>().FirstOrDefault(f => f.IsHandleCreated);
-        if (form != null)
-            form.BeginInvoke(action);
-        else
-            Log.Warn("[Manager] The bot window is not ready yet");
-    }
+    internal void RunOnUi(Action action) => _uiEvents.Post(action);
 
     private void btnClientHideShow_Click(object sender, EventArgs e)
     {

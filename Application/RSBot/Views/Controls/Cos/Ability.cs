@@ -7,9 +7,11 @@ namespace RSBot.Views.Controls.Cos;
 [ToolboxItem(false)]
 public partial class Ability : CosControlBase
 {
+    private UiEventSubscriptions _uiEvents;
     public Ability()
     {
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(MiniCosControl);
         MiniCosControl.Satiety.Visible = false;
         MiniCosControl.Hgp.Visible = false;
         MiniCosControl.Level.Visible = false;
@@ -22,7 +24,7 @@ public partial class Ability : CosControlBase
     /// </summary>
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnAbilityPetNameChange", OnAbilityPetNameChange);
+        _uiEvents.Subscribe("OnAbilityPetNameChange", OnAbilityPetNameChange, coalesce: true);
     }
 
     private void OnAbilityPetNameChange()

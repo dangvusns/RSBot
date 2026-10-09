@@ -13,12 +13,14 @@ namespace RSBot.Views.Controls
 {
     public partial class PluginStore : UserControl
     {
+        private UiEventSubscriptions _uiEvents;
         private PluginRepository _currentRepository;
         private CancellationTokenSource _downloadCancellation;
 
         public PluginStore()
         {
             InitializeComponent();
+            _uiEvents = new UiEventSubscriptions(this);
         }
 
         private static string FormatBytes(long bytes)
@@ -38,16 +40,13 @@ namespace RSBot.Views.Controls
 
         public void On_DownloadProgressChanged(object sender, DownloadProgressEventArgs e)
         {
-            if (InvokeRequired)
+            _uiEvents.Post(() =>
             {
-                Invoke(new Action(() => On_DownloadProgressChanged(sender, e)));
-                return;
-            }
-
-            progressBarDownload.Value = e.ProgressPercentage;
-            labelStatus.Text = $"Downloading {e.FileName}: {e.ProgressPercentage}% ({FormatBytes(e.BytesReceived)} / {FormatBytes(e.TotalBytesToReceive)})";
-            progressBarDownload.Visible = true;
-            labelStatus.Visible = true;
+                progressBarDownload.Value = e.ProgressPercentage;
+                labelStatus.Text = $"Downloading {e.FileName}: {e.ProgressPercentage}% ({FormatBytes(e.BytesReceived)} / {FormatBytes(e.TotalBytesToReceive)})";
+                progressBarDownload.Visible = true;
+                labelStatus.Visible = true;
+            }, "downloadProgress");
         }
 
         private void BtnRefreshWeb_Click(object sender, EventArgs e)

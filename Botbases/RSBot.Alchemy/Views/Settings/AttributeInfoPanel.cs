@@ -40,7 +40,6 @@ public partial class AttributeInfoPanel : DoubleBufferedControl
         int maxValue = 22
     )
     {
-        CheckForIllegalCrossThreadCalls = false;
 
         InitializeComponent();
 

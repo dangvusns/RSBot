@@ -10,10 +10,12 @@ namespace RSBot.Views.Controls;
 
 public partial class Entity : DoubleBufferedControl
 {
+    private UiEventSubscriptions _uiEvents;
     public Entity()
     {
-        CheckForIllegalCrossThreadCalls = false;
+
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
         SubscribeEvents();
     }
 
@@ -22,12 +24,12 @@ public partial class Entity : DoubleBufferedControl
     /// </summary>
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnSelectEntity", new Action<SpawnedBionic>(OnSelectEntity));
-        EventManager.SubscribeEvent("OnDeselectEntity", OnDeselectEntity);
-        EventManager.SubscribeEvent("OnUpdateEntityHp", new Action<SpawnedBionic>(OnUpdateEntityHp));
-        EventManager.SubscribeEvent("OnKillSelectedEnemy", OnKillSelectedEnemy);
-        EventManager.SubscribeEvent("OnAgentServerDisconnected", OnAgentServerDisconnected);
-        EventManager.SubscribeEvent("OnInitialized", OnInitialized);
+        _uiEvents.Subscribe("OnSelectEntity", new Action<SpawnedBionic>(OnSelectEntity));
+        _uiEvents.Subscribe("OnDeselectEntity", OnDeselectEntity);
+        _uiEvents.Subscribe("OnUpdateEntityHp", new Action<SpawnedBionic>(OnUpdateEntityHp), coalesce: true);
+        _uiEvents.Subscribe("OnKillSelectedEnemy", OnKillSelectedEnemy);
+        _uiEvents.Subscribe("OnAgentServerDisconnected", OnAgentServerDisconnected);
+        _uiEvents.Subscribe("OnInitialized", OnInitialized);
     }
 
     private void OnInitialized()

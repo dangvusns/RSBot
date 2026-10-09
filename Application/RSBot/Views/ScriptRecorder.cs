@@ -17,9 +17,10 @@ namespace RSBot.Views;
 
 public partial class ScriptRecorder : UIWindow
 {
+    private UiEventSubscriptions _uiEvents;
     private readonly int _ownerId;
 
-    private bool _recording;
+    private volatile bool _recording;
     private bool _running;
 
     /// <summary>
@@ -30,6 +31,7 @@ public partial class ScriptRecorder : UIWindow
         _ownerId = ownerId;
 
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
         SubscribeEvents();
         PopulateCommandList();
 
@@ -51,28 +53,34 @@ public partial class ScriptRecorder : UIWindow
     /// </summary>
     private void SubscribeEvents()
     {
+        // Capture movement coordinates before another packet changes the destination.
         EventManager.SubscribeEvent("OnPlayerMove", OnPlayerMove);
         EventManager.SubscribeEvent("OnVehicleMove", OnPlayerMove);
-        EventManager.SubscribeEvent("OnRequestTeleport", new Action<uint, string>(OnRequestTeleport));
-        EventManager.SubscribeEvent("OnTerminateVehicle", OnTerminateVehicle);
-        EventManager.SubscribeEvent("OnTeleportComplete", OnTeleportComplete);
-        EventManager.SubscribeEvent(
+        Disposed += (_, _) =>
+        {
+            EventManager.UnsubscribeEvent("OnPlayerMove", (Action)OnPlayerMove);
+            EventManager.UnsubscribeEvent("OnVehicleMove", (Action)OnPlayerMove);
+        };
+        _uiEvents.Subscribe("OnRequestTeleport", new Action<uint, string>(OnRequestTeleport));
+        _uiEvents.Subscribe("OnTerminateVehicle", OnTerminateVehicle);
+        _uiEvents.Subscribe("OnTeleportComplete", OnTeleportComplete);
+        _uiEvents.Subscribe(
             "OnScriptStartExecuteCommand",
             new Action<IScriptCommand, int>(OnScriptStartExecuteCommand)
         );
-        EventManager.SubscribeEvent("OnNpcRepairRequest", new Action<uint, byte, byte>(OnNpcRepairRequest));
-        EventManager.SubscribeEvent("OnStorageOpenRequest", new Action<uint>(StorageOpenRequest));
-        EventManager.SubscribeEvent("OnTalkRequest", new Action<uint, TalkOption>(OnTalkRequest));
-        EventManager.SubscribeEvent("OnFinishScript", new Action<bool>(OnFinishScript));
-        EventManager.SubscribeEvent("OnCastSkill", new Action<uint>(OnCastSkill));
+        _uiEvents.Subscribe("OnNpcRepairRequest", new Action<uint, byte, byte>(OnNpcRepairRequest));
+        _uiEvents.Subscribe("OnStorageOpenRequest", new Action<uint>(StorageOpenRequest));
+        _uiEvents.Subscribe("OnTalkRequest", new Action<uint, TalkOption>(OnTalkRequest));
+        _uiEvents.Subscribe("OnFinishScript", new Action<bool>(OnFinishScript));
+        _uiEvents.Subscribe("OnCastSkill", new Action<uint>(OnCastSkill));
 
-        EventManager.SubscribeEvent("OnBuyItemRequest", new Action<byte, byte, ushort, uint>(OnBuyItemRequest));
-        EventManager.SubscribeEvent("OnSellItemRequest", new Action<byte, ushort, uint>(OnSellItemRequest));
-        EventManager.SubscribeEvent("OnBuyItemToCosRequest", new Action<byte, byte, ushort, uint>(OnBuyItemToCos));
-        EventManager.SubscribeEvent("OnSellItemFromCosRequest", new Action<byte, ushort, uint>(OnSellItemFromCos));
+        _uiEvents.Subscribe("OnBuyItemRequest", new Action<byte, byte, ushort, uint>(OnBuyItemRequest));
+        _uiEvents.Subscribe("OnSellItemRequest", new Action<byte, ushort, uint>(OnSellItemRequest));
+        _uiEvents.Subscribe("OnBuyItemToCosRequest", new Action<byte, byte, ushort, uint>(OnBuyItemToCos));
+        _uiEvents.Subscribe("OnSellItemFromCosRequest", new Action<byte, ushort, uint>(OnSellItemFromCos));
 
         //Use EventManager.FireEvent("AppendScriptCommand", "<name> <parameters>"); to add your own commands to the output
-        EventManager.SubscribeEvent("AppendScriptCommand", new Action<string>(AppendScriptCommand));
+        _uiEvents.Subscribe("AppendScriptCommand", new Action<string>(AppendScriptCommand));
     }
 
     private void OnCastSkill(uint skillId)
@@ -226,7 +234,11 @@ public partial class ScriptRecorder : UIWindow
         stepString.Append($" {destination.Region.Y}");
         stepString.AppendLine();
 
-        txtScript.AppendText(stepString.ToString());
+        var command = stepString.ToString();
+        _uiEvents.Post(() =>
+        {
+            if (_recording) txtScript.AppendText(command);
+        });
     }
 
     /// <summary>

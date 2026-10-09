@@ -65,6 +65,9 @@ internal static class Program
     {
         // Configure DPI before command-line errors can create a MessageBox handle.
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
+#if DEBUG
+        Control.CheckForIllegalCrossThreadCalls = true;
+#endif
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
         // Plain UI: no ripple/hover/theme-fade timers.

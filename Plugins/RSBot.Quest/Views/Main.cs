@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Linq;
 using System.Windows.Forms;
+using System.Threading.Tasks;
 using RSBot.Core;
 using RSBot.Core.Event;
 using RSBot.Core.Objects.Quests;
@@ -13,61 +14,64 @@ namespace RSBot.Quest.Views;
 [ToolboxItem(false)]
 public partial class Main : DoubleBufferedControl
 {
+    private readonly UiEventSubscriptions _uiEvents;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="Main" /> class.
     /// </summary>
     public Main()
     {
-        CheckForIllegalCrossThreadCalls = false;
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
 
         SubscribeEvents();
     }
 
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnLoadCharacter", RefreshQuestList);
-        EventManager.SubscribeEvent("OnUpdateQuests", RefreshQuestList);
+        _uiEvents.Subscribe("OnLoadCharacter", RefreshQuestList);
+        _uiEvents.Subscribe("OnUpdateQuests", RefreshQuestList);
     }
 
-    private void RefreshQuestList()
+    private void RefreshQuestList() => _uiEvents.Post(RebuildQuestList, nameof(RebuildQuestList));
+
+    private void RebuildQuestList()
     {
+        treeQuests.BeginUpdate();
         try
         {
-            if (!treeQuests.Created)
+            treeQuests.Nodes.Clear();
+            var questLog = Game.Player?.QuestLog;
+            if (questLog == null)
                 return;
 
-            treeQuests.Invoke(() =>
+            foreach (var activeQuest in questLog.ActiveQuests.ToArray())
             {
-                treeQuests.Nodes.Clear();
-                foreach (var activeQuest in Game.Player.QuestLog.ActiveQuests)
-                {
-                    var node = CreateNode(activeQuest.Value);
-                    node.Tag = activeQuest.Key;
+                var node = CreateNode(activeQuest.Value);
+                node.Tag = activeQuest.Key;
+                node.ContextMenuStrip = contextQuest;
+                treeQuests.Nodes.Add(node);
+            }
 
-                    node.ContextMenuStrip = contextQuest;
+            if (!checkShowCompleted.Checked)
+                return;
 
-                    treeQuests.Nodes.Add(node);
-                }
-
-                if (!checkShowCompleted.Checked)
-                    return;
-
-                var completedNode = new TreeNode("Completed");
-                foreach (var questId in Game.Player.QuestLog.CompletedQuests)
-                {
-                    var quest = Game.ReferenceManager.GetRefQuest(questId);
-
-                    var node = new TreeNode($"{quest.GetTranslatedName()} (lv. {quest.Level})");
-                    completedNode.Nodes.Add(node);
-                }
-
-                treeQuests.Nodes.Add(completedNode);
-            });
+            var completedNode = new TreeNode("Completed");
+            foreach (var questId in questLog.CompletedQuests.ToArray())
+            {
+                var quest = Game.ReferenceManager.GetRefQuest(questId);
+                var node = new TreeNode($"{quest.GetTranslatedName()} (lv. {quest.Level})");
+                completedNode.Nodes.Add(node);
+            }
+            treeQuests.Nodes.Add(completedNode);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            // ignored
+            Log.Debug($"[Quest] Could not refresh quest list: {ex.Message}");
+        }
+        finally
+        {
+            treeQuests.EndUpdate();
         }
     }
 
@@ -211,7 +215,7 @@ public partial class Main : DoubleBufferedControl
         treeQuests.SelectedNode = e.Node;
     }
 
-    private void abandonToolStripMenuItem_Click(object sender, EventArgs e)
+    private async void abandonToolStripMenuItem_Click(object sender, EventArgs e)
     {
         if (!uint.TryParse(treeQuests.SelectedNode?.Tag.ToString(), out var questId))
             return;
@@ -226,6 +230,16 @@ public partial class Main : DoubleBufferedControl
                 MessageBoxButtons.YesNo
             ) == DialogResult.Yes
         )
-            Game.Player.QuestLog.AbandonQuest(questId);
+        {
+            var questLog = Game.Player.QuestLog;
+            try
+            {
+                await Task.Run(() => questLog.AbandonQuest(questId));
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex);
+            }
+        }
     }
 }

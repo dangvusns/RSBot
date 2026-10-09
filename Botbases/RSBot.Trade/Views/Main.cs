@@ -13,22 +13,26 @@ namespace RSBot.Trade.Views;
 
 public partial class Main : DoubleBufferedControl
 {
+    private readonly UiEventSubscriptions _uiEvents;
+
     private bool _loadingConfig;
 
     public Main()
     {
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
         SubscribeEvents();
     }
 
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnTalkToNpc", OnTalkToNpc);
-        EventManager.SubscribeEvent("OnJobScaleUpdate", OnUpdateJobInfo);
-        EventManager.SubscribeEvent("OnJobExperienceUpdate", OnUpdateJobInfo);
-        EventManager.SubscribeEvent("OnJobJoin", OnUpdateJobInfo);
-        EventManager.SubscribeEvent("OnJobLeave", OnUpdateJobInfo);
-        EventManager.SubscribeEvent("OnJobAliasUpdate", OnUpdateJobInfo);
+        EventManager.SubscribeEvent("OnTalkToNpc", new Action<uint>(OnTalkToNpc));
+        Disposed += (_, _) => EventManager.UnsubscribeEvent("OnTalkToNpc", (Action<uint>)OnTalkToNpc);
+        _uiEvents.Subscribe("OnJobScaleUpdate", OnUpdateJobInfo, coalesce: true);
+        _uiEvents.Subscribe("OnJobExperienceUpdate", OnUpdateJobInfo, coalesce: true);
+        _uiEvents.Subscribe("OnJobJoin", OnUpdateJobInfo, coalesce: true);
+        _uiEvents.Subscribe("OnJobLeave", OnUpdateJobInfo, coalesce: true);
+        _uiEvents.Subscribe("OnJobAliasUpdate", OnUpdateJobInfo, coalesce: true);
     }
 
     private void OnUpdateJobInfo()

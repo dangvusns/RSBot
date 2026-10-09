@@ -22,6 +22,10 @@ namespace RSBot.Party.Views;
 [ToolboxItem(false)]
 public partial class Main : DoubleBufferedControl
 {
+    private readonly UiEventSubscriptions _uiEvents;
+    private Font _buffCountFont;
+    private Font _matchingBoldFont;
+
     /// <summary>
     ///     <inheritdoc />
     /// </summary>
@@ -48,6 +52,7 @@ public partial class Main : DoubleBufferedControl
     public Main()
     {
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
         InitializeAttackLeaderTarget();
 
         selectedMemberBuffs.SmallImageList = ListViewExtensions.StaticImageList;
@@ -55,7 +60,6 @@ public partial class Main : DoubleBufferedControl
 
         _selectedBuffingGroup = new ListViewItem();
         _buffings = new List<BuffingPartyMember>();
-        CheckForIllegalCrossThreadCalls = false;
         cbPartySearchPurpose.SelectedIndex = 0;
         InitializeMatchingLayout();
         InitializeCommandGuide();
@@ -78,19 +82,26 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnLoadCharacter", OnLoadCharacter);
+        _uiEvents.Subscribe("OnLoadCharacter", OnLoadCharacter);
         EventManager.SubscribeEvent("OnEnterGame", OnEnterGame);
-        EventManager.SubscribeEvent("OnCreatePartyEntry", OnCreatePartyEntry);
-        EventManager.SubscribeEvent("OnChangePartyEntry", OnChangePartyEntry);
-        EventManager.SubscribeEvent("OnDeletePartyEntry", OnDeletePartyEntry);
-        EventManager.SubscribeEvent("OnPartyData", OnPartyData);
-        EventManager.SubscribeEvent("OnPartyMemberJoin", new Action<PartyMember>(OnPartyMemberJoin));
-        EventManager.SubscribeEvent("OnPartyMemberLeave", new Action<PartyMember>(OnPartyMemberLeave));
-        EventManager.SubscribeEvent("OnPartyMemberBanned", new Action<PartyMember>(OnPartyMemberBanned));
-        EventManager.SubscribeEvent("OnPartyMemberUpdate", new Action<PartyMember>(OnPartyMemberUpdate));
-        EventManager.SubscribeEvent("OnPartyDismiss", OnPartyDismiss);
-        EventManager.SubscribeEvent("OnPartyLeaderChange", OnPartyData);
-        EventManager.SubscribeEvent("OnAgentServerDisconnected", OnPartyDismiss);
+        _uiEvents.Subscribe("OnCreatePartyEntry", OnCreatePartyEntry);
+        _uiEvents.Subscribe("OnChangePartyEntry", OnChangePartyEntry);
+        _uiEvents.Subscribe("OnDeletePartyEntry", OnDeletePartyEntry);
+        _uiEvents.Subscribe("OnPartyData", OnPartyData);
+        _uiEvents.Subscribe("OnPartyMemberJoin", new Action<PartyMember>(OnPartyMemberJoin));
+        _uiEvents.Subscribe("OnPartyMemberLeave", new Action<PartyMember>(OnPartyMemberLeave));
+        _uiEvents.Subscribe("OnPartyMemberBanned", new Action<PartyMember>(OnPartyMemberBanned));
+        EventManager.SubscribeEvent("OnPartyMemberUpdate", new Action<PartyMember>(QueuePartyMemberUpdate));
+        Disposed += (_, _) =>
+        {
+            EventManager.UnsubscribeEvent("OnPartyMemberUpdate", new Action<PartyMember>(QueuePartyMemberUpdate));
+            EventManager.UnsubscribeEvent("OnEnterGame", new Action(OnEnterGame));
+            _buffCountFont?.Dispose();
+            _matchingBoldFont?.Dispose();
+        };
+        _uiEvents.Subscribe("OnPartyDismiss", OnPartyDismiss);
+        _uiEvents.Subscribe("OnPartyLeaderChange", OnPartyData);
+        _uiEvents.Subscribe("OnAgentServerDisconnected", OnPartyDismiss);
     }
 
     /// <summary>
@@ -308,63 +319,71 @@ public partial class Main : DoubleBufferedControl
     /// <summary>
     ///     Requests the party list.
     /// </summary>
-    private void RequestPartyList(byte page = 0)
+    private async void RequestPartyList(byte page = 0)
     {
-        Task.Run(() =>
+        try
         {
-            lvPartyMatching.BeginUpdate();
-            lvPartyMatching.Items.Clear();
-
-            var listViewItems = new List<ListViewItem>();
-            var currentPage = Bundle.Container.PartyMatching.RequestPartyList(page);
-
-            btnPrev.Enabled = currentPage.Page > 0;
-            btnNext.Enabled = currentPage.Page != currentPage.PageCount - 1;
-            btnPrev.Tag = currentPage.Page - 1;
-            btnNext.Tag = currentPage.Page + 1;
-
-            lbl_partyPageRange.Text = $"{currentPage.Page + 1} / {currentPage.PageCount}";
-
-            foreach (var party in currentPage.Parties)
+            var currentPage = await Task.Run(() => Bundle.Container.PartyMatching.RequestPartyList(page));
+            _uiEvents.Post(() =>
             {
-                var existingEntry = listViewItems.Find(p => p.Name == party.Id.ToString());
-                //For a self created party!
-                if (existingEntry != null)
-                    continue;
-
-                var listItem = new ListViewItem { Text = party.Id.ToString(), Name = party.Id.ToString() };
-                listItem.SubItems.Add(party.Race.ToString());
-                listItem.SubItems.Add(party.Leader);
-                listItem.SubItems.Add(party.Title);
-                listItem.SubItems.Add(party.Purpose.ToString());
-                listItem.SubItems.Add(party.MemberCount.ToString("#/" + party.Settings.MaxMember));
-                listItem.SubItems.Add(party.MinLevel + "~" + party.MaxLevel);
-
-                listItem.ToolTipText = party.Settings.ToString();
-                if (
-                    party.Leader == Game.Player.Name
-                    || party.Leader == Game.Player.JobInformation.Name
-                    || Game.Party?.Leader?.Name == party.Leader
-                )
+                lvPartyMatching.BeginUpdate();
+                try
                 {
-                    listItem.Font = new Font(Font, FontStyle.Bold);
+                    lvPartyMatching.Items.Clear();
+                    var listViewItems = new List<ListViewItem>();
+                    btnPrev.Enabled = currentPage.Page > 0;
+                    btnNext.Enabled = currentPage.Page != currentPage.PageCount - 1;
+                    btnPrev.Tag = currentPage.Page - 1;
+                    btnNext.Tag = currentPage.Page + 1;
 
-                    listItem.BackColor = ControlPaint.Light(ColorScheme.BackColor, .15f);
-                    listItem.Font = new Font(Font, FontStyle.Bold);
+                    lbl_partyPageRange.Text = $"{currentPage.Page + 1} / {currentPage.PageCount}";
 
-                    listViewItems.Insert(0, listItem);
+                    foreach (var party in currentPage.Parties)
+                    {
+                        var existingEntry = listViewItems.Find(p => p.Name == party.Id.ToString());
+                        //For a self created party!
+                        if (existingEntry != null)
+                            continue;
 
-                    continue;
+                        var listItem = new ListViewItem { Text = party.Id.ToString(), Name = party.Id.ToString() };
+                        listItem.SubItems.Add(party.Race.ToString());
+                        listItem.SubItems.Add(party.Leader);
+                        listItem.SubItems.Add(party.Title);
+                        listItem.SubItems.Add(party.Purpose.ToString());
+                        listItem.SubItems.Add(party.MemberCount.ToString("#/" + party.Settings.MaxMember));
+                        listItem.SubItems.Add(party.MinLevel + "~" + party.MaxLevel);
+
+                        listItem.ToolTipText = party.Settings.ToString();
+                        if (
+                            party.Leader == Game.Player.Name
+                            || party.Leader == Game.Player.JobInformation.Name
+                            || Game.Party?.Leader?.Name == party.Leader
+                        )
+                        {
+                            listItem.BackColor = ControlPaint.Light(ColorScheme.BackColor, .15f);
+                            listItem.Font = _matchingBoldFont ??= new Font(Font, FontStyle.Bold);
+
+                            listViewItems.Insert(0, listItem);
+
+                            continue;
+                        }
+
+                        listViewItems.Add(listItem);
+                    }
+
+                    foreach (var item in listViewItems)
+                        lvPartyMatching.Items.Add(item);
                 }
-
-                listViewItems.Add(listItem);
-            }
-
-            foreach (var item in listViewItems)
-                lvPartyMatching.Items.Add(item);
-
-            lvPartyMatching.EndUpdate();
-        });
+                finally
+                {
+                    lvPartyMatching.EndUpdate();
+                }
+            }, nameof(RequestPartyList));
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex);
+        }
     }
 
     /// <summary>
@@ -415,13 +434,6 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     private void OnLoadCharacter()
     {
-        // Raised on the network thread; the lists may only be changed on the UI thread
-        if (IsHandleCreated && InvokeRequired)
-        {
-            BeginInvoke(new Action(OnLoadCharacter));
-            return;
-        }
-
         // The settings belong to the character; show this character's protected players
         var applySettings = _applySettings;
         _applySettings = false;
@@ -457,16 +469,30 @@ public partial class Main : DoubleBufferedControl
         RefreshGroupMembers();
     }
 
+    private static async Task CreateMatchingAsync()
+    {
+        try
+        {
+            await Task.Run(() => Bundle.Container.PartyMatching.Create());
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex);
+        }
+    }
+
     private async void OnEnterGame()
     {
         await Task.Delay(5000);
+        if (IsDisposed || Disposing)
+            return;
 
         if (
             Game.Ready
             && Bundle.Container.PartyMatching.Config.AutoReform
             && !Bundle.Container.PartyMatching.HasMatchingEntry
         )
-            Bundle.Container.PartyMatching.Create();
+            await CreateMatchingAsync();
     }
 
     /// <summary>
@@ -540,7 +566,7 @@ public partial class Main : DoubleBufferedControl
             else
                 subItem.ForeColor = Color.DarkRed;
 
-            subItem.Font = new Font("Segoe UI", 9f, FontStyle.Bold);
+            subItem.Font = _buffCountFont ??= new Font("Segoe UI", 9f, FontStyle.Bold);
 
             foreach (
                 var group in listPartyBuffSkills
@@ -569,7 +595,6 @@ public partial class Main : DoubleBufferedControl
 
             if (Game.Party.Members == null)
             {
-                listParty.EndUpdate();
                 OnPartyDismiss();
                 return;
             }
@@ -598,8 +623,10 @@ public partial class Main : DoubleBufferedControl
             menuLeave.Enabled = true;
         }
         catch { }
-
-        listParty.EndUpdate();
+        finally
+        {
+            listParty.EndUpdate();
+        }
     }
 
     private void OnChangePartyEntry()
@@ -610,7 +637,7 @@ public partial class Main : DoubleBufferedControl
             RequestPartyList();
     }
 
-    private void OnDeletePartyEntry()
+    private async void OnDeletePartyEntry()
     {
         if (Bundle.Container.PartyMatching == null)
             return;
@@ -631,7 +658,7 @@ public partial class Main : DoubleBufferedControl
         grbAutoPartySettings.Enabled = true;
 
         if (Game.Ready && Bundle.Container.PartyMatching.Config.AutoReform)
-            Bundle.Container.PartyMatching.Create();
+            await CreateMatchingAsync();
     }
 
     private void OnCreatePartyEntry()
@@ -660,7 +687,7 @@ public partial class Main : DoubleBufferedControl
         AddNewPartyMember(member);
     }
 
-    private void OnPartyMemberLeave(PartyMember member)
+    private async void OnPartyMemberLeave(PartyMember member)
     {
         Log.NotifyLang("UserLeftParty", member.Name);
 
@@ -672,10 +699,10 @@ public partial class Main : DoubleBufferedControl
                 && !Bundle.Container.PartyMatching.HasMatchingEntry
                 && Game.Party.Members?.Count < Game.Party.Settings.MaxMember
             )
-                Bundle.Container.PartyMatching.Create();
+                await CreateMatchingAsync();
     }
 
-    private void OnPartyMemberBanned(PartyMember member)
+    private async void OnPartyMemberBanned(PartyMember member)
     {
         Log.NotifyLang("UserBannedParty", member.Name);
 
@@ -689,7 +716,7 @@ public partial class Main : DoubleBufferedControl
                     && !Bundle.Container.PartyMatching.HasMatchingEntry
                     && Game.Party.Members?.Count < Game.Party.Settings.MaxMember
                 )
-                    Bundle.Container.PartyMatching.Create();
+                    await CreateMatchingAsync();
         }
         else
             OnPartyDismiss();
@@ -699,24 +726,38 @@ public partial class Main : DoubleBufferedControl
     ///     Called when [party member update].
     /// </summary>
     /// <param name="member">The member.</param>
+    private void QueuePartyMemberUpdate(PartyMember member) =>
+        _uiEvents.Post(() => OnPartyMemberUpdate(member), $"PartyMember:{member.Name}");
+
     private void OnPartyMemberUpdate(PartyMember member)
     {
+        if (IsDisposed || Disposing || !IsHandleCreated)
+            return;
+
+        if (InvokeRequired)
+        {
+            try
+            {
+                BeginInvoke(new System.Action(() => OnPartyMemberUpdate(member)));
+            }
+            catch (ObjectDisposedException) { }
+            catch (InvalidOperationException) { }
+            return;
+        }
+
         if (!listParty.Items.ContainsKey(member.Name))
             return;
 
         var lvItem = listParty.Items[member.Name];
-
-        lvItem.Text = member.Name;
-        lvItem.SubItems[1].Text = member.Level.ToString();
-        if (string.IsNullOrWhiteSpace(member.Guild))
+        var noGuild = string.IsNullOrWhiteSpace(member.Guild);
+        var guild = noGuild ? _noGuildText : member.Guild;
+        if (lvItem.SubItems[2].Text != guild)
         {
-            lvItem.SubItems[2].Text = _noGuildText;
-            lvItem.SubItems[2].ForeColor = Color.DarkGray;
-        }
-        else
-        {
-            lvItem.SubItems[2].Text = member.Guild;
-            lvItem.SubItems[2].ResetStyle();
+            lvItem.SubItems[2].Text = guild;
+            if (noGuild)
+                lvItem.SubItems[2].ForeColor = Color.DarkGray;
+            else
+                lvItem.SubItems[2].ResetStyle();
         }
 
         var mastery1 = Game.ReferenceManager.GetRefSkillMastery(member.MasteryId1);
@@ -729,8 +770,15 @@ public partial class Main : DoubleBufferedControl
         if (mastery2 != null)
             masteryInfo += $", {mastery2.Name}";
 
-        lvItem.SubItems[3].Text = masteryInfo;
-        lvItem.SubItems[4].Text = location;
+        if (lvItem.Text != member.Name)
+            lvItem.Text = member.Name;
+        var level = member.Level.ToString();
+        if (lvItem.SubItems[1].Text != level)
+            lvItem.SubItems[1].Text = level;
+        if (lvItem.SubItems[3].Text != masteryInfo)
+            lvItem.SubItems[3].Text = masteryInfo;
+        if (lvItem.SubItems[4].Text != location)
+            lvItem.SubItems[4].Text = location;
     }
 
     /// <summary>
@@ -856,27 +904,35 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     /// <param name="sender">The source of the event.</param>
     /// <param name="e">The <see cref="System.EventArgs" /> instance containing the event data.</param>
-    private void btnJoinFormedParty_Click(object sender, EventArgs e)
+    private async void btnJoinFormedParty_Click(object sender, EventArgs e)
     {
         if (lvPartyMatching.SelectedItems.Count != 1)
             return;
 
         var partyNumber = Convert.ToUInt32(lvPartyMatching.SelectedItems[0].Text);
-
         Log.NotifyLang("JoinFormedParty", partyNumber);
-
-        Task.Run(() =>
+        btnJoinFormedParty.Enabled = false;
+        btnJoinFormedParty.Text = LanguageManager.GetLang("Joining");
+        try
         {
-            btnJoinFormedParty.Enabled = false;
-            btnJoinFormedParty.Text = LanguageManager.GetLang("Joining");
-
-            var joiningResult = Bundle.Container.PartyMatching.Join(partyNumber);
-            if (joiningResult)
-                RequestPartyList();
-
-            btnJoinFormedParty.Text = LanguageManager.GetLang("JoinParty");
-            btnJoinFormedParty.Enabled = !joiningResult;
-        });
+            var joiningResult = await Task.Run(() => Bundle.Container.PartyMatching.Join(partyNumber));
+            _uiEvents.Post(() =>
+            {
+                if (joiningResult)
+                    RequestPartyList();
+                btnJoinFormedParty.Text = LanguageManager.GetLang("JoinParty");
+                btnJoinFormedParty.Enabled = !joiningResult;
+            });
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex);
+            _uiEvents.Post(() =>
+            {
+                btnJoinFormedParty.Text = LanguageManager.GetLang("JoinParty");
+                btnJoinFormedParty.Enabled = true;
+            });
+        }
     }
 
     /// <summary>
@@ -895,7 +951,7 @@ public partial class Main : DoubleBufferedControl
     /// </summary>
     /// <param name="sender">The source of the event.</param>
     /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
-    private void btnPartyMatchForm_Click(object sender, EventArgs e)
+    private async void btnPartyMatchForm_Click(object sender, EventArgs e)
     {
         var senderName = (sender as Button).Name;
 
@@ -906,10 +962,21 @@ public partial class Main : DoubleBufferedControl
 
         if (View.PartyWindow.ShowDialog() == DialogResult.OK)
         {
-            if (senderName == nameof(btnPartyMatchForm))
-                Bundle.Container.PartyMatching.Create();
-            else
-                Bundle.Container.PartyMatching.Change();
+            var create = senderName == nameof(btnPartyMatchForm);
+            try
+            {
+                await Task.Run(() =>
+                {
+                    if (create)
+                        Bundle.Container.PartyMatching.Create();
+                    else
+                        Bundle.Container.PartyMatching.Change();
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex);
+            }
         }
     }
 

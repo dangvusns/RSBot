@@ -9,21 +9,23 @@ namespace RSBot.Quest.Views.Sidebar;
 
 public partial class QuestSidebarElement : DoubleBufferedControl
 {
+    private readonly UiEventSubscriptions _uiEvents;
+
     private List<uint> TrackedQuests = new(4);
 
     public QuestSidebarElement()
     {
-        CheckForIllegalCrossThreadCalls = false;
 
         InitializeComponent();
+        _uiEvents = new UiEventSubscriptions(this);
         SubscribeEvents();
         Visible = false;
     }
 
     private void SubscribeEvents()
     {
-        EventManager.SubscribeEvent("OnUpdateQuests", RefreshQuests);
-        EventManager.SubscribeEvent("OnLoadCharacter", RefreshQuests);
+        _uiEvents.Subscribe("OnUpdateQuests", RefreshQuests, coalesce: true);
+        _uiEvents.Subscribe("OnLoadCharacter", RefreshQuests);
     }
 
     public void AddQuest(uint questId)
@@ -47,19 +49,11 @@ public partial class QuestSidebarElement : DoubleBufferedControl
         if (!TrackedQuests.Contains(questId))
             TrackedQuests.Add(questId);
 
-        var questItem = new QuestItem(questId)
-        {
-            Name = questId.ToString(),
-            Dock = DockStyle.Top,
-            Tag = questId,
-        };
+        var questItem = CreateQuestItem(questId);
 
         PlayerConfig.SetArray("RSBot.QuestLog.TrackedQuests", TrackedQuests);
 
-        pQuests.BeginInvoke(() =>
-        {
-            pQuests.Controls.Add(questItem);
-        });
+        pQuests.Controls.Add(questItem);
 
         Refresh();
     }
@@ -68,10 +62,9 @@ public partial class QuestSidebarElement : DoubleBufferedControl
     {
         TrackedQuests = PlayerConfig.GetArray<uint>("RSBot.QuestLog.TrackedQuests").ToList();
 
-        pQuests.BeginInvoke(() =>
-        {
-            pQuests.Controls.RemoveByKey(questId.ToString());
-        });
+        var removed = pQuests.Controls[questId.ToString()];
+        pQuests.Controls.RemoveByKey(questId.ToString());
+        removed?.Dispose();
 
         TrackedQuests.Remove(questId);
 
@@ -116,14 +109,28 @@ public partial class QuestSidebarElement : DoubleBufferedControl
             }
 
             foreach (var item in toRemove)
-                RemoveQuest(item);
+            {
+                var removed = pQuests.Controls[item.ToString()];
+                pQuests.Controls.RemoveByKey(item.ToString());
+                removed?.Dispose();
+                TrackedQuests.Remove(item);
+            }
+            if (toRemove.Count > 0)
+                PlayerConfig.SetArray("RSBot.QuestLog.TrackedQuests", TrackedQuests);
 
             foreach (var item in toAdd)
-                AddQuest(item);
+                pQuests.Controls.Add(CreateQuestItem(item));
         }
 
         Refresh();
     }
+
+    private static QuestItem CreateQuestItem(uint questId) => new(questId)
+    {
+        Name = questId.ToString(),
+        Dock = DockStyle.Top,
+        Tag = questId,
+    };
 
     private bool TryGetQuestItem(uint questId, out QuestItem? questItem)
     {

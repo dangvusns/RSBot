@@ -31,8 +31,11 @@ internal class GatewayPendingCancelingResponse : IPacketHandler
         if (packet.ReadByte() == 0x01)
         {
             AutoLogin.Pending = false;
-            View.PendingWindow?.Hide();
-            View.PendingWindow?.StopClientlessQueueTask();
+            View.Instance.RunOnUi(() =>
+            {
+                View.PendingWindow?.Hide();
+                View.PendingWindow?.StopClientlessQueueTask();
+            });
         }
     }
 }
