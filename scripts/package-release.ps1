@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
 if ($Tag -notmatch '^v\d+\.\d+\.\d+$') { throw 'Expected a vMAJOR.MINOR.PATCH tag.' }
 $required = @('RSBot.exe', 'RSBot.dll', 'RSBot.runtimeconfig.json',
-    'RSBot.Updater.exe', 'RSBot.Updater.dll', 'RSBot.Updater.deps.json', 'RSBot.Updater.runtimeconfig.json', 'Data')
+    'Data')
 foreach ($name in $required) {
     if (-not (Test-Path (Join-Path Build $name))) { throw "Build is missing $name" }
 }

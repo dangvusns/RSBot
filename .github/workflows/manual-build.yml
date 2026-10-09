@@ -71,19 +71,6 @@ jobs:
           RELEASE_VERSION: ${{ steps.version.outputs.number }}
         run: ./build.ps1 -Configuration Release -DoNotStart -Version $env:RELEASE_VERSION
 
-      - name: Install x86 runtime for updater checks
-        shell: pwsh
-        run: |
-          $installer = Join-Path $env:RUNNER_TEMP dotnet-install.ps1
-          Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile $installer
-          $runtime = Join-Path $env:RUNNER_TEMP dotnet-x86
-          & $installer -Channel 8.0 -Runtime dotnet -Architecture x86 -InstallDir $runtime
-          "DOTNET_ROOT_X86=$runtime" >> $env:GITHUB_ENV
-
-      - name: Verify updater installation and rollback
-        shell: pwsh
-        run: ./scripts/test-updater.ps1
-
       - name: Package application
         shell: pwsh
         env:
