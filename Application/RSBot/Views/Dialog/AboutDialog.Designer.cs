@@ -56,7 +56,7 @@
             buttonOk.Location = new System.Drawing.Point(12, 317);
             buttonOk.Name = "buttonOk";
             buttonOk.Radius = 6;
-            buttonOk.ShadowDepth = 4F;
+            buttonOk.ShadowDepth = 0F;
             buttonOk.Size = new System.Drawing.Size(110, 32);
             buttonOk.TabIndex = 0;
             buttonOk.Text = "OK";

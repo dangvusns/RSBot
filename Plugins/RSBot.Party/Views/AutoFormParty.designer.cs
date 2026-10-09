@@ -64,7 +64,7 @@
             btnAccept.Location = new System.Drawing.Point(12, 323);
             btnAccept.Name = "btnAccept";
             btnAccept.Radius = 6;
-            btnAccept.ShadowDepth = 4F;
+            btnAccept.ShadowDepth = 0F;
             btnAccept.Size = new System.Drawing.Size(75, 23);
             btnAccept.TabIndex = 0;
             btnAccept.Text = "Accept";
@@ -78,7 +78,7 @@
             btnCancel.Location = new System.Drawing.Point(271, 323);
             btnCancel.Name = "btnCancel";
             btnCancel.Radius = 6;
-            btnCancel.ShadowDepth = 4F;
+            btnCancel.ShadowDepth = 0F;
             btnCancel.Size = new System.Drawing.Size(75, 23);
             btnCancel.TabIndex = 1;
             btnCancel.Text = "Cancel";
@@ -95,7 +95,7 @@
             gbObjective.Name = "gbObjective";
             gbObjective.Padding = new System.Windows.Forms.Padding(3, 10, 3, 3);
             gbObjective.Radius = 10;
-            gbObjective.ShadowDepth = 4;
+            gbObjective.ShadowDepth = 0;
             gbObjective.Size = new System.Drawing.Size(334, 52);
             gbObjective.TabIndex = 2;
             gbObjective.TabStop = false;
@@ -107,7 +107,7 @@
             rbtn_Thief.Location = new System.Drawing.Point(238, 31);
             rbtn_Thief.Margin = new System.Windows.Forms.Padding(0);
             rbtn_Thief.Name = "rbtn_Thief";
-            rbtn_Thief.Ripple = true;
+            rbtn_Thief.Ripple = false;
             rbtn_Thief.Size = new System.Drawing.Size(93, 15);
             rbtn_Thief.TabIndex = 0;
             rbtn_Thief.TabStop = true;
@@ -121,7 +121,7 @@
             rbtn_Trade.Location = new System.Drawing.Point(149, 31);
             rbtn_Trade.Margin = new System.Windows.Forms.Padding(0);
             rbtn_Trade.Name = "rbtn_Trade";
-            rbtn_Trade.Ripple = true;
+            rbtn_Trade.Ripple = false;
             rbtn_Trade.Size = new System.Drawing.Size(95, 15);
             rbtn_Trade.TabIndex = 0;
             rbtn_Trade.TabStop = true;
@@ -134,7 +134,7 @@
             rbtn_Quest.Location = new System.Drawing.Point(87, 31);
             rbtn_Quest.Margin = new System.Windows.Forms.Padding(0);
             rbtn_Quest.Name = "rbtn_Quest";
-            rbtn_Quest.Ripple = true;
+            rbtn_Quest.Ripple = false;
             rbtn_Quest.Size = new System.Drawing.Size(63, 15);
             rbtn_Quest.TabIndex = 0;
             rbtn_Quest.TabStop = true;
@@ -147,7 +147,7 @@
             rbtn_Hunting.Location = new System.Drawing.Point(12, 31);
             rbtn_Hunting.Margin = new System.Windows.Forms.Padding(0);
             rbtn_Hunting.Name = "rbtn_Hunting";
-            rbtn_Hunting.Ripple = true;
+            rbtn_Hunting.Ripple = false;
             rbtn_Hunting.Size = new System.Drawing.Size(76, 15);
             rbtn_Hunting.TabIndex = 0;
             rbtn_Hunting.TabStop = true;
@@ -166,7 +166,7 @@
             groupBox2.Name = "groupBox2";
             groupBox2.Padding = new System.Windows.Forms.Padding(3, 10, 3, 3);
             groupBox2.Radius = 10;
-            groupBox2.ShadowDepth = 4;
+            groupBox2.ShadowDepth = 0;
             groupBox2.Size = new System.Drawing.Size(334, 63);
             groupBox2.TabIndex = 3;
             groupBox2.TabStop = false;
@@ -235,7 +235,7 @@
             groupBox3.Name = "groupBox3";
             groupBox3.Padding = new System.Windows.Forms.Padding(3, 10, 3, 3);
             groupBox3.Radius = 10;
-            groupBox3.ShadowDepth = 4;
+            groupBox3.ShadowDepth = 0;
             groupBox3.Size = new System.Drawing.Size(334, 57);
             groupBox3.TabIndex = 3;
             groupBox3.TabStop = false;
@@ -299,7 +299,7 @@
             groupBox4.Name = "groupBox4";
             groupBox4.Padding = new System.Windows.Forms.Padding(3, 10, 3, 3);
             groupBox4.Radius = 10;
-            groupBox4.ShadowDepth = 4;
+            groupBox4.ShadowDepth = 0;
             groupBox4.Size = new System.Drawing.Size(334, 55);
             groupBox4.TabIndex = 3;
             groupBox4.TabStop = false;
@@ -327,7 +327,7 @@
             groupBox5.Name = "groupBox5";
             groupBox5.Padding = new System.Windows.Forms.Padding(3, 10, 3, 3);
             groupBox5.Radius = 10;
-            groupBox5.ShadowDepth = 4;
+            groupBox5.ShadowDepth = 0;
             groupBox5.Size = new System.Drawing.Size(334, 54);
             groupBox5.TabIndex = 3;
             groupBox5.TabStop = false;
@@ -341,7 +341,7 @@
             cb_AutoReform.Margin = new System.Windows.Forms.Padding(0);
             cb_AutoReform.MouseLocation = new System.Drawing.Point(-1, -1);
             cb_AutoReform.Name = "cb_AutoReform";
-            cb_AutoReform.Ripple = true;
+            cb_AutoReform.Ripple = false;
             cb_AutoReform.Size = new System.Drawing.Size(91, 15);
             cb_AutoReform.TabIndex = 0;
             cb_AutoReform.Text = "Auto Reform";
@@ -356,7 +356,7 @@
             cb_AutoAccept.Margin = new System.Windows.Forms.Padding(0);
             cb_AutoAccept.MouseLocation = new System.Drawing.Point(-1, -1);
             cb_AutoAccept.Name = "cb_AutoAccept";
-            cb_AutoAccept.Ripple = true;
+            cb_AutoAccept.Ripple = false;
             cb_AutoAccept.Size = new System.Drawing.Size(89, 15);
             cb_AutoAccept.TabIndex = 0;
             cb_AutoAccept.Text = "Auto Accept";

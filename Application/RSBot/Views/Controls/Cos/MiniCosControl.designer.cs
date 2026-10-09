@@ -149,7 +149,7 @@
             panel.Name = "panel";
             panel.Padding = new System.Windows.Forms.Padding(3);
             panel.Radius = 8;
-            panel.ShadowDepth = 4F;
+            panel.ShadowDepth = 0F;
             panel.Size = new System.Drawing.Size(40, 60);
             panel.TabIndex = 1;
             panel.Click += OnClick_Redirector;

@@ -136,7 +136,7 @@ namespace RSBot.Views
             bottomPanel.Margin = new Padding(4);
             bottomPanel.Name = "bottomPanel";
             bottomPanel.Radius = 0;
-            bottomPanel.ShadowDepth = 8F;
+            bottomPanel.ShadowDepth = 0F;
             bottomPanel.Size = new System.Drawing.Size(1255, 65);
             bottomPanel.TabIndex = 2;
             // 
@@ -149,7 +149,7 @@ namespace RSBot.Views
             buttonConfig.Margin = new Padding(4);
             buttonConfig.Name = "buttonConfig";
             buttonConfig.Radius = 6;
-            buttonConfig.ShadowDepth = 4F;
+            buttonConfig.ShadowDepth = 0F;
             buttonConfig.Size = new System.Drawing.Size(71, 23);
             buttonConfig.TabIndex = 12;
             buttonConfig.Text = "IP Bind";
@@ -168,7 +168,7 @@ namespace RSBot.Views
             comboServer.Margin = new Padding(4);
             comboServer.Name = "comboServer";
             comboServer.Radius = 5;
-            comboServer.ShadowDepth = 4F;
+            comboServer.ShadowDepth = 0F;
             comboServer.Size = new System.Drawing.Size(164, 28);
             comboServer.TabIndex = 11;
             comboServer.SelectedIndexChanged += comboServer_SelectedIndexChanged;
@@ -185,7 +185,7 @@ namespace RSBot.Views
             comboDivision.Margin = new Padding(4);
             comboDivision.Name = "comboDivision";
             comboDivision.Radius = 5;
-            comboDivision.ShadowDepth = 4F;
+            comboDivision.ShadowDepth = 0F;
             comboDivision.Size = new System.Drawing.Size(113, 28);
             comboDivision.TabIndex = 10;
             comboDivision.SelectedIndexChanged += comboDivision_SelectedIndexChanged;
@@ -200,7 +200,7 @@ namespace RSBot.Views
             btnSave.Margin = new Padding(4);
             btnSave.Name = "btnSave";
             btnSave.Radius = 6;
-            btnSave.ShadowDepth = 4F;
+            btnSave.ShadowDepth = 0F;
             btnSave.Size = new System.Drawing.Size(125, 34);
             btnSave.TabIndex = 1;
             btnSave.TabStop = false;
@@ -221,7 +221,7 @@ namespace RSBot.Views
             btnStartStop.Margin = new Padding(4);
             btnStartStop.Name = "btnStartStop";
             btnStartStop.Radius = 6;
-            btnStartStop.ShadowDepth = 4F;
+            btnStartStop.ShadowDepth = 0F;
             btnStartStop.Size = new System.Drawing.Size(125, 34);
             btnStartStop.TabIndex = 0;
             btnStartStop.TabStop = false;

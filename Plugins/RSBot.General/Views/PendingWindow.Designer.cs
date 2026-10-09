@@ -138,7 +138,7 @@
             buttonCancel.Location = new System.Drawing.Point(152, 207);
             buttonCancel.Name = "buttonCancel";
             buttonCancel.Radius = 6;
-            buttonCancel.ShadowDepth = 4F;
+            buttonCancel.ShadowDepth = 0F;
             buttonCancel.Size = new System.Drawing.Size(191, 23);
             buttonCancel.TabIndex = 1;
             buttonCancel.Text = "Cancel the waiting";
@@ -152,7 +152,7 @@
             buttonHide.Location = new System.Drawing.Point(70, 207);
             buttonHide.Name = "buttonHide";
             buttonHide.Radius = 6;
-            buttonHide.ShadowDepth = 4F;
+            buttonHide.ShadowDepth = 0F;
             buttonHide.Size = new System.Drawing.Size(72, 23);
             buttonHide.TabIndex = 2;
             buttonHide.Text = "Hide";

@@ -96,7 +96,7 @@
             btnSearch.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnSearch.Name = "btnSearch";
             btnSearch.Radius = 8;
-            btnSearch.ShadowDepth = 3F;
+            btnSearch.ShadowDepth = 0F;
             btnSearch.Size = new System.Drawing.Size(114, 32);
             btnSearch.TabIndex = 1;
             btnSearch.Text = "Search";
@@ -112,7 +112,7 @@
             btnRefreshWeb.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnRefreshWeb.Name = "btnRefreshWeb";
             btnRefreshWeb.Radius = 8;
-            btnRefreshWeb.ShadowDepth = 2F;
+            btnRefreshWeb.ShadowDepth = 0F;
             btnRefreshWeb.Size = new System.Drawing.Size(137, 32);
             btnRefreshWeb.TabIndex = 2;
             btnRefreshWeb.Text = "Refresh";

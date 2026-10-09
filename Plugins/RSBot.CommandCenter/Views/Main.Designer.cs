@@ -54,7 +54,7 @@
             checkEnable.Margin = new System.Windows.Forms.Padding(0);
             checkEnable.MouseLocation = new System.Drawing.Point(-1, -1);
             checkEnable.Name = "checkEnable";
-            checkEnable.Ripple = true;
+            checkEnable.Ripple = false;
             checkEnable.Size = new System.Drawing.Size(161, 30);
             checkEnable.TabIndex = 0;
             checkEnable.Text = "Enable command center";
@@ -67,7 +67,7 @@
             btnResetToDefaults.Location = new System.Drawing.Point(8, 371);
             btnResetToDefaults.Name = "btnResetToDefaults";
             btnResetToDefaults.Radius = 6;
-            btnResetToDefaults.ShadowDepth = 4F;
+            btnResetToDefaults.ShadowDepth = 0F;
             btnResetToDefaults.Size = new System.Drawing.Size(118, 23);
             btnResetToDefaults.TabIndex = 3;
             btnResetToDefaults.Text = "Reset to defaults";
@@ -108,7 +108,7 @@
             panelActions.Location = new System.Drawing.Point(3, 3);
             panelActions.Name = "panelActions";
             panelActions.Radius = 10;
-            panelActions.ShadowDepth = 4F;
+            panelActions.ShadowDepth = 0F;
             panelActions.Size = new System.Drawing.Size(371, 321);
             panelActions.TabIndex = 1;
             // 
@@ -177,7 +177,7 @@
             btnSave.Location = new System.Drawing.Point(311, 371);
             btnSave.Name = "btnSave";
             btnSave.Radius = 6;
-            btnSave.ShadowDepth = 4F;
+            btnSave.ShadowDepth = 0F;
             btnSave.Size = new System.Drawing.Size(75, 23);
             btnSave.TabIndex = 4;
             btnSave.Text = "Save";

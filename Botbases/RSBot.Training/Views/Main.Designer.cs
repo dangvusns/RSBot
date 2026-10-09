@@ -113,7 +113,7 @@
             groupBox2.Name = "groupBox2";
             groupBox2.Padding = new System.Windows.Forms.Padding(2, 7, 2, 3);
             groupBox2.Radius = 10;
-            groupBox2.ShadowDepth = 4;
+            groupBox2.ShadowDepth = 0;
             groupBox2.Size = new System.Drawing.Size(221, 214);
             groupBox2.TabIndex = 1;
             groupBox2.TabStop = false;
@@ -219,7 +219,7 @@
             groupBoxWalkback.Name = "groupBoxWalkback";
             groupBoxWalkback.Padding = new System.Windows.Forms.Padding(3, 10, 3, 3);
             groupBoxWalkback.Radius = 10;
-            groupBoxWalkback.ShadowDepth = 4;
+            groupBoxWalkback.ShadowDepth = 0;
             groupBoxWalkback.Size = new System.Drawing.Size(478, 117);
             groupBoxWalkback.TabIndex = 2;
             groupBoxWalkback.TabStop = false;
@@ -231,7 +231,7 @@
             btnRemove.Location = new System.Drawing.Point(406, 27);
             btnRemove.Name = "btnRemove";
             btnRemove.Radius = 6;
-            btnRemove.ShadowDepth = 4F;
+            btnRemove.ShadowDepth = 0F;
             btnRemove.Size = new System.Drawing.Size(57, 23);
             btnRemove.TabIndex = 8;
             btnRemove.Text = "Remove";
@@ -259,7 +259,7 @@
             checkBoxUseReverse.Margin = new System.Windows.Forms.Padding(0);
             checkBoxUseReverse.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxUseReverse.Name = "checkBoxUseReverse";
-            checkBoxUseReverse.Ripple = true;
+            checkBoxUseReverse.Ripple = false;
             checkBoxUseReverse.Size = new System.Drawing.Size(95, 30);
             checkBoxUseReverse.TabIndex = 7;
             checkBoxUseReverse.Text = "Use Reverse";
@@ -277,7 +277,7 @@
             checkUseSpeedDrug.Margin = new System.Windows.Forms.Padding(0);
             checkUseSpeedDrug.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseSpeedDrug.Name = "checkUseSpeedDrug";
-            checkUseSpeedDrug.Ripple = true;
+            checkUseSpeedDrug.Ripple = false;
             checkUseSpeedDrug.Size = new System.Drawing.Size(114, 30);
             checkUseSpeedDrug.TabIndex = 7;
             checkUseSpeedDrug.Text = "Use speed drug";
@@ -295,7 +295,7 @@
             checkCastBuffs.Margin = new System.Windows.Forms.Padding(0);
             checkCastBuffs.MouseLocation = new System.Drawing.Point(-1, -1);
             checkCastBuffs.Name = "checkCastBuffs";
-            checkCastBuffs.Ripple = true;
+            checkCastBuffs.Ripple = false;
             checkCastBuffs.Size = new System.Drawing.Size(86, 30);
             checkCastBuffs.TabIndex = 6;
             checkCastBuffs.Text = "Cast buffs";
@@ -313,7 +313,7 @@
             checkUseMount.Margin = new System.Windows.Forms.Padding(0);
             checkUseMount.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseMount.Name = "checkUseMount";
-            checkUseMount.Ripple = true;
+            checkUseMount.Ripple = false;
             checkUseMount.Size = new System.Drawing.Size(150, 30);
             checkUseMount.TabIndex = 3;
             checkUseMount.Text = "Use mount if available";
@@ -326,7 +326,7 @@
             btnBrowse.Location = new System.Drawing.Point(406, 51);
             btnBrowse.Name = "btnBrowse";
             btnBrowse.Radius = 6;
-            btnBrowse.ShadowDepth = 4F;
+            btnBrowse.ShadowDepth = 0F;
             btnBrowse.Size = new System.Drawing.Size(57, 23);
             btnBrowse.TabIndex = 3;
             btnBrowse.Text = "Browse";
@@ -373,7 +373,7 @@
             checkBerzerkWhenFull.Margin = new System.Windows.Forms.Padding(0);
             checkBerzerkWhenFull.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBerzerkWhenFull.Name = "checkBerzerkWhenFull";
-            checkBerzerkWhenFull.Ripple = true;
+            checkBerzerkWhenFull.Ripple = false;
             checkBerzerkWhenFull.Size = new System.Drawing.Size(187, 30);
             checkBerzerkWhenFull.TabIndex = 4;
             checkBerzerkWhenFull.Text = "Enter berzerk mode when full";
@@ -389,7 +389,7 @@
             checkBerserkOnMonsterRarity.Margin = new System.Windows.Forms.Padding(0);
             checkBerserkOnMonsterRarity.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBerserkOnMonsterRarity.Name = "checkBerserkOnMonsterRarity";
-            checkBerserkOnMonsterRarity.Ripple = true;
+            checkBerserkOnMonsterRarity.Ripple = false;
             checkBerserkOnMonsterRarity.Size = new System.Drawing.Size(318, 30);
             checkBerserkOnMonsterRarity.TabIndex = 4;
             checkBerserkOnMonsterRarity.Text = "Enter berserk mode when attack specific monster type";
@@ -409,7 +409,7 @@
             groupBoxBerserk.Name = "groupBoxBerserk";
             groupBoxBerserk.Padding = new System.Windows.Forms.Padding(3, 10, 3, 3);
             groupBoxBerserk.Radius = 10;
-            groupBoxBerserk.ShadowDepth = 4;
+            groupBoxBerserk.ShadowDepth = 0;
             groupBoxBerserk.Size = new System.Drawing.Size(478, 150);
             groupBoxBerserk.TabIndex = 5;
             groupBoxBerserk.TabStop = false;
@@ -456,7 +456,7 @@
             checkBerzerkAvoidance.Margin = new System.Windows.Forms.Padding(0);
             checkBerzerkAvoidance.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBerzerkAvoidance.Name = "checkBerzerkAvoidance";
-            checkBerzerkAvoidance.Ripple = true;
+            checkBerzerkAvoidance.Ripple = false;
             checkBerzerkAvoidance.Size = new System.Drawing.Size(343, 30);
             checkBerzerkAvoidance.TabIndex = 5;
             checkBerzerkAvoidance.Text = "If being attacked by a monster type that should be avoided";
@@ -472,7 +472,7 @@
             checkBerzerkMonsterAmount.Margin = new System.Windows.Forms.Padding(0);
             checkBerzerkMonsterAmount.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBerzerkMonsterAmount.Name = "checkBerzerkMonsterAmount";
-            checkBerzerkMonsterAmount.Ripple = true;
+            checkBerzerkMonsterAmount.Ripple = false;
             checkBerzerkMonsterAmount.Size = new System.Drawing.Size(185, 30);
             checkBerzerkMonsterAmount.TabIndex = 4;
             checkBerzerkMonsterAmount.Text = "Being attacked by more than";
@@ -501,7 +501,7 @@
             groupBoxArea.Name = "groupBoxArea";
             groupBoxArea.Padding = new System.Windows.Forms.Padding(3, 10, 3, 3);
             groupBoxArea.Radius = 10;
-            groupBoxArea.ShadowDepth = 4;
+            groupBoxArea.ShadowDepth = 0;
             groupBoxArea.Size = new System.Drawing.Size(221, 250);
             groupBoxArea.TabIndex = 0;
             groupBoxArea.TabStop = false;
@@ -514,7 +514,7 @@
             btnApplyArea.Location = new System.Drawing.Point(45, 139);
             btnApplyArea.Name = "btnApplyArea";
             btnApplyArea.Radius = 6;
-            btnApplyArea.ShadowDepth = 4F;
+            btnApplyArea.ShadowDepth = 0F;
             btnApplyArea.Size = new System.Drawing.Size(24, 24);
             btnApplyArea.TabIndex = 10;
             btnApplyArea.Text = "v";
@@ -559,7 +559,7 @@
             buttonSelectTrainingArea.Location = new System.Drawing.Point(179, 139);
             buttonSelectTrainingArea.Name = "buttonSelectTrainingArea";
             buttonSelectTrainingArea.Radius = 6;
-            buttonSelectTrainingArea.ShadowDepth = 4F;
+            buttonSelectTrainingArea.ShadowDepth = 0F;
             buttonSelectTrainingArea.Size = new System.Drawing.Size(24, 24);
             buttonSelectTrainingArea.TabIndex = 7;
             buttonSelectTrainingArea.Text = "...";
@@ -605,7 +605,7 @@
             radioWalkAround.Location = new System.Drawing.Point(35, 224);
             radioWalkAround.Margin = new System.Windows.Forms.Padding(0);
             radioWalkAround.Name = "radioWalkAround";
-            radioWalkAround.Ripple = true;
+            radioWalkAround.Ripple = false;
             radioWalkAround.Size = new System.Drawing.Size(100, 30);
             radioWalkAround.TabIndex = 5;
             radioWalkAround.TabStop = true;
@@ -618,7 +618,7 @@
             radioCenter.Location = new System.Drawing.Point(35, 198);
             radioCenter.Margin = new System.Windows.Forms.Padding(0);
             radioCenter.Name = "radioCenter";
-            radioCenter.Ripple = true;
+            radioCenter.Ripple = false;
             radioCenter.Size = new System.Drawing.Size(127, 30);
             radioCenter.TabIndex = 4;
             radioCenter.Text = "Go back to center";
@@ -630,7 +630,7 @@
             btnGetCurrent.Location = new System.Drawing.Point(76, 139);
             btnGetCurrent.Name = "btnGetCurrent";
             btnGetCurrent.Radius = 6;
-            btnGetCurrent.ShadowDepth = 4F;
+            btnGetCurrent.ShadowDepth = 0F;
             btnGetCurrent.Size = new System.Drawing.Size(97, 23);
             btnGetCurrent.TabIndex = 3;
             btnGetCurrent.Text = "Current";
@@ -748,7 +748,7 @@
             groupBoxAdvanced.Name = "groupBoxAdvanced";
             groupBoxAdvanced.Padding = new System.Windows.Forms.Padding(3, 8, 3, 3);
             groupBoxAdvanced.Radius = 10;
-            groupBoxAdvanced.ShadowDepth = 4;
+            groupBoxAdvanced.ShadowDepth = 0;
             groupBoxAdvanced.Size = new System.Drawing.Size(478, 158);
             groupBoxAdvanced.TabIndex = 6;
             groupBoxAdvanced.TabStop = false;
@@ -763,7 +763,7 @@
             checkBoxDontFollowMobs.Margin = new System.Windows.Forms.Padding(0);
             checkBoxDontFollowMobs.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxDontFollowMobs.Name = "checkBoxDontFollowMobs";
-            checkBoxDontFollowMobs.Ripple = true;
+            checkBoxDontFollowMobs.Ripple = false;
             checkBoxDontFollowMobs.Size = new System.Drawing.Size(262, 30);
             checkBoxDontFollowMobs.TabIndex = 8;
             checkBoxDontFollowMobs.Text = "Don't follow mobs outside the training area";
@@ -790,7 +790,7 @@
             checkAttackWeakerFirst.Margin = new System.Windows.Forms.Padding(0);
             checkAttackWeakerFirst.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAttackWeakerFirst.Name = "checkAttackWeakerFirst";
-            checkAttackWeakerFirst.Ripple = true;
+            checkAttackWeakerFirst.Ripple = false;
             checkAttackWeakerFirst.Size = new System.Drawing.Size(263, 30);
             checkAttackWeakerFirst.TabIndex = 1;
             checkAttackWeakerFirst.Text = "If avoided: counter attack weaker mobs first";
@@ -806,7 +806,7 @@
             checkBoxDimensionPillar.Margin = new System.Windows.Forms.Padding(0);
             checkBoxDimensionPillar.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxDimensionPillar.Name = "checkBoxDimensionPillar";
-            checkBoxDimensionPillar.Ripple = true;
+            checkBoxDimensionPillar.Ripple = false;
             checkBoxDimensionPillar.Size = new System.Drawing.Size(156, 30);
             checkBoxDimensionPillar.TabIndex = 0;
             checkBoxDimensionPillar.Text = "Ignore Dimension Pillar";
@@ -822,7 +822,7 @@
             checkBoxAvoidKillSteal.Margin = new System.Windows.Forms.Padding(0);
             checkBoxAvoidKillSteal.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxAvoidKillSteal.Name = "checkBoxAvoidKillSteal";
-            checkBoxAvoidKillSteal.Ripple = true;
+            checkBoxAvoidKillSteal.Ripple = false;
             checkBoxAvoidKillSteal.Size = new System.Drawing.Size(232, 30);
             checkBoxAvoidKillSteal.TabIndex = 9;
             checkBoxAvoidKillSteal.Text = "Don't attack mobs others are fighting";
@@ -838,7 +838,7 @@
             checkBoxSwitchTargetIfStolen.Margin = new System.Windows.Forms.Padding(0);
             checkBoxSwitchTargetIfStolen.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxSwitchTargetIfStolen.Name = "checkBoxSwitchTargetIfStolen";
-            checkBoxSwitchTargetIfStolen.Ripple = true;
+            checkBoxSwitchTargetIfStolen.Ripple = false;
             checkBoxSwitchTargetIfStolen.Size = new System.Drawing.Size(212, 30);
             checkBoxSwitchTargetIfStolen.TabIndex = 10;
             checkBoxSwitchTargetIfStolen.Text = "Switch target if others attack it";
@@ -854,7 +854,7 @@
             checkBoxPetAttackTarget.Margin = new System.Windows.Forms.Padding(0);
             checkBoxPetAttackTarget.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxPetAttackTarget.Name = "checkBoxPetAttackTarget";
-            checkBoxPetAttackTarget.Ripple = true;
+            checkBoxPetAttackTarget.Ripple = false;
             checkBoxPetAttackTarget.Size = new System.Drawing.Size(150, 30);
             checkBoxPetAttackTarget.TabIndex = 11;
             checkBoxPetAttackTarget.Text = "Pet attacks my target";
@@ -870,7 +870,7 @@
             checkBoxDefendPet.Margin = new System.Windows.Forms.Padding(0);
             checkBoxDefendPet.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxDefendPet.Name = "checkBoxDefendPet";
-            checkBoxDefendPet.Ripple = true;
+            checkBoxDefendPet.Ripple = false;
             checkBoxDefendPet.Size = new System.Drawing.Size(146, 30);
             checkBoxDefendPet.TabIndex = 12;
             checkBoxDefendPet.Text = "Defend my attack pet";
@@ -886,7 +886,7 @@
             checkBoxKillWeakestAttacker.Margin = new System.Windows.Forms.Padding(0);
             checkBoxKillWeakestAttacker.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxKillWeakestAttacker.Name = "checkBoxKillWeakestAttacker";
-            checkBoxKillWeakestAttacker.Ripple = true;
+            checkBoxKillWeakestAttacker.Ripple = false;
             checkBoxKillWeakestAttacker.Size = new System.Drawing.Size(200, 30);
             checkBoxKillWeakestAttacker.TabIndex = 13;
             checkBoxKillWeakestAttacker.Text = "Kill the weakest attacker first";

@@ -49,7 +49,7 @@
             panel1.Margin = new System.Windows.Forms.Padding(8);
             panel1.Name = "panel1";
             panel1.Radius = 10;
-            panel1.ShadowDepth = 4F;
+            panel1.ShadowDepth = 0F;
             panel1.Size = new System.Drawing.Size(239, 56);
             panel1.TabIndex = 0;
             // 
@@ -61,7 +61,7 @@
             btnRemove.Location = new System.Drawing.Point(214, 3);
             btnRemove.Name = "btnRemove";
             btnRemove.Radius = 16;
-            btnRemove.ShadowDepth = 1F;
+            btnRemove.ShadowDepth = 0F;
             btnRemove.Size = new System.Drawing.Size(18, 18);
             btnRemove.TabIndex = 2;
             btnRemove.Text = "x";

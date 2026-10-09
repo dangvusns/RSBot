@@ -59,7 +59,7 @@
             panel1.Location = new System.Drawing.Point(1, 32);
             panel1.Name = "panel1";
             panel1.Radius = 0;
-            panel1.ShadowDepth = 4F;
+            panel1.ShadowDepth = 0F;
             panel1.Size = new System.Drawing.Size(491, 53);
             panel1.TabIndex = 0;
             // 
@@ -73,7 +73,7 @@
             btnStartStop.Location = new System.Drawing.Point(13, 15);
             btnStartStop.Name = "btnStartStop";
             btnStartStop.Radius = 8;
-            btnStartStop.ShadowDepth = 4F;
+            btnStartStop.ShadowDepth = 0F;
             btnStartStop.Size = new System.Drawing.Size(74, 27);
             btnStartStop.TabIndex = 6;
             btnStartStop.TabStop = false;
@@ -92,7 +92,7 @@
             btnSave.Location = new System.Drawing.Point(384, 15);
             btnSave.Name = "btnSave";
             btnSave.Radius = 8;
-            btnSave.ShadowDepth = 4F;
+            btnSave.ShadowDepth = 0F;
             btnSave.Size = new System.Drawing.Size(95, 27);
             btnSave.TabIndex = 5;
             btnSave.TabStop = false;
@@ -127,7 +127,7 @@
             btnRun.Location = new System.Drawing.Point(174, 15);
             btnRun.Name = "btnRun";
             btnRun.Radius = 6;
-            btnRun.ShadowDepth = 4F;
+            btnRun.ShadowDepth = 0F;
             btnRun.Size = new System.Drawing.Size(30, 27);
             btnRun.TabIndex = 3;
             btnRun.Text = "►";
@@ -143,7 +143,7 @@
             btnClear.Location = new System.Drawing.Point(93, 15);
             btnClear.Name = "btnClear";
             btnClear.Radius = 8;
-            btnClear.ShadowDepth = 4F;
+            btnClear.ShadowDepth = 0F;
             btnClear.Size = new System.Drawing.Size(75, 27);
             btnClear.TabIndex = 0;
             btnClear.Text = "Clear";
@@ -174,7 +174,7 @@
             panel2.Location = new System.Drawing.Point(1, 483);
             panel2.Name = "panel2";
             panel2.Radius = 0;
-            panel2.ShadowDepth = 4F;
+            panel2.ShadowDepth = 0F;
             panel2.Size = new System.Drawing.Size(491, 77);
             panel2.TabIndex = 2;
             // 
@@ -203,7 +203,7 @@
             btnAddCommand.Location = new System.Drawing.Point(255, 8);
             btnAddCommand.Name = "btnAddCommand";
             btnAddCommand.Radius = 8;
-            btnAddCommand.ShadowDepth = 4F;
+            btnAddCommand.ShadowDepth = 0F;
             btnAddCommand.Size = new System.Drawing.Size(93, 27);
             btnAddCommand.TabIndex = 2;
             btnAddCommand.Text = "Add";
@@ -221,7 +221,7 @@
             comboCommand.Location = new System.Drawing.Point(93, 9);
             comboCommand.Name = "comboCommand";
             comboCommand.Radius = 5;
-            comboCommand.ShadowDepth = 4F;
+            comboCommand.ShadowDepth = 0F;
             comboCommand.Size = new System.Drawing.Size(156, 23);
             comboCommand.TabIndex = 1;
             // 

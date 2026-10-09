@@ -64,7 +64,7 @@
             btnLoadPlugin.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnLoadPlugin.Name = "btnLoadPlugin";
             btnLoadPlugin.Radius = 8;
-            btnLoadPlugin.ShadowDepth = 3F;
+            btnLoadPlugin.ShadowDepth = 0F;
             btnLoadPlugin.Size = new System.Drawing.Size(171, 32);
             btnLoadPlugin.TabIndex = 0;
             btnLoadPlugin.Text = "Load from File";
@@ -80,7 +80,7 @@
             btnRefreshLocal.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnRefreshLocal.Name = "btnRefreshLocal";
             btnRefreshLocal.Radius = 8;
-            btnRefreshLocal.ShadowDepth = 2F;
+            btnRefreshLocal.ShadowDepth = 0F;
             btnRefreshLocal.Size = new System.Drawing.Size(137, 32);
             btnRefreshLocal.TabIndex = 1;
             btnRefreshLocal.Text = "Refresh";

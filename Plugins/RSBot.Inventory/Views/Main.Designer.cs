@@ -205,7 +205,7 @@
             panel1.Name = "panel1";
             panel1.Padding = new System.Windows.Forms.Padding(3);
             panel1.Radius = 0;
-            panel1.ShadowDepth = 4F;
+            panel1.ShadowDepth = 0F;
             panel1.Size = new System.Drawing.Size(792, 45);
             panel1.TabIndex = 6;
             // 
@@ -232,7 +232,7 @@
             checkAutoSort.Margin = new System.Windows.Forms.Padding(0);
             checkAutoSort.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAutoSort.Name = "checkAutoSort";
-            checkAutoSort.Ripple = true;
+            checkAutoSort.Ripple = false;
             checkAutoSort.Size = new System.Drawing.Size(72, 15);
             checkAutoSort.TabIndex = 6;
             checkAutoSort.Text = "Auto sort";
@@ -246,7 +246,7 @@
             btnSort.Location = new System.Drawing.Point(714, 2);
             btnSort.Name = "btnSort";
             btnSort.Radius = 6;
-            btnSort.ShadowDepth = 4F;
+            btnSort.ShadowDepth = 0F;
             btnSort.Size = new System.Drawing.Size(75, 23);
             btnSort.TabIndex = 5;
             btnSort.Text = "Sort";
@@ -260,7 +260,7 @@
             buttonInventory.Location = new System.Drawing.Point(9, 8);
             buttonInventory.Name = "buttonInventory";
             buttonInventory.Radius = 6;
-            buttonInventory.ShadowDepth = 4F;
+            buttonInventory.ShadowDepth = 0F;
             buttonInventory.Size = new System.Drawing.Size(62, 22);
             buttonInventory.TabIndex = 0;
             buttonInventory.Text = "Inventory";
@@ -274,7 +274,7 @@
             buttonEquipment.Location = new System.Drawing.Point(77, 8);
             buttonEquipment.Name = "buttonEquipment";
             buttonEquipment.Radius = 6;
-            buttonEquipment.ShadowDepth = 4F;
+            buttonEquipment.ShadowDepth = 0F;
             buttonEquipment.Size = new System.Drawing.Size(69, 22);
             buttonEquipment.TabIndex = 1;
             buttonEquipment.Text = "Equipment";
@@ -288,7 +288,7 @@
             buttonAvatars.Location = new System.Drawing.Point(245, 8);
             buttonAvatars.Name = "buttonAvatars";
             buttonAvatars.Radius = 6;
-            buttonAvatars.ShadowDepth = 4F;
+            buttonAvatars.ShadowDepth = 0F;
             buttonAvatars.Size = new System.Drawing.Size(57, 22);
             buttonAvatars.TabIndex = 2;
             buttonAvatars.Text = "Avatars";
@@ -302,7 +302,7 @@
             buttonGrabpet.Location = new System.Drawing.Point(308, 8);
             buttonGrabpet.Name = "buttonGrabpet";
             buttonGrabpet.Radius = 6;
-            buttonGrabpet.ShadowDepth = 4F;
+            buttonGrabpet.ShadowDepth = 0F;
             buttonGrabpet.Size = new System.Drawing.Size(59, 22);
             buttonGrabpet.TabIndex = 3;
             buttonGrabpet.Text = "Grab Pet";
@@ -329,7 +329,7 @@
             topPanel.Name = "topPanel";
             topPanel.Padding = new System.Windows.Forms.Padding(8);
             topPanel.Radius = 0;
-            topPanel.ShadowDepth = 4F;
+            topPanel.ShadowDepth = 0F;
             topPanel.Size = new System.Drawing.Size(792, 38);
             topPanel.TabIndex = 8;
             // 
@@ -340,7 +340,7 @@
             buttonSpecialty.Location = new System.Drawing.Point(553, 8);
             buttonSpecialty.Name = "buttonSpecialty";
             buttonSpecialty.Radius = 6;
-            buttonSpecialty.ShadowDepth = 4F;
+            buttonSpecialty.ShadowDepth = 0F;
             buttonSpecialty.Size = new System.Drawing.Size(66, 22);
             buttonSpecialty.TabIndex = 7;
             buttonSpecialty.Text = "Specialty";
@@ -354,7 +354,7 @@
             buttonGuildStorage.Location = new System.Drawing.Point(684, 8);
             buttonGuildStorage.Name = "buttonGuildStorage";
             buttonGuildStorage.Radius = 6;
-            buttonGuildStorage.ShadowDepth = 4F;
+            buttonGuildStorage.ShadowDepth = 0F;
             buttonGuildStorage.Size = new System.Drawing.Size(81, 22);
             buttonGuildStorage.TabIndex = 5;
             buttonGuildStorage.Text = "Guild Storage";
@@ -368,7 +368,7 @@
             buttonFellowPet.Location = new System.Drawing.Point(373, 8);
             buttonFellowPet.Name = "buttonFellowPet";
             buttonFellowPet.Radius = 6;
-            buttonFellowPet.ShadowDepth = 4F;
+            buttonFellowPet.ShadowDepth = 0F;
             buttonFellowPet.Size = new System.Drawing.Size(84, 22);
             buttonFellowPet.TabIndex = 9;
             buttonFellowPet.Text = "Fellow Pet";
@@ -382,7 +382,7 @@
             buttonJobTransport.Location = new System.Drawing.Point(463, 8);
             buttonJobTransport.Name = "buttonJobTransport";
             buttonJobTransport.Radius = 6;
-            buttonJobTransport.ShadowDepth = 4F;
+            buttonJobTransport.ShadowDepth = 0F;
             buttonJobTransport.Size = new System.Drawing.Size(84, 22);
             buttonJobTransport.TabIndex = 6;
             buttonJobTransport.Text = "Job Transport";
@@ -396,7 +396,7 @@
             buttonStorage.Location = new System.Drawing.Point(625, 8);
             buttonStorage.Name = "buttonStorage";
             buttonStorage.Radius = 6;
-            buttonStorage.ShadowDepth = 4F;
+            buttonStorage.ShadowDepth = 0F;
             buttonStorage.Size = new System.Drawing.Size(53, 22);
             buttonStorage.TabIndex = 4;
             buttonStorage.Text = "Storage";
@@ -410,7 +410,7 @@
             buttonJobEquipment.Location = new System.Drawing.Point(152, 8);
             buttonJobEquipment.Name = "buttonJobEquipment";
             buttonJobEquipment.Radius = 6;
-            buttonJobEquipment.ShadowDepth = 4F;
+            buttonJobEquipment.ShadowDepth = 0F;
             buttonJobEquipment.Size = new System.Drawing.Size(87, 22);
             buttonJobEquipment.TabIndex = 8;
             buttonJobEquipment.Text = "Job Equipment";

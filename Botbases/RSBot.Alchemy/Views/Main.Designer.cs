@@ -86,7 +86,7 @@ namespace RSBot.Alchemy.Views
             groupItem.Name = "groupItem";
             groupItem.Padding = new Padding(4, 12, 4, 3);
             groupItem.Radius = 10;
-            groupItem.ShadowDepth = 4;
+            groupItem.ShadowDepth = 0;
             groupItem.Size = new Size(322, 331);
             groupItem.TabIndex = 0;
             groupItem.TabStop = false;
@@ -176,7 +176,7 @@ namespace RSBot.Alchemy.Views
             comboItem.Margin = new Padding(4, 3, 4, 3);
             comboItem.Name = "comboItem";
             comboItem.Radius = 5;
-            comboItem.ShadowDepth = 4F;
+            comboItem.ShadowDepth = 0F;
             comboItem.Size = new Size(255, 23);
             comboItem.TabIndex = 4;
             comboItem.SelectedIndexChanged += comboItem_SelectedIndexChanged;
@@ -285,7 +285,7 @@ namespace RSBot.Alchemy.Views
             panelSettingsGroup.Margin = new Padding(4, 3, 4, 3);
             panelSettingsGroup.Name = "panelSettingsGroup";
             panelSettingsGroup.Radius = 1;
-            panelSettingsGroup.ShadowDepth = 4F;
+            panelSettingsGroup.ShadowDepth = 0F;
             panelSettingsGroup.Size = new Size(424, 331);
             panelSettingsGroup.TabIndex = 7;
             // 
@@ -299,7 +299,7 @@ namespace RSBot.Alchemy.Views
             panelSettings.Margin = new Padding(0);
             panelSettings.Name = "panelSettings";
             panelSettings.Radius = 0;
-            panelSettings.ShadowDepth = 4F;
+            panelSettings.ShadowDepth = 0F;
             panelSettings.Size = new Size(424, 293);
             panelSettings.TabIndex = 1;
             // 
@@ -316,7 +316,7 @@ namespace RSBot.Alchemy.Views
             panel2.Margin = new Padding(4, 3, 4, 3);
             panel2.Name = "panel2";
             panel2.Radius = 1;
-            panel2.ShadowDepth = 4F;
+            panel2.ShadowDepth = 0F;
             panel2.Size = new Size(424, 38);
             panel2.TabIndex = 0;
             // 
@@ -326,7 +326,7 @@ namespace RSBot.Alchemy.Views
             radioAttributes.Location = new Point(235, 8);
             radioAttributes.Margin = new Padding(0);
             radioAttributes.Name = "radioAttributes";
-            radioAttributes.Ripple = true;
+            radioAttributes.Ripple = false;
             radioAttributes.Size = new Size(57, 30);
             radioAttributes.TabIndex = 2;
             radioAttributes.Text = "Stats";
@@ -338,7 +338,7 @@ namespace RSBot.Alchemy.Views
             radioMagicOptions.Location = new Point(135, 8);
             radioMagicOptions.Margin = new Padding(0);
             radioMagicOptions.Name = "radioMagicOptions";
-            radioMagicOptions.Ripple = true;
+            radioMagicOptions.Ripple = false;
             radioMagicOptions.Size = new Size(59, 30);
             radioMagicOptions.TabIndex = 1;
             radioMagicOptions.Text = "Blues";
@@ -351,7 +351,7 @@ namespace RSBot.Alchemy.Views
             radioEnhance.Location = new Point(10, 8);
             radioEnhance.Margin = new Padding(0);
             radioEnhance.Name = "radioEnhance";
-            radioEnhance.Ripple = true;
+            radioEnhance.Ripple = false;
             radioEnhance.Size = new Size(96, 30);
             radioEnhance.TabIndex = 0;
             radioEnhance.TabStop = true;

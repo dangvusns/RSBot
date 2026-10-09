@@ -55,7 +55,7 @@
             checkShowCompleted.Margin = new System.Windows.Forms.Padding(0);
             checkShowCompleted.MouseLocation = new System.Drawing.Point(-1, -1);
             checkShowCompleted.Name = "checkShowCompleted";
-            checkShowCompleted.Ripple = true;
+            checkShowCompleted.Ripple = false;
             checkShowCompleted.Size = new System.Drawing.Size(121, 30);
             checkShowCompleted.TabIndex = 1;
             checkShowCompleted.Text = "Show completed";

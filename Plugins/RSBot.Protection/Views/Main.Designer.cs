@@ -159,7 +159,7 @@
             groupBackTown.Name = "groupBackTown";
             groupBackTown.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             groupBackTown.Radius = 10;
-            groupBackTown.ShadowDepth = 4;
+            groupBackTown.ShadowDepth = 0;
             groupBackTown.Size = new System.Drawing.Size(330, 386);
             groupBackTown.TabIndex = 17;
             groupBackTown.TabStop = false;
@@ -240,7 +240,7 @@
             checkShardFatigue.Margin = new System.Windows.Forms.Padding(0);
             checkShardFatigue.MouseLocation = new System.Drawing.Point(-1, -1);
             checkShardFatigue.Name = "checkShardFatigue";
-            checkShardFatigue.Ripple = true;
+            checkShardFatigue.Ripple = false;
             checkShardFatigue.Size = new System.Drawing.Size(124, 30);
             checkShardFatigue.TabIndex = 12;
             checkShardFatigue.Text = "Shard fatigue";
@@ -257,7 +257,7 @@
             checkStopBotOnReturnToTown.Margin = new System.Windows.Forms.Padding(0);
             checkStopBotOnReturnToTown.MouseLocation = new System.Drawing.Point(-1, -1);
             checkStopBotOnReturnToTown.Name = "checkStopBotOnReturnToTown";
-            checkStopBotOnReturnToTown.Ripple = true;
+            checkStopBotOnReturnToTown.Ripple = false;
             checkStopBotOnReturnToTown.Size = new System.Drawing.Size(220, 30);
             checkStopBotOnReturnToTown.TabIndex = 11;
             checkStopBotOnReturnToTown.Text = "Stop bot when back in town";
@@ -307,7 +307,7 @@
             checkLevelUp.Margin = new System.Windows.Forms.Padding(0);
             checkLevelUp.MouseLocation = new System.Drawing.Point(-1, -1);
             checkLevelUp.Name = "checkLevelUp";
-            checkLevelUp.Ripple = true;
+            checkLevelUp.Ripple = false;
             checkLevelUp.Size = new System.Drawing.Size(90, 30);
             checkLevelUp.TabIndex = 8;
             checkLevelUp.Text = "Level up";
@@ -323,7 +323,7 @@
             checkFullPetInventory.Margin = new System.Windows.Forms.Padding(0);
             checkFullPetInventory.MouseLocation = new System.Drawing.Point(-1, -1);
             checkFullPetInventory.Name = "checkFullPetInventory";
-            checkFullPetInventory.Ripple = true;
+            checkFullPetInventory.Ripple = false;
             checkFullPetInventory.Size = new System.Drawing.Size(149, 30);
             checkFullPetInventory.TabIndex = 7;
             checkFullPetInventory.Text = "Full pet inventory";
@@ -339,7 +339,7 @@
             checkNoMPPotions.Margin = new System.Windows.Forms.Padding(0);
             checkNoMPPotions.MouseLocation = new System.Drawing.Point(-1, -1);
             checkNoMPPotions.Name = "checkNoMPPotions";
-            checkNoMPPotions.Ripple = true;
+            checkNoMPPotions.Ripple = false;
             checkNoMPPotions.Size = new System.Drawing.Size(134, 30);
             checkNoMPPotions.TabIndex = 6;
             checkNoMPPotions.Text = "MP Potions left";
@@ -355,7 +355,7 @@
             checkNoHPPotions.Margin = new System.Windows.Forms.Padding(0);
             checkNoHPPotions.MouseLocation = new System.Drawing.Point(-1, -1);
             checkNoHPPotions.Name = "checkNoHPPotions";
-            checkNoHPPotions.Ripple = true;
+            checkNoHPPotions.Ripple = false;
             checkNoHPPotions.Size = new System.Drawing.Size(132, 30);
             checkNoHPPotions.TabIndex = 5;
             checkNoHPPotions.Text = "HP Potions left";
@@ -371,7 +371,7 @@
             checkDurability.Margin = new System.Windows.Forms.Padding(0);
             checkDurability.MouseLocation = new System.Drawing.Point(-1, -1);
             checkDurability.Name = "checkDurability";
-            checkDurability.Ripple = true;
+            checkDurability.Ripple = false;
             checkDurability.Size = new System.Drawing.Size(202, 30);
             checkDurability.TabIndex = 4;
             checkDurability.Text = "Equipment durability low";
@@ -387,7 +387,7 @@
             checkUniqueNearby.Margin = new System.Windows.Forms.Padding(0);
             checkUniqueNearby.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUniqueNearby.Name = "checkUniqueNearby";
-            checkUniqueNearby.Ripple = true;
+            checkUniqueNearby.Ripple = false;
             checkUniqueNearby.Size = new System.Drawing.Size(123, 30);
             checkUniqueNearby.TabIndex = 30;
             checkUniqueNearby.Text = "Unique nearby";
@@ -403,7 +403,7 @@
             checkPetDied.Margin = new System.Windows.Forms.Padding(0);
             checkPetDied.MouseLocation = new System.Drawing.Point(-1, -1);
             checkPetDied.Name = "checkPetDied";
-            checkPetDied.Ripple = true;
+            checkPetDied.Ripple = false;
             checkPetDied.Size = new System.Drawing.Size(90, 30);
             checkPetDied.TabIndex = 31;
             checkPetDied.Text = "Pet died";
@@ -419,7 +419,7 @@
             checkTransportDied.Margin = new System.Windows.Forms.Padding(0);
             checkTransportDied.MouseLocation = new System.Drawing.Point(-1, -1);
             checkTransportDied.Name = "checkTransportDied";
-            checkTransportDied.Ripple = true;
+            checkTransportDied.Ripple = false;
             checkTransportDied.Size = new System.Drawing.Size(130, 30);
             checkTransportDied.TabIndex = 32;
             checkTransportDied.Text = "Transport died";
@@ -435,7 +435,7 @@
             checkQuestCompleted.Margin = new System.Windows.Forms.Padding(0);
             checkQuestCompleted.MouseLocation = new System.Drawing.Point(-1, -1);
             checkQuestCompleted.Name = "checkQuestCompleted";
-            checkQuestCompleted.Ripple = true;
+            checkQuestCompleted.Ripple = false;
             checkQuestCompleted.Size = new System.Drawing.Size(136, 30);
             checkQuestCompleted.TabIndex = 33;
             checkQuestCompleted.Text = "Quest completed";
@@ -451,7 +451,7 @@
             checkPetTransferSupplies.Margin = new System.Windows.Forms.Padding(0);
             checkPetTransferSupplies.MouseLocation = new System.Drawing.Point(-1, -1);
             checkPetTransferSupplies.Name = "checkPetTransferSupplies";
-            checkPetTransferSupplies.Ripple = true;
+            checkPetTransferSupplies.Ripple = false;
             checkPetTransferSupplies.Size = new System.Drawing.Size(255, 30);
             checkPetTransferSupplies.TabIndex = 40;
             checkPetTransferSupplies.Text = "Move pots, pills, arrows from pick pet";
@@ -467,7 +467,7 @@
             checkPetTransferWhenFull.Margin = new System.Windows.Forms.Padding(0);
             checkPetTransferWhenFull.MouseLocation = new System.Drawing.Point(-1, -1);
             checkPetTransferWhenFull.Name = "checkPetTransferWhenFull";
-            checkPetTransferWhenFull.Ripple = true;
+            checkPetTransferWhenFull.Ripple = false;
             checkPetTransferWhenFull.Size = new System.Drawing.Size(255, 30);
             checkPetTransferWhenFull.TabIndex = 41;
             checkPetTransferWhenFull.Text = "Empty a full pick pet into inventory";
@@ -483,7 +483,7 @@
             checkDead.Margin = new System.Windows.Forms.Padding(0);
             checkDead.MouseLocation = new System.Drawing.Point(-1, -1);
             checkDead.Name = "checkDead";
-            checkDead.Ripple = true;
+            checkDead.Ripple = false;
             checkDead.Size = new System.Drawing.Size(165, 30);
             checkDead.TabIndex = 3;
             checkDead.Text = "Dead with delay of ";
@@ -499,7 +499,7 @@
             checkInventory.Margin = new System.Windows.Forms.Padding(0);
             checkInventory.MouseLocation = new System.Drawing.Point(-1, -1);
             checkInventory.Name = "checkInventory";
-            checkInventory.Ripple = true;
+            checkInventory.Ripple = false;
             checkInventory.Size = new System.Drawing.Size(123, 30);
             checkInventory.TabIndex = 4;
             checkInventory.Text = "Full inventory";
@@ -515,7 +515,7 @@
             checkNoArrows.Margin = new System.Windows.Forms.Padding(0);
             checkNoArrows.MouseLocation = new System.Drawing.Point(-1, -1);
             checkNoArrows.Name = "checkNoArrows";
-            checkNoArrows.Ripple = true;
+            checkNoArrows.Ripple = false;
             checkNoArrows.Size = new System.Drawing.Size(176, 30);
             checkNoArrows.TabIndex = 4;
             checkNoArrows.Text = "No arrows / bolts left";
@@ -534,7 +534,7 @@
             groupBadStatus.Name = "groupBadStatus";
             groupBadStatus.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             groupBadStatus.Radius = 10;
-            groupBadStatus.ShadowDepth = 4;
+            groupBadStatus.ShadowDepth = 0;
             groupBadStatus.Size = new System.Drawing.Size(585, 116);
             groupBadStatus.TabIndex = 6;
             groupBadStatus.TabStop = false;
@@ -570,7 +570,7 @@
             comboSkillBadStatus.Margin = new System.Windows.Forms.Padding(4);
             comboSkillBadStatus.Name = "comboSkillBadStatus";
             comboSkillBadStatus.Radius = 5;
-            comboSkillBadStatus.ShadowDepth = 4F;
+            comboSkillBadStatus.ShadowDepth = 0F;
             comboSkillBadStatus.Size = new System.Drawing.Size(150, 23);
             comboSkillBadStatus.TabIndex = 26;
             comboSkillBadStatus.SelectedIndexChanged += comboSkill_SelectedIndexChanged;
@@ -584,7 +584,7 @@
             checkUseBadStatusSkill.Margin = new System.Windows.Forms.Padding(0);
             checkUseBadStatusSkill.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseBadStatusSkill.Name = "checkUseBadStatusSkill";
-            checkUseBadStatusSkill.Ripple = true;
+            checkUseBadStatusSkill.Ripple = false;
             checkUseBadStatusSkill.Size = new System.Drawing.Size(90, 30);
             checkUseBadStatusSkill.TabIndex = 5;
             checkUseBadStatusSkill.Text = "Use Skill";
@@ -602,7 +602,7 @@
             checkUseUniversalPills.Margin = new System.Windows.Forms.Padding(0);
             checkUseUniversalPills.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseUniversalPills.Name = "checkUseUniversalPills";
-            checkUseUniversalPills.Ripple = true;
+            checkUseUniversalPills.Ripple = false;
             checkUseUniversalPills.Size = new System.Drawing.Size(163, 30);
             checkUseUniversalPills.TabIndex = 4;
             checkUseUniversalPills.Text = "Use Universal Pills *";
@@ -644,7 +644,7 @@
             groupHPMP.Name = "groupHPMP";
             groupHPMP.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             groupHPMP.Radius = 10;
-            groupHPMP.ShadowDepth = 4;
+            groupHPMP.ShadowDepth = 0;
             groupHPMP.Size = new System.Drawing.Size(585, 266);
             groupHPMP.TabIndex = 5;
             groupHPMP.TabStop = false;
@@ -680,7 +680,7 @@
             comboSkillPlayerMP.Margin = new System.Windows.Forms.Padding(4);
             comboSkillPlayerMP.Name = "comboSkillPlayerMP";
             comboSkillPlayerMP.Radius = 5;
-            comboSkillPlayerMP.ShadowDepth = 4F;
+            comboSkillPlayerMP.ShadowDepth = 0F;
             comboSkillPlayerMP.Size = new System.Drawing.Size(150, 23);
             comboSkillPlayerMP.TabIndex = 25;
             comboSkillPlayerMP.SelectedIndexChanged += comboSkill_SelectedIndexChanged;
@@ -697,7 +697,7 @@
             comboSkillPlayerHP.Margin = new System.Windows.Forms.Padding(4);
             comboSkillPlayerHP.Name = "comboSkillPlayerHP";
             comboSkillPlayerHP.Radius = 5;
-            comboSkillPlayerHP.ShadowDepth = 4F;
+            comboSkillPlayerHP.ShadowDepth = 0F;
             comboSkillPlayerHP.Size = new System.Drawing.Size(150, 23);
             comboSkillPlayerHP.TabIndex = 7;
             comboSkillPlayerHP.SelectedIndexChanged += comboSkill_SelectedIndexChanged;
@@ -1023,7 +1023,7 @@
             checkUseSkillHP.Margin = new System.Windows.Forms.Padding(0);
             checkUseSkillHP.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseSkillHP.Name = "checkUseSkillHP";
-            checkUseSkillHP.Ripple = true;
+            checkUseSkillHP.Ripple = false;
             checkUseSkillHP.Size = new System.Drawing.Size(124, 30);
             checkUseSkillHP.TabIndex = 4;
             checkUseSkillHP.Text = "Use skill if HP";
@@ -1039,7 +1039,7 @@
             checkUseSkillMP.Margin = new System.Windows.Forms.Padding(0);
             checkUseSkillMP.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseSkillMP.Name = "checkUseSkillMP";
-            checkUseSkillMP.Ripple = true;
+            checkUseSkillMP.Ripple = false;
             checkUseSkillMP.Size = new System.Drawing.Size(126, 30);
             checkUseSkillMP.TabIndex = 5;
             checkUseSkillMP.Text = "Use skill if MP";
@@ -1057,7 +1057,7 @@
             checkUseHPPotionsPlayer.Margin = new System.Windows.Forms.Padding(0);
             checkUseHPPotionsPlayer.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseHPPotionsPlayer.Name = "checkUseHPPotionsPlayer";
-            checkUseHPPotionsPlayer.Ripple = true;
+            checkUseHPPotionsPlayer.Ripple = false;
             checkUseHPPotionsPlayer.Size = new System.Drawing.Size(182, 30);
             checkUseHPPotionsPlayer.TabIndex = 0;
             checkUseHPPotionsPlayer.Text = "Use HP potions if HP *";
@@ -1073,7 +1073,7 @@
             checkUseVigorMP.Margin = new System.Windows.Forms.Padding(0);
             checkUseVigorMP.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseVigorMP.Name = "checkUseVigorMP";
-            checkUseVigorMP.Ripple = true;
+            checkUseVigorMP.Ripple = false;
             checkUseVigorMP.Size = new System.Drawing.Size(189, 30);
             checkUseVigorMP.TabIndex = 3;
             checkUseVigorMP.Text = "Use Vigor Potions if MP";
@@ -1091,7 +1091,7 @@
             checkUseMPPotionsPlayer.Margin = new System.Windows.Forms.Padding(0);
             checkUseMPPotionsPlayer.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseMPPotionsPlayer.Name = "checkUseMPPotionsPlayer";
-            checkUseMPPotionsPlayer.Ripple = true;
+            checkUseMPPotionsPlayer.Ripple = false;
             checkUseMPPotionsPlayer.Size = new System.Drawing.Size(186, 30);
             checkUseMPPotionsPlayer.TabIndex = 1;
             checkUseMPPotionsPlayer.Text = "Use MP potions if MP *";
@@ -1107,7 +1107,7 @@
             checkUseVigorHP.Margin = new System.Windows.Forms.Padding(0);
             checkUseVigorHP.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseVigorHP.Name = "checkUseVigorHP";
-            checkUseVigorHP.Ripple = true;
+            checkUseVigorHP.Ripple = false;
             checkUseVigorHP.Size = new System.Drawing.Size(187, 30);
             checkUseVigorHP.TabIndex = 2;
             checkUseVigorHP.Text = "Use Vigor Potions if HP";
@@ -1135,7 +1135,7 @@
             groupPet.Name = "groupPet";
             groupPet.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             groupPet.Radius = 10;
-            groupPet.ShadowDepth = 4;
+            groupPet.ShadowDepth = 0;
             groupPet.Size = new System.Drawing.Size(585, 200);
             groupPet.TabIndex = 1;
             groupPet.TabStop = false;
@@ -1149,7 +1149,7 @@
             checkAutoSummonAttackPet.Margin = new System.Windows.Forms.Padding(0);
             checkAutoSummonAttackPet.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAutoSummonAttackPet.Name = "checkAutoSummonAttackPet";
-            checkAutoSummonAttackPet.Ripple = true;
+            checkAutoSummonAttackPet.Ripple = false;
             checkAutoSummonAttackPet.Size = new System.Drawing.Size(280, 30);
             checkAutoSummonAttackPet.TabIndex = 27;
             checkAutoSummonAttackPet.Text = "Auto summon growth & fellow pet";
@@ -1167,7 +1167,7 @@
             checkUseAbnormalStatePotion.Margin = new System.Windows.Forms.Padding(0);
             checkUseAbnormalStatePotion.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseAbnormalStatePotion.Name = "checkUseAbnormalStatePotion";
-            checkUseAbnormalStatePotion.Ripple = true;
+            checkUseAbnormalStatePotion.Ripple = false;
             checkUseAbnormalStatePotion.Size = new System.Drawing.Size(287, 30);
             checkUseAbnormalStatePotion.TabIndex = 26;
             checkUseAbnormalStatePotion.Text = "Use abnormal state recovery potions *";
@@ -1183,7 +1183,7 @@
             checkReviveAttackPet.Margin = new System.Windows.Forms.Padding(0);
             checkReviveAttackPet.MouseLocation = new System.Drawing.Point(-1, -1);
             checkReviveAttackPet.Name = "checkReviveAttackPet";
-            checkReviveAttackPet.Ripple = true;
+            checkReviveAttackPet.Ripple = false;
             checkReviveAttackPet.Size = new System.Drawing.Size(210, 30);
             checkReviveAttackPet.TabIndex = 25;
             checkReviveAttackPet.Text = "Revive growth / fellow pet";
@@ -1305,7 +1305,7 @@
             checkUsePetHP.Margin = new System.Windows.Forms.Padding(0);
             checkUsePetHP.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUsePetHP.Name = "checkUsePetHP";
-            checkUsePetHP.Ripple = true;
+            checkUsePetHP.Ripple = false;
             checkUsePetHP.Size = new System.Drawing.Size(182, 30);
             checkUsePetHP.TabIndex = 13;
             checkUsePetHP.Text = "Use HP potions if HP *";
@@ -1323,7 +1323,7 @@
             checkUseHGP.Margin = new System.Windows.Forms.Padding(0);
             checkUseHGP.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseHGP.Name = "checkUseHGP";
-            checkUseHGP.Ripple = true;
+            checkUseHGP.Ripple = false;
             checkUseHGP.Size = new System.Drawing.Size(273, 30);
             checkUseHGP.TabIndex = 14;
             checkUseHGP.Text = "Use HGP / Saiety potions if hunger *";
@@ -1345,7 +1345,7 @@
             groupStatPoints.Name = "groupStatPoints";
             groupStatPoints.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             groupStatPoints.Radius = 10;
-            groupStatPoints.ShadowDepth = 4;
+            groupStatPoints.ShadowDepth = 0;
             groupStatPoints.Size = new System.Drawing.Size(330, 211);
             groupStatPoints.TabIndex = 18;
             groupStatPoints.TabStop = false;
@@ -1358,7 +1358,7 @@
             buttonRun.Margin = new System.Windows.Forms.Padding(4);
             buttonRun.Name = "buttonRun";
             buttonRun.Radius = 6;
-            buttonRun.ShadowDepth = 4F;
+            buttonRun.ShadowDepth = 0F;
             buttonRun.Size = new System.Drawing.Size(121, 29);
             buttonRun.TabIndex = 27;
             buttonRun.Text = "Run";
@@ -1376,7 +1376,7 @@
             checkIncBotStopped.Margin = new System.Windows.Forms.Padding(0);
             checkIncBotStopped.MouseLocation = new System.Drawing.Point(-1, -1);
             checkIncBotStopped.Name = "checkIncBotStopped";
-            checkIncBotStopped.Ripple = true;
+            checkIncBotStopped.Ripple = false;
             checkIncBotStopped.Size = new System.Drawing.Size(237, 30);
             checkIncBotStopped.TabIndex = 24;
             checkIncBotStopped.Text = "Increase even if bot is stopped";
@@ -1424,7 +1424,7 @@
             checkIncStr.Margin = new System.Windows.Forms.Padding(0);
             checkIncStr.MouseLocation = new System.Drawing.Point(-1, -1);
             checkIncStr.Name = "checkIncStr";
-            checkIncStr.Ripple = true;
+            checkIncStr.Ripple = false;
             checkIncStr.Size = new System.Drawing.Size(118, 30);
             checkIncStr.TabIndex = 20;
             checkIncStr.Text = "Increase STR";
@@ -1440,7 +1440,7 @@
             checkIncInt.Margin = new System.Windows.Forms.Padding(0);
             checkIncInt.MouseLocation = new System.Drawing.Point(-1, -1);
             checkIncInt.Name = "checkIncInt";
-            checkIncInt.Ripple = true;
+            checkIncInt.Ripple = false;
             checkIncInt.Size = new System.Drawing.Size(116, 30);
             checkIncInt.TabIndex = 19;
             checkIncInt.Text = "Increase INT";

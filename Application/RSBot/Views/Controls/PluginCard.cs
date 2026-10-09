@@ -281,7 +281,7 @@ public partial class PluginCard : SDUI.Controls.Panel
         btnToggle.Location = new Point(748, 108);
         btnToggle.Name = "btnToggle";
         btnToggle.Radius = 6;
-        btnToggle.ShadowDepth = 2F;
+        btnToggle.ShadowDepth = 0F;
         btnToggle.Size = new Size(95, 30);
         btnToggle.TabIndex = 6;
         btnToggle.Text = "Enable";
@@ -298,7 +298,7 @@ public partial class PluginCard : SDUI.Controls.Panel
         btnDownload.Location = new Point(748, 108);
         btnDownload.Name = "btnDownload";
         btnDownload.Radius = 6;
-        btnDownload.ShadowDepth = 2F;
+        btnDownload.ShadowDepth = 0F;
         btnDownload.Size = new Size(95, 30);
         btnDownload.TabIndex = 7;
         btnDownload.Text = "Download";
@@ -312,7 +312,7 @@ public partial class PluginCard : SDUI.Controls.Panel
         buttonToggleLoad.Location = new Point(749, 73);
         buttonToggleLoad.Name = "buttonToggleLoad";
         buttonToggleLoad.Radius = 6;
-        buttonToggleLoad.ShadowDepth = 4F;
+        buttonToggleLoad.ShadowDepth = 0F;
         buttonToggleLoad.Size = new Size(94, 29);
         buttonToggleLoad.TabIndex = 8;
         buttonToggleLoad.Text = "Unload";

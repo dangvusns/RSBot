@@ -204,7 +204,7 @@
             radioUseRouteList.Location = new System.Drawing.Point(11, 58);
             radioUseRouteList.Margin = new System.Windows.Forms.Padding(0);
             radioUseRouteList.Name = "radioUseRouteList";
-            radioUseRouteList.Ripple = true;
+            radioUseRouteList.Ripple = false;
             radioUseRouteList.Size = new System.Drawing.Size(121, 30);
             radioUseRouteList.TabIndex = 23;
             radioUseRouteList.TabStop = true;
@@ -218,7 +218,7 @@
             radioTracePlayer.Location = new System.Drawing.Point(11, 18);
             radioTracePlayer.Margin = new System.Windows.Forms.Padding(0);
             radioTracePlayer.Name = "radioTracePlayer";
-            radioTracePlayer.Ripple = true;
+            radioTracePlayer.Ripple = false;
             radioTracePlayer.Size = new System.Drawing.Size(114, 30);
             radioTracePlayer.TabIndex = 22;
             radioTracePlayer.Text = "Trace player";
@@ -234,7 +234,7 @@
             buttonDeleteList.Margin = new System.Windows.Forms.Padding(2, 4, 2, 4);
             buttonDeleteList.Name = "buttonDeleteList";
             buttonDeleteList.Radius = 6;
-            buttonDeleteList.ShadowDepth = 4F;
+            buttonDeleteList.ShadowDepth = 0F;
             buttonDeleteList.Size = new System.Drawing.Size(28, 32);
             buttonDeleteList.TabIndex = 20;
             buttonDeleteList.Text = "x";
@@ -250,7 +250,7 @@
             buttonCreateList.Margin = new System.Windows.Forms.Padding(2, 4, 2, 4);
             buttonCreateList.Name = "buttonCreateList";
             buttonCreateList.Radius = 6;
-            buttonCreateList.ShadowDepth = 4F;
+            buttonCreateList.ShadowDepth = 0F;
             buttonCreateList.Size = new System.Drawing.Size(28, 32);
             buttonCreateList.TabIndex = 21;
             buttonCreateList.Text = "+";
@@ -267,7 +267,7 @@
             comboRouteList.Margin = new System.Windows.Forms.Padding(2);
             comboRouteList.Name = "comboRouteList";
             comboRouteList.Radius = 5;
-            comboRouteList.ShadowDepth = 4F;
+            comboRouteList.ShadowDepth = 0F;
             comboRouteList.Size = new System.Drawing.Size(152, 28);
             comboRouteList.TabIndex = 19;
             comboRouteList.SelectedIndexChanged += comboRouteList_SelectedIndexChanged;
@@ -331,7 +331,7 @@
             panel1.Margin = new System.Windows.Forms.Padding(4);
             panel1.Name = "panel1";
             panel1.Radius = 10;
-            panel1.ShadowDepth = 4F;
+            panel1.ShadowDepth = 0F;
             panel1.Size = new System.Drawing.Size(958, 52);
             panel1.TabIndex = 29;
             // 
@@ -344,7 +344,7 @@
             checkRunTownscript.Margin = new System.Windows.Forms.Padding(0);
             checkRunTownscript.MouseLocation = new System.Drawing.Point(-1, -1);
             checkRunTownscript.Name = "checkRunTownscript";
-            checkRunTownscript.Ripple = true;
+            checkRunTownscript.Ripple = false;
             checkRunTownscript.Size = new System.Drawing.Size(263, 30);
             checkRunTownscript.TabIndex = 27;
             checkRunTownscript.Text = "Run townscript after route finished";
@@ -377,7 +377,7 @@
             checkAttackThiefPlayers.Margin = new System.Windows.Forms.Padding(0);
             checkAttackThiefPlayers.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAttackThiefPlayers.Name = "checkAttackThiefPlayers";
-            checkAttackThiefPlayers.Ripple = true;
+            checkAttackThiefPlayers.Ripple = false;
             checkAttackThiefPlayers.Size = new System.Drawing.Size(162, 30);
             checkAttackThiefPlayers.TabIndex = 0;
             checkAttackThiefPlayers.Text = "Attack thief players";
@@ -393,7 +393,7 @@
             checkAttackThiefNpc.Margin = new System.Windows.Forms.Padding(0);
             checkAttackThiefNpc.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAttackThiefNpc.Name = "checkAttackThiefNpc";
-            checkAttackThiefNpc.Ripple = true;
+            checkAttackThiefNpc.Ripple = false;
             checkAttackThiefNpc.Size = new System.Drawing.Size(149, 30);
             checkAttackThiefNpc.TabIndex = 1;
             checkAttackThiefNpc.Text = "Attack thief NPCs";
@@ -409,7 +409,7 @@
             checkCounterAttack.Margin = new System.Windows.Forms.Padding(0);
             checkCounterAttack.MouseLocation = new System.Drawing.Point(-1, -1);
             checkCounterAttack.Name = "checkCounterAttack";
-            checkCounterAttack.Ripple = true;
+            checkCounterAttack.Ripple = false;
             checkCounterAttack.Size = new System.Drawing.Size(131, 30);
             checkCounterAttack.TabIndex = 2;
             checkCounterAttack.Text = "Counter attack";
@@ -425,7 +425,7 @@
             checkProtectTransport.Margin = new System.Windows.Forms.Padding(0);
             checkProtectTransport.MouseLocation = new System.Drawing.Point(-1, -1);
             checkProtectTransport.Name = "checkProtectTransport";
-            checkProtectTransport.Ripple = true;
+            checkProtectTransport.Ripple = false;
             checkProtectTransport.Size = new System.Drawing.Size(146, 30);
             checkProtectTransport.TabIndex = 6;
             checkProtectTransport.Text = "Protect transport";
@@ -445,7 +445,7 @@
             groupBox1.Name = "groupBox1";
             groupBox1.Padding = new System.Windows.Forms.Padding(4, 10, 4, 4);
             groupBox1.Radius = 10;
-            groupBox1.ShadowDepth = 4;
+            groupBox1.ShadowDepth = 0;
             groupBox1.Size = new System.Drawing.Size(389, 168);
             groupBox1.TabIndex = 28;
             groupBox1.TabStop = false;
@@ -460,7 +460,7 @@
             checkSellGoods.Margin = new System.Windows.Forms.Padding(0);
             checkSellGoods.MouseLocation = new System.Drawing.Point(-1, -1);
             checkSellGoods.Name = "checkSellGoods";
-            checkSellGoods.Ripple = true;
+            checkSellGoods.Ripple = false;
             checkSellGoods.Size = new System.Drawing.Size(105, 30);
             checkSellGoods.TabIndex = 5;
             checkSellGoods.Text = "Sell goods";
@@ -495,7 +495,7 @@
             checkBuyGoods.Margin = new System.Windows.Forms.Padding(0);
             checkBuyGoods.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBuyGoods.Name = "checkBuyGoods";
-            checkBuyGoods.Ripple = true;
+            checkBuyGoods.Ripple = false;
             checkBuyGoods.Size = new System.Drawing.Size(63, 30);
             checkBuyGoods.TabIndex = 0;
             checkBuyGoods.Text = "Buy ";
@@ -553,7 +553,7 @@
             groupBox2.Name = "groupBox2";
             groupBox2.Padding = new System.Windows.Forms.Padding(2, 5, 2, 2);
             groupBox2.Radius = 10;
-            groupBox2.ShadowDepth = 4;
+            groupBox2.ShadowDepth = 0;
             groupBox2.Size = new System.Drawing.Size(359, 405);
             groupBox2.TabIndex = 29;
             groupBox2.TabStop = false;
@@ -577,7 +577,7 @@
             checkCastBuffs.Margin = new System.Windows.Forms.Padding(0);
             checkCastBuffs.MouseLocation = new System.Drawing.Point(-1, -1);
             checkCastBuffs.Name = "checkCastBuffs";
-            checkCastBuffs.Ripple = true;
+            checkCastBuffs.Ripple = false;
             checkCastBuffs.Size = new System.Drawing.Size(100, 30);
             checkCastBuffs.TabIndex = 4;
             checkCastBuffs.Text = "Cast buffs";
@@ -594,7 +594,7 @@
             checkWaitForHunter.Margin = new System.Windows.Forms.Padding(0);
             checkWaitForHunter.MouseLocation = new System.Drawing.Point(-1, -1);
             checkWaitForHunter.Name = "checkWaitForHunter";
-            checkWaitForHunter.Ripple = true;
+            checkWaitForHunter.Ripple = false;
             checkWaitForHunter.Size = new System.Drawing.Size(195, 30);
             checkWaitForHunter.TabIndex = 30;
             checkWaitForHunter.Text = "Wait for a hunter nearby";
@@ -671,7 +671,7 @@
             checkMountTransport.Margin = new System.Windows.Forms.Padding(0);
             checkMountTransport.MouseLocation = new System.Drawing.Point(-1, -1);
             checkMountTransport.Name = "checkMountTransport";
-            checkMountTransport.Ripple = true;
+            checkMountTransport.Ripple = false;
             checkMountTransport.Size = new System.Drawing.Size(142, 30);
             checkMountTransport.TabIndex = 7;
             checkMountTransport.Text = "Mount transport";

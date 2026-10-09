@@ -115,7 +115,7 @@ namespace RSBot.Alchemy.Views.Settings
             checkUseLuckyStones.Margin = new System.Windows.Forms.Padding(0);
             checkUseLuckyStones.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseLuckyStones.Name = "checkUseLuckyStones";
-            checkUseLuckyStones.Ripple = true;
+            checkUseLuckyStones.Ripple = false;
             checkUseLuckyStones.Size = new System.Drawing.Size(142, 30);
             checkUseLuckyStones.TabIndex = 3;
             checkUseLuckyStones.Text = "Use lucky stones";
@@ -131,7 +131,7 @@ namespace RSBot.Alchemy.Views.Settings
             checkUseImmortalStones.Margin = new System.Windows.Forms.Padding(0);
             checkUseImmortalStones.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseImmortalStones.Name = "checkUseImmortalStones";
-            checkUseImmortalStones.Ripple = true;
+            checkUseImmortalStones.Ripple = false;
             checkUseImmortalStones.Size = new System.Drawing.Size(170, 30);
             checkUseImmortalStones.TabIndex = 4;
             checkUseImmortalStones.Text = "Use immortal stones";
@@ -167,7 +167,7 @@ namespace RSBot.Alchemy.Views.Settings
             comboElixir.Location = new System.Drawing.Point(140, 67);
             comboElixir.Name = "comboElixir";
             comboElixir.Radius = 5;
-            comboElixir.ShadowDepth = 4F;
+            comboElixir.ShadowDepth = 0F;
             comboElixir.Size = new System.Drawing.Size(193, 23);
             comboElixir.TabIndex = 6;
             comboElixir.SelectedIndexChanged += config_CheckedChange;
@@ -201,7 +201,7 @@ namespace RSBot.Alchemy.Views.Settings
             checkUseAstralStones.Margin = new System.Windows.Forms.Padding(0);
             checkUseAstralStones.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseAstralStones.Name = "checkUseAstralStones";
-            checkUseAstralStones.Ripple = true;
+            checkUseAstralStones.Ripple = false;
             checkUseAstralStones.Size = new System.Drawing.Size(145, 30);
             checkUseAstralStones.TabIndex = 8;
             checkUseAstralStones.Text = "Use astral stones";
@@ -268,7 +268,7 @@ namespace RSBot.Alchemy.Views.Settings
             checkUseSteadyStones.Margin = new System.Windows.Forms.Padding(0);
             checkUseSteadyStones.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseSteadyStones.Name = "checkUseSteadyStones";
-            checkUseSteadyStones.Ripple = true;
+            checkUseSteadyStones.Ripple = false;
             checkUseSteadyStones.Size = new System.Drawing.Size(152, 30);
             checkUseSteadyStones.TabIndex = 8;
             checkUseSteadyStones.Text = "Use steady stones";
@@ -320,7 +320,7 @@ namespace RSBot.Alchemy.Views.Settings
             checkStopLuckyPowder.Margin = new System.Windows.Forms.Padding(0);
             checkStopLuckyPowder.MouseLocation = new System.Drawing.Point(-1, -1);
             checkStopLuckyPowder.Name = "checkStopLuckyPowder";
-            checkStopLuckyPowder.Ripple = true;
+            checkStopLuckyPowder.Ripple = false;
             checkStopLuckyPowder.Size = new System.Drawing.Size(183, 30);
             checkStopLuckyPowder.TabIndex = 10;
             checkStopLuckyPowder.Text = "Stop if 0 lucky powder";

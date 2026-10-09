@@ -95,7 +95,7 @@
             groupBox1.Name = "groupBox1";
             groupBox1.Padding = new System.Windows.Forms.Padding(3, 11, 3, 4);
             groupBox1.Radius = 10;
-            groupBox1.ShadowDepth = 4;
+            groupBox1.ShadowDepth = 0;
             groupBox1.Size = new System.Drawing.Size(379, 572);
             groupBox1.TabIndex = 0;
             groupBox1.TabStop = false;
@@ -125,7 +125,7 @@
             btnBrowseWalkscript.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnBrowseWalkscript.Name = "btnBrowseWalkscript";
             btnBrowseWalkscript.Radius = 6;
-            btnBrowseWalkscript.ShadowDepth = 4F;
+            btnBrowseWalkscript.ShadowDepth = 0F;
             btnBrowseWalkscript.Size = new System.Drawing.Size(49, 31);
             btnBrowseWalkscript.TabIndex = 28;
             btnBrowseWalkscript.Text = "...";
@@ -152,7 +152,7 @@
             radioStayAtCenter.Location = new System.Drawing.Point(21, 339);
             radioStayAtCenter.Margin = new System.Windows.Forms.Padding(0);
             radioStayAtCenter.Name = "radioStayAtCenter";
-            radioStayAtCenter.Ripple = true;
+            radioStayAtCenter.Ripple = false;
             radioStayAtCenter.Size = new System.Drawing.Size(124, 30);
             radioStayAtCenter.TabIndex = 25;
             radioStayAtCenter.Text = "Stay at center";
@@ -210,7 +210,7 @@
             checkStayAtCenter.Margin = new System.Windows.Forms.Padding(0);
             checkStayAtCenter.MouseLocation = new System.Drawing.Point(-1, -1);
             checkStayAtCenter.Name = "checkStayAtCenter";
-            checkStayAtCenter.Ripple = true;
+            checkStayAtCenter.Ripple = false;
             checkStayAtCenter.Size = new System.Drawing.Size(148, 30);
             checkStayAtCenter.TabIndex = 22;
             checkStayAtCenter.Text = "Stay at center for";
@@ -224,7 +224,7 @@
             btnBrowse.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnBrowse.Name = "btnBrowse";
             btnBrowse.Radius = 6;
-            btnBrowse.ShadowDepth = 4F;
+            btnBrowse.ShadowDepth = 0F;
             btnBrowse.Size = new System.Drawing.Size(49, 31);
             btnBrowse.TabIndex = 4;
             btnBrowse.Text = "...";
@@ -237,7 +237,7 @@
             radioUseScript.Location = new System.Drawing.Point(21, 376);
             radioUseScript.Margin = new System.Windows.Forms.Padding(0);
             radioUseScript.Name = "radioUseScript";
-            radioUseScript.Ripple = true;
+            radioUseScript.Ripple = false;
             radioUseScript.Size = new System.Drawing.Size(140, 30);
             radioUseScript.TabIndex = 2;
             radioUseScript.Text = "Use a lure script";
@@ -251,7 +251,7 @@
             radioWalkRandomly.Location = new System.Drawing.Point(21, 301);
             radioWalkRandomly.Margin = new System.Windows.Forms.Padding(0);
             radioWalkRandomly.Name = "radioWalkRandomly";
-            radioWalkRandomly.Ripple = true;
+            radioWalkRandomly.Ripple = false;
             radioWalkRandomly.Size = new System.Drawing.Size(134, 30);
             radioWalkRandomly.TabIndex = 1;
             radioWalkRandomly.TabStop = true;
@@ -300,7 +300,7 @@
             panel1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             panel1.Name = "panel1";
             panel1.Radius = 10;
-            panel1.ShadowDepth = 4F;
+            panel1.ShadowDepth = 0F;
             panel1.Size = new System.Drawing.Size(384, 161);
             panel1.TabIndex = 30;
             // 
@@ -311,7 +311,7 @@
             btnSetCenter.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnSetCenter.Name = "btnSetCenter";
             btnSetCenter.Radius = 6;
-            btnSetCenter.ShadowDepth = 4F;
+            btnSetCenter.ShadowDepth = 0F;
             btnSetCenter.Size = new System.Drawing.Size(97, 31);
             btnSetCenter.TabIndex = 10;
             btnSetCenter.Text = "Set center";
@@ -430,7 +430,7 @@
             checkUseNormalAttack.Margin = new System.Windows.Forms.Padding(0);
             checkUseNormalAttack.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseNormalAttack.Name = "checkUseNormalAttack";
-            checkUseNormalAttack.Ripple = true;
+            checkUseNormalAttack.Ripple = false;
             checkUseNormalAttack.Size = new System.Drawing.Size(278, 30);
             checkUseNormalAttack.TabIndex = 1;
             checkUseNormalAttack.Text = "Use normal attack and switch target*";
@@ -446,7 +446,7 @@
             checkUseHowlingShout.Margin = new System.Windows.Forms.Padding(0);
             checkUseHowlingShout.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseHowlingShout.Name = "checkUseHowlingShout";
-            checkUseHowlingShout.Ripple = true;
+            checkUseHowlingShout.Ripple = false;
             checkUseHowlingShout.Size = new System.Drawing.Size(224, 30);
             checkUseHowlingShout.TabIndex = 0;
             checkUseHowlingShout.Text = "Cast howling shout (only EU)";
@@ -478,7 +478,7 @@
             groupBox3.Name = "groupBox3";
             groupBox3.Padding = new System.Windows.Forms.Padding(3, 11, 3, 4);
             groupBox3.Radius = 10;
-            groupBox3.ShadowDepth = 4;
+            groupBox3.ShadowDepth = 0;
             groupBox3.Size = new System.Drawing.Size(447, 493);
             groupBox3.TabIndex = 2;
             groupBox3.TabStop = false;
@@ -510,7 +510,7 @@
             checkUseAttackingSkills.Margin = new System.Windows.Forms.Padding(0);
             checkUseAttackingSkills.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseAttackingSkills.Name = "checkUseAttackingSkills";
-            checkUseAttackingSkills.Ripple = true;
+            checkUseAttackingSkills.Ripple = false;
             checkUseAttackingSkills.Size = new System.Drawing.Size(277, 30);
             checkUseAttackingSkills.TabIndex = 27;
             checkUseAttackingSkills.Text = "Use attacking skill and switch target*";
@@ -526,7 +526,7 @@
             checkNoHowlingAtCenter.Margin = new System.Windows.Forms.Padding(0);
             checkNoHowlingAtCenter.MouseLocation = new System.Drawing.Point(-1, -1);
             checkNoHowlingAtCenter.Name = "checkNoHowlingAtCenter";
-            checkNoHowlingAtCenter.Ripple = true;
+            checkNoHowlingAtCenter.Ripple = false;
             checkNoHowlingAtCenter.Size = new System.Drawing.Size(179, 30);
             checkNoHowlingAtCenter.TabIndex = 26;
             checkNoHowlingAtCenter.Text = "Don't cast near center";
@@ -576,7 +576,7 @@
             checkStopPartyMember.Margin = new System.Windows.Forms.Padding(0);
             checkStopPartyMember.MouseLocation = new System.Drawing.Point(-1, -1);
             checkStopPartyMember.Name = "checkStopPartyMember";
-            checkStopPartyMember.Ripple = true;
+            checkStopPartyMember.Ripple = false;
             checkStopPartyMember.Size = new System.Drawing.Size(227, 30);
             checkStopPartyMember.TabIndex = 19;
             checkStopPartyMember.Text = "Stop num party members <=";
@@ -610,7 +610,7 @@
             comboMonsterType.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             comboMonsterType.Name = "comboMonsterType";
             comboMonsterType.Radius = 5;
-            comboMonsterType.ShadowDepth = 4F;
+            comboMonsterType.ShadowDepth = 0F;
             comboMonsterType.Size = new System.Drawing.Size(159, 28);
             comboMonsterType.TabIndex = 17;
             comboMonsterType.SelectedIndexChanged += comboMonsterType_SelectedIndexChanged;
@@ -640,7 +640,7 @@
             checkStopMonsterType.Margin = new System.Windows.Forms.Padding(0);
             checkStopMonsterType.MouseLocation = new System.Drawing.Point(-1, -1);
             checkStopMonsterType.Name = "checkStopMonsterType";
-            checkStopMonsterType.Ripple = true;
+            checkStopMonsterType.Ripple = false;
             checkStopMonsterType.Size = new System.Drawing.Size(221, 30);
             checkStopMonsterType.TabIndex = 15;
             checkStopMonsterType.Text = "Stop if num monster of type";
@@ -672,7 +672,7 @@
             checkStopPartyMemberDead.Margin = new System.Windows.Forms.Padding(0);
             checkStopPartyMemberDead.MouseLocation = new System.Drawing.Point(-1, -1);
             checkStopPartyMemberDead.Name = "checkStopPartyMemberDead";
-            checkStopPartyMemberDead.Ripple = true;
+            checkStopPartyMemberDead.Ripple = false;
             checkStopPartyMemberDead.Size = new System.Drawing.Size(245, 30);
             checkStopPartyMemberDead.TabIndex = 6;
             checkStopPartyMemberDead.Text = "Stop if dead party members >=";
@@ -704,7 +704,7 @@
             checkNumPartyMembersOnSpot.Margin = new System.Windows.Forms.Padding(0);
             checkNumPartyMembersOnSpot.MouseLocation = new System.Drawing.Point(-1, -1);
             checkNumPartyMembersOnSpot.Name = "checkNumPartyMembersOnSpot";
-            checkNumPartyMembersOnSpot.Ripple = true;
+            checkNumPartyMembersOnSpot.Ripple = false;
             checkNumPartyMembersOnSpot.Size = new System.Drawing.Size(228, 30);
             checkNumPartyMembersOnSpot.TabIndex = 28;
             checkNumPartyMembersOnSpot.Text = "Stop pt members on spot <=";

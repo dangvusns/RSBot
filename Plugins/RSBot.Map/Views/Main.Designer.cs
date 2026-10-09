@@ -88,7 +88,7 @@ namespace RSBot.Map.Views
             comboViewType.Location = new System.Drawing.Point(81, 14);
             comboViewType.Name = "comboViewType";
             comboViewType.Radius = 5;
-            comboViewType.ShadowDepth = 4F;
+            comboViewType.ShadowDepth = 0F;
             comboViewType.Size = new System.Drawing.Size(197, 23);
             comboViewType.TabIndex = 10;
             // 
@@ -142,7 +142,7 @@ namespace RSBot.Map.Views
             checkBoxAutoSelectUniques.Margin = new System.Windows.Forms.Padding(0);
             checkBoxAutoSelectUniques.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxAutoSelectUniques.Name = "checkBoxAutoSelectUniques";
-            checkBoxAutoSelectUniques.Ripple = true;
+            checkBoxAutoSelectUniques.Ripple = false;
             checkBoxAutoSelectUniques.Size = new System.Drawing.Size(225, 30);
             checkBoxAutoSelectUniques.TabIndex = 17;
             checkBoxAutoSelectUniques.Text = "Automatically select uniques";
@@ -182,7 +182,7 @@ namespace RSBot.Map.Views
             checkEnableCollisions.Margin = new System.Windows.Forms.Padding(0);
             checkEnableCollisions.MouseLocation = new System.Drawing.Point(-1, -1);
             checkEnableCollisions.Name = "checkEnableCollisions";
-            checkEnableCollisions.Ripple = true;
+            checkEnableCollisions.Ripple = false;
             checkEnableCollisions.Size = new System.Drawing.Size(204, 30);
             checkEnableCollisions.TabIndex = 19;
             checkEnableCollisions.Text = "Enable collision detection";
@@ -232,7 +232,7 @@ namespace RSBot.Map.Views
             btnNvmResetToPlayer.Location = new System.Drawing.Point(14, 7);
             btnNvmResetToPlayer.Name = "btnNvmResetToPlayer";
             btnNvmResetToPlayer.Radius = 6;
-            btnNvmResetToPlayer.ShadowDepth = 4F;
+            btnNvmResetToPlayer.ShadowDepth = 0F;
             btnNvmResetToPlayer.Size = new System.Drawing.Size(122, 23);
             btnNvmResetToPlayer.TabIndex = 16;
             btnNvmResetToPlayer.Text = "Reset to player";

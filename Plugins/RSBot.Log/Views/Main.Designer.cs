@@ -50,7 +50,7 @@
             checkEnabled.Margin = new System.Windows.Forms.Padding(0);
             checkEnabled.MouseLocation = new System.Drawing.Point(-1, -1);
             checkEnabled.Name = "checkEnabled";
-            checkEnabled.Ripple = true;
+            checkEnabled.Ripple = false;
             checkEnabled.Size = new System.Drawing.Size(97, 46);
             checkEnabled.TabIndex = 1;
             checkEnabled.Text = "Enabled";
@@ -64,7 +64,7 @@
             btnReset.Location = new System.Drawing.Point(624, 13);
             btnReset.Name = "btnReset";
             btnReset.Radius = 6;
-            btnReset.ShadowDepth = 4F;
+            btnReset.ShadowDepth = 0F;
             btnReset.Size = new System.Drawing.Size(75, 23);
             btnReset.TabIndex = 0;
             btnReset.Text = "Clear";
@@ -101,7 +101,7 @@
             checkNormal.Margin = new System.Windows.Forms.Padding(0);
             checkNormal.MouseLocation = new System.Drawing.Point(-1, -1);
             checkNormal.Name = "checkNormal";
-            checkNormal.Ripple = true;
+            checkNormal.Ripple = false;
             checkNormal.Size = new System.Drawing.Size(93, 46);
             checkNormal.TabIndex = 6;
             checkNormal.Text = "Normal";
@@ -118,7 +118,7 @@
             checkError.Margin = new System.Windows.Forms.Padding(0);
             checkError.MouseLocation = new System.Drawing.Point(-1, -1);
             checkError.Name = "checkError";
-            checkError.Ripple = true;
+            checkError.Ripple = false;
             checkError.Size = new System.Drawing.Size(75, 46);
             checkError.TabIndex = 3;
             checkError.Text = "Error";
@@ -135,7 +135,7 @@
             checkWarning.Margin = new System.Windows.Forms.Padding(0);
             checkWarning.MouseLocation = new System.Drawing.Point(-1, -1);
             checkWarning.Name = "checkWarning";
-            checkWarning.Ripple = true;
+            checkWarning.Ripple = false;
             checkWarning.Size = new System.Drawing.Size(98, 46);
             checkWarning.TabIndex = 4;
             checkWarning.Text = "Warning";
@@ -152,7 +152,7 @@
             checkDebug.Margin = new System.Windows.Forms.Padding(0);
             checkDebug.MouseLocation = new System.Drawing.Point(-1, -1);
             checkDebug.Name = "checkDebug";
-            checkDebug.Ripple = true;
+            checkDebug.Ripple = false;
             checkDebug.Size = new System.Drawing.Size(88, 46);
             checkDebug.TabIndex = 5;
             checkDebug.Text = "Debug";

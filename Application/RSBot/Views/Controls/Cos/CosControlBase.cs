@@ -128,7 +128,7 @@ public class CosControlBase : DoubleBufferedControl
         panel1.Location = new Point(48, 18);
         panel1.Name = "panel1";
         panel1.Radius = 10;
-        panel1.ShadowDepth = 4F;
+        panel1.ShadowDepth = 0F;
         panel1.Size = new Size(180, 21);
         panel1.TabIndex = 21;
         // 

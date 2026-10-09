@@ -67,6 +67,8 @@ internal static class Program
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
+        // Plain UI: no ripple/hover/theme-fade timers.
+        SDUI.Helpers.SystemAnimations.Disabled = true;
 
         // Without these a crash leaves no trace in RSBot's logs (Data\Logs\Exceptions). An error on the UI
         // thread is logged and the bot keeps running, instead of an error dialog that can fail and end it.

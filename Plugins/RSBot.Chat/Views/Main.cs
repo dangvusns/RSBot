@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Text;
 using System.Windows.Forms;
 using RSBot.Core;
 using RSBot.Core.Event;
@@ -12,10 +14,22 @@ namespace RSBot.Chat.Views;
 [ToolboxItem(false)]
 public partial class Main : DoubleBufferedControl
 {
+    private const int MaximumCharacters = 60000;
+    private const int RetainedCharacters = 40000;
+
+    // Chat arrives on network threads; lines are buffered per box and written by a UI timer in batches.
+    private readonly Dictionary<RichTextBox, StringBuilder> _pending = new();
+    private readonly Timer _flushTimer;
+
     public Main()
     {
         CheckForIllegalCrossThreadCalls = false;
         InitializeComponent();
+
+        components ??= new Container();
+        _flushTimer = new Timer(components) { Interval = 250 };
+        _flushTimer.Tick += (s, e) => FlushPending();
+        _flushTimer.Start();
 
         SubscribeEvents();
     }
@@ -54,53 +68,68 @@ public partial class Main : DoubleBufferedControl
     /// <param name="type">The type.</param>
     public void AppendMessage(string message, string sender, ChatType type)
     {
-        message = $"({sender}): {message}";
-
-        switch (type)
+        RichTextBox target = type switch
         {
-            case ChatType.Academy:
-                txtAcademy.Write(message);
-                break;
+            ChatType.Academy => txtAcademy,
+            ChatType.All or ChatType.AllGM or ChatType.Npc => txtAll,
+            ChatType.Global or ChatType.Notice => txtGlobal,
+            ChatType.Guild => txtGuild,
+            ChatType.Party => txtParty,
+            ChatType.Private => txtPrivate,
+            ChatType.Union => txtUnion,
+            ChatType.Stall => txtStall,
+            _ => null,
+        };
 
-            case ChatType.All:
-                txtAll.Write(message);
-                break;
+        if (target == null)
+            return;
 
-            case ChatType.AllGM:
-                txtAll.Write(message);
-                break;
+        var line = $"[{DateTime.Now:HH:mm:ss}]\t({sender}): {message}{Environment.NewLine}";
+        lock (_pending)
+        {
+            if (!_pending.TryGetValue(target, out var buffer))
+                _pending[target] = buffer = new StringBuilder();
 
-            case ChatType.Global:
-                txtGlobal.Write(message);
-                break;
+            buffer.Append(line);
+            if (buffer.Length > MaximumCharacters)
+                buffer.Remove(0, buffer.Length - RetainedCharacters);
+        }
+    }
 
-            case ChatType.Guild:
-                txtGuild.Write(message);
-                break;
+    private void FlushPending()
+    {
+        if (IsDisposed || FindForm()?.WindowState == FormWindowState.Minimized)
+            return;
 
-            case ChatType.Notice:
-                txtGlobal.Write(message);
-                break;
+        List<KeyValuePair<RichTextBox, string>> batch;
+        lock (_pending)
+        {
+            if (_pending.Count == 0)
+                return;
 
-            case ChatType.Npc:
-                txtAll.Write(message);
-                break;
+            batch = new List<KeyValuePair<RichTextBox, string>>(_pending.Count);
+            foreach (var entry in _pending)
+                batch.Add(new(entry.Key, entry.Value.ToString()));
+            _pending.Clear();
+        }
 
-            case ChatType.Party:
-                txtParty.Write(message);
-                break;
+        foreach (var (box, text) in batch)
+        {
+            box.AppendText(text);
+            if (box.TextLength > MaximumCharacters)
+            {
+                // Cut at a line start, like the Log plugin
+                var line = box.GetLineFromCharIndex(box.TextLength - RetainedCharacters);
+                var removed = box.GetFirstCharIndexFromLine(line + 1);
+                if (removed <= 0)
+                    removed = box.TextLength - RetainedCharacters;
 
-            case ChatType.Private:
-                txtPrivate.Write(message);
-                break;
+                box.Select(0, removed);
+                box.SelectedText = string.Empty;
+            }
 
-            case ChatType.Union:
-                txtUnion.Write(message);
-                break;
-
-            case ChatType.Stall:
-                txtStall.Write(message);
-                break;
+            box.Select(box.TextLength, 0);
+            box.ScrollToCaret();
         }
     }
 

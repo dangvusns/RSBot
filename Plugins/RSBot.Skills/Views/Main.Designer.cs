@@ -136,7 +136,7 @@
             groupBoxAttackingSkills.Name = "groupBoxAttackingSkills";
             groupBoxAttackingSkills.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             groupBoxAttackingSkills.Radius = 10;
-            groupBoxAttackingSkills.ShadowDepth = 4;
+            groupBoxAttackingSkills.ShadowDepth = 0;
             groupBoxAttackingSkills.Size = new System.Drawing.Size(465, 266);
             groupBoxAttackingSkills.TabIndex = 1;
             groupBoxAttackingSkills.TabStop = false;
@@ -150,7 +150,7 @@
             checkUseSkillsInOrder.Margin = new System.Windows.Forms.Padding(0);
             checkUseSkillsInOrder.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseSkillsInOrder.Name = "checkUseSkillsInOrder";
-            checkUseSkillsInOrder.Ripple = true;
+            checkUseSkillsInOrder.Ripple = false;
             checkUseSkillsInOrder.Size = new System.Drawing.Size(108, 19);
             checkUseSkillsInOrder.TabIndex = 10;
             checkUseSkillsInOrder.Text = "Use in order";
@@ -165,7 +165,7 @@
             checkBoxNoAttack.Margin = new System.Windows.Forms.Padding(0);
             checkBoxNoAttack.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxNoAttack.Name = "checkBoxNoAttack";
-            checkBoxNoAttack.Ripple = true;
+            checkBoxNoAttack.Ripple = false;
             checkBoxNoAttack.Size = new System.Drawing.Size(95, 19);
             checkBoxNoAttack.TabIndex = 9;
             checkBoxNoAttack.Text = "No Attack";
@@ -228,7 +228,7 @@
             comboMonsterType.Margin = new System.Windows.Forms.Padding(4);
             comboMonsterType.Name = "comboMonsterType";
             comboMonsterType.Radius = 5;
-            comboMonsterType.ShadowDepth = 4F;
+            comboMonsterType.ShadowDepth = 0F;
             comboMonsterType.Size = new System.Drawing.Size(213, 23);
             comboMonsterType.TabIndex = 2;
             comboMonsterType.SelectedIndexChanged += comboMonsterType_SelectedIndexChanged;
@@ -241,7 +241,7 @@
             btnMoveAttackSkillDown.Margin = new System.Windows.Forms.Padding(4);
             btnMoveAttackSkillDown.Name = "btnMoveAttackSkillDown";
             btnMoveAttackSkillDown.Radius = 6;
-            btnMoveAttackSkillDown.ShadowDepth = 4F;
+            btnMoveAttackSkillDown.ShadowDepth = 0F;
             btnMoveAttackSkillDown.Size = new System.Drawing.Size(30, 30);
             btnMoveAttackSkillDown.TabIndex = 1;
             btnMoveAttackSkillDown.Text = "6";
@@ -256,7 +256,7 @@
             btnMoveAttackSkillUp.Margin = new System.Windows.Forms.Padding(4);
             btnMoveAttackSkillUp.Name = "btnMoveAttackSkillUp";
             btnMoveAttackSkillUp.Radius = 6;
-            btnMoveAttackSkillUp.ShadowDepth = 4F;
+            btnMoveAttackSkillUp.ShadowDepth = 0F;
             btnMoveAttackSkillUp.Size = new System.Drawing.Size(30, 30);
             btnMoveAttackSkillUp.TabIndex = 1;
             btnMoveAttackSkillUp.Text = "5";
@@ -271,7 +271,7 @@
             btnRemoveAttackSkill.Margin = new System.Windows.Forms.Padding(4);
             btnRemoveAttackSkill.Name = "btnRemoveAttackSkill";
             btnRemoveAttackSkill.Radius = 6;
-            btnRemoveAttackSkill.ShadowDepth = 4F;
+            btnRemoveAttackSkill.ShadowDepth = 0F;
             btnRemoveAttackSkill.Size = new System.Drawing.Size(30, 28);
             btnRemoveAttackSkill.TabIndex = 1;
             btnRemoveAttackSkill.Text = "r";
@@ -292,7 +292,7 @@
             groupBox2.Name = "groupBox2";
             groupBox2.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             groupBox2.Radius = 10;
-            groupBox2.ShadowDepth = 4;
+            groupBox2.ShadowDepth = 0;
             groupBox2.Size = new System.Drawing.Size(465, 248);
             groupBox2.TabIndex = 2;
             groupBox2.TabStop = false;
@@ -331,7 +331,7 @@
             btnMoveBuffSkillDown.Margin = new System.Windows.Forms.Padding(4);
             btnMoveBuffSkillDown.Name = "btnMoveBuffSkillDown";
             btnMoveBuffSkillDown.Radius = 6;
-            btnMoveBuffSkillDown.ShadowDepth = 4F;
+            btnMoveBuffSkillDown.ShadowDepth = 0F;
             btnMoveBuffSkillDown.Size = new System.Drawing.Size(30, 30);
             btnMoveBuffSkillDown.TabIndex = 8;
             btnMoveBuffSkillDown.Text = "6";
@@ -350,7 +350,7 @@
             comboImbue.Margin = new System.Windows.Forms.Padding(4);
             comboImbue.Name = "comboImbue";
             comboImbue.Radius = 5;
-            comboImbue.ShadowDepth = 4F;
+            comboImbue.ShadowDepth = 0F;
             comboImbue.Size = new System.Drawing.Size(333, 23);
             comboImbue.TabIndex = 7;
             comboImbue.SelectedIndexChanged += comboImbue_SelectedIndexChanged;
@@ -363,7 +363,7 @@
             btnMoveBuffSkillUp.Margin = new System.Windows.Forms.Padding(4);
             btnMoveBuffSkillUp.Name = "btnMoveBuffSkillUp";
             btnMoveBuffSkillUp.Radius = 6;
-            btnMoveBuffSkillUp.ShadowDepth = 4F;
+            btnMoveBuffSkillUp.ShadowDepth = 0F;
             btnMoveBuffSkillUp.Size = new System.Drawing.Size(30, 30);
             btnMoveBuffSkillUp.TabIndex = 9;
             btnMoveBuffSkillUp.Text = "5";
@@ -396,7 +396,7 @@
             btnRemoveBuffSkill.Margin = new System.Windows.Forms.Padding(4);
             btnRemoveBuffSkill.Name = "btnRemoveBuffSkill";
             btnRemoveBuffSkill.Radius = 6;
-            btnRemoveBuffSkill.ShadowDepth = 4F;
+            btnRemoveBuffSkill.ShadowDepth = 0F;
             btnRemoveBuffSkill.Size = new System.Drawing.Size(30, 30);
             btnRemoveBuffSkill.TabIndex = 5;
             btnRemoveBuffSkill.Text = "r";
@@ -461,7 +461,7 @@
             groupBoxAutomatedResurrection.Name = "groupBoxAutomatedResurrection";
             groupBoxAutomatedResurrection.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             groupBoxAutomatedResurrection.Radius = 10;
-            groupBoxAutomatedResurrection.ShadowDepth = 4;
+            groupBoxAutomatedResurrection.ShadowDepth = 0;
             groupBoxAutomatedResurrection.Size = new System.Drawing.Size(465, 193);
             groupBoxAutomatedResurrection.TabIndex = 11;
             groupBoxAutomatedResurrection.TabStop = false;
@@ -565,7 +565,7 @@
             comboResurrectionSkill.Margin = new System.Windows.Forms.Padding(4);
             comboResurrectionSkill.Name = "comboResurrectionSkill";
             comboResurrectionSkill.Radius = 5;
-            comboResurrectionSkill.ShadowDepth = 4F;
+            comboResurrectionSkill.ShadowDepth = 0F;
             comboResurrectionSkill.Size = new System.Drawing.Size(318, 23);
             comboResurrectionSkill.TabIndex = 8;
             comboResurrectionSkill.SelectedIndexChanged += comboResurrectionSkill_SelectedIndexChanged;
@@ -581,7 +581,7 @@
             checkAcceptResurrection.Margin = new System.Windows.Forms.Padding(0);
             checkAcceptResurrection.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAcceptResurrection.Name = "checkAcceptResurrection";
-            checkAcceptResurrection.Ripple = true;
+            checkAcceptResurrection.Ripple = false;
             checkAcceptResurrection.Size = new System.Drawing.Size(197, 30);
             checkAcceptResurrection.TabIndex = 9;
             checkAcceptResurrection.Text = "Auto accept resurrection";
@@ -597,7 +597,7 @@
             checkAcceptResurrectionPartyOnly.Margin = new System.Windows.Forms.Padding(0);
             checkAcceptResurrectionPartyOnly.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAcceptResurrectionPartyOnly.Name = "checkAcceptResurrectionPartyOnly";
-            checkAcceptResurrectionPartyOnly.Ripple = true;
+            checkAcceptResurrectionPartyOnly.Ripple = false;
             checkAcceptResurrectionPartyOnly.Size = new System.Drawing.Size(190, 30);
             checkAcceptResurrectionPartyOnly.TabIndex = 10;
             checkAcceptResurrectionPartyOnly.Text = "Only from party members";
@@ -631,7 +631,7 @@
             checkResurrectParty.Margin = new System.Windows.Forms.Padding(0);
             checkResurrectParty.MouseLocation = new System.Drawing.Point(-1, -1);
             checkResurrectParty.Name = "checkResurrectParty";
-            checkResurrectParty.Ripple = true;
+            checkResurrectParty.Ripple = false;
             checkResurrectParty.Size = new System.Drawing.Size(232, 30);
             checkResurrectParty.TabIndex = 6;
             checkResurrectParty.Text = "Auto resurrect party members";
@@ -649,7 +649,7 @@
             groupBoxAdvancedBuff.Name = "groupBoxAdvancedBuff";
             groupBoxAdvancedBuff.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             groupBoxAdvancedBuff.Radius = 10;
-            groupBoxAdvancedBuff.ShadowDepth = 4;
+            groupBoxAdvancedBuff.ShadowDepth = 0;
             groupBoxAdvancedBuff.Size = new System.Drawing.Size(465, 114);
             groupBoxAdvancedBuff.TabIndex = 12;
             groupBoxAdvancedBuff.TabStop = false;
@@ -664,7 +664,7 @@
             checkCastBuffsBetweenAttacks.Margin = new System.Windows.Forms.Padding(0);
             checkCastBuffsBetweenAttacks.MouseLocation = new System.Drawing.Point(-1, -1);
             checkCastBuffsBetweenAttacks.Name = "checkCastBuffsBetweenAttacks";
-            checkCastBuffsBetweenAttacks.Ripple = true;
+            checkCastBuffsBetweenAttacks.Ripple = false;
             checkCastBuffsBetweenAttacks.Size = new System.Drawing.Size(240, 30);
             checkCastBuffsBetweenAttacks.TabIndex = 11;
             checkCastBuffsBetweenAttacks.Text = "Cast buffs between attack skills";
@@ -682,7 +682,7 @@
             checkCastBuffsDuringWalkBack.Margin = new System.Windows.Forms.Padding(0);
             checkCastBuffsDuringWalkBack.MouseLocation = new System.Drawing.Point(-1, -1);
             checkCastBuffsDuringWalkBack.Name = "checkCastBuffsDuringWalkBack";
-            checkCastBuffsDuringWalkBack.Ripple = true;
+            checkCastBuffsDuringWalkBack.Ripple = false;
             checkCastBuffsDuringWalkBack.Size = new System.Drawing.Size(210, 30);
             checkCastBuffsDuringWalkBack.TabIndex = 10;
             checkCastBuffsDuringWalkBack.Text = "Cast buffs while walk-back";
@@ -698,7 +698,7 @@
             checkCastBuffsInTowns.Margin = new System.Windows.Forms.Padding(0);
             checkCastBuffsInTowns.MouseLocation = new System.Drawing.Point(-1, -1);
             checkCastBuffsInTowns.Name = "checkCastBuffsInTowns";
-            checkCastBuffsInTowns.Ripple = true;
+            checkCastBuffsInTowns.Ripple = false;
             checkCastBuffsInTowns.Size = new System.Drawing.Size(159, 30);
             checkCastBuffsInTowns.TabIndex = 10;
             checkCastBuffsInTowns.Text = "Cast buffs in towns";
@@ -718,7 +718,7 @@
             grpMasteryUpdate.Name = "grpMasteryUpdate";
             grpMasteryUpdate.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             grpMasteryUpdate.Radius = 10;
-            grpMasteryUpdate.ShadowDepth = 4;
+            grpMasteryUpdate.ShadowDepth = 0;
             grpMasteryUpdate.Size = new System.Drawing.Size(465, 95);
             grpMasteryUpdate.TabIndex = 13;
             grpMasteryUpdate.TabStop = false;
@@ -733,7 +733,7 @@
             checkLearnMasteryBotStopped.Margin = new System.Windows.Forms.Padding(0);
             checkLearnMasteryBotStopped.MouseLocation = new System.Drawing.Point(-1, -1);
             checkLearnMasteryBotStopped.Name = "checkLearnMasteryBotStopped";
-            checkLearnMasteryBotStopped.Ripple = true;
+            checkLearnMasteryBotStopped.Ripple = false;
             checkLearnMasteryBotStopped.Size = new System.Drawing.Size(237, 30);
             checkLearnMasteryBotStopped.TabIndex = 25;
             checkLearnMasteryBotStopped.Text = "Increase even if bot is stopped";
@@ -786,7 +786,7 @@
             comboLearnMastery.Margin = new System.Windows.Forms.Padding(4);
             comboLearnMastery.Name = "comboLearnMastery";
             comboLearnMastery.Radius = 5;
-            comboLearnMastery.ShadowDepth = 4F;
+            comboLearnMastery.ShadowDepth = 0F;
             comboLearnMastery.Size = new System.Drawing.Size(175, 23);
             comboLearnMastery.TabIndex = 1;
             comboLearnMastery.SelectedIndexChanged += comboLearnMastery_SelectedIndexChanged;
@@ -800,7 +800,7 @@
             checkLearnMastery.Margin = new System.Windows.Forms.Padding(0);
             checkLearnMastery.MouseLocation = new System.Drawing.Point(-1, -1);
             checkLearnMastery.Name = "checkLearnMastery";
-            checkLearnMastery.Ripple = true;
+            checkLearnMastery.Ripple = false;
             checkLearnMastery.Size = new System.Drawing.Size(87, 30);
             checkLearnMastery.TabIndex = 0;
             checkLearnMastery.Text = "Mastery";
@@ -819,7 +819,7 @@
             groupAdvancedSetup.Name = "groupAdvancedSetup";
             groupAdvancedSetup.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             groupAdvancedSetup.Radius = 10;
-            groupAdvancedSetup.ShadowDepth = 4;
+            groupAdvancedSetup.ShadowDepth = 0;
             groupAdvancedSetup.Size = new System.Drawing.Size(465, 130);
             groupAdvancedSetup.TabIndex = 14;
             groupAdvancedSetup.TabStop = false;
@@ -837,7 +837,7 @@
             comboTeleportSkill.Margin = new System.Windows.Forms.Padding(4);
             comboTeleportSkill.Name = "comboTeleportSkill";
             comboTeleportSkill.Radius = 5;
-            comboTeleportSkill.ShadowDepth = 4F;
+            comboTeleportSkill.ShadowDepth = 0F;
             comboTeleportSkill.Size = new System.Drawing.Size(259, 22);
             comboTeleportSkill.TabIndex = 9;
             comboTeleportSkill.SelectedIndexChanged += comboTeleportSkill_SelectedIndexChanged;
@@ -851,7 +851,7 @@
             checkUseTeleportSkill.Margin = new System.Windows.Forms.Padding(0);
             checkUseTeleportSkill.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseTeleportSkill.Name = "checkUseTeleportSkill";
-            checkUseTeleportSkill.Ripple = true;
+            checkUseTeleportSkill.Ripple = false;
             checkUseTeleportSkill.Size = new System.Drawing.Size(148, 30);
             checkUseTeleportSkill.TabIndex = 2;
             checkUseTeleportSkill.Text = "Use teleport skill:";
@@ -869,7 +869,7 @@
             checkUseDefaultAttack.Margin = new System.Windows.Forms.Padding(0);
             checkUseDefaultAttack.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseDefaultAttack.Name = "checkUseDefaultAttack";
-            checkUseDefaultAttack.Ripple = true;
+            checkUseDefaultAttack.Ripple = false;
             checkUseDefaultAttack.Size = new System.Drawing.Size(295, 30);
             checkUseDefaultAttack.TabIndex = 1;
             checkUseDefaultAttack.Text = "Use normal attack if no skill is available";
@@ -885,7 +885,7 @@
             checkWarlockMode.Margin = new System.Windows.Forms.Padding(0);
             checkWarlockMode.MouseLocation = new System.Drawing.Point(-1, -1);
             checkWarlockMode.Name = "checkWarlockMode";
-            checkWarlockMode.Ripple = true;
+            checkWarlockMode.Ripple = false;
             checkWarlockMode.Size = new System.Drawing.Size(213, 30);
             checkWarlockMode.TabIndex = 0;
             checkWarlockMode.Text = "Change target after 2 DoTs";
@@ -1043,7 +1043,7 @@
             panelPlayerSkills.Margin = new System.Windows.Forms.Padding(0);
             panelPlayerSkills.Name = "panelPlayerSkills";
             panelPlayerSkills.Radius = 0;
-            panelPlayerSkills.ShadowDepth = 4F;
+            panelPlayerSkills.ShadowDepth = 0F;
             panelPlayerSkills.Size = new System.Drawing.Size(444, 46);
             panelPlayerSkills.TabIndex = 9;
             // 
@@ -1057,7 +1057,7 @@
             panel2.Margin = new System.Windows.Forms.Padding(4);
             panel2.Name = "panel2";
             panel2.Radius = 1;
-            panel2.ShadowDepth = 4F;
+            panel2.ShadowDepth = 0F;
             panel2.Size = new System.Drawing.Size(444, 1);
             panel2.TabIndex = 9;
             // 
@@ -1070,7 +1070,7 @@
             checkHideLowerLevelSkills.Margin = new System.Windows.Forms.Padding(0);
             checkHideLowerLevelSkills.MouseLocation = new System.Drawing.Point(-1, -1);
             checkHideLowerLevelSkills.Name = "checkHideLowerLevelSkills";
-            checkHideLowerLevelSkills.Ripple = true;
+            checkHideLowerLevelSkills.Ripple = false;
             checkHideLowerLevelSkills.Size = new System.Drawing.Size(178, 30);
             checkHideLowerLevelSkills.TabIndex = 6;
             checkHideLowerLevelSkills.Text = "Hide lower level skills";
@@ -1088,7 +1088,7 @@
             checkShowAttacks.Margin = new System.Windows.Forms.Padding(0);
             checkShowAttacks.MouseLocation = new System.Drawing.Point(-1, -1);
             checkShowAttacks.Name = "checkShowAttacks";
-            checkShowAttacks.Ripple = true;
+            checkShowAttacks.Ripple = false;
             checkShowAttacks.Size = new System.Drawing.Size(83, 30);
             checkShowAttacks.TabIndex = 7;
             checkShowAttacks.Text = "Attacks";
@@ -1106,7 +1106,7 @@
             checkShowBuffs.Margin = new System.Windows.Forms.Padding(0);
             checkShowBuffs.MouseLocation = new System.Drawing.Point(-1, -1);
             checkShowBuffs.Name = "checkShowBuffs";
-            checkShowBuffs.Ripple = true;
+            checkShowBuffs.Ripple = false;
             checkShowBuffs.Size = new System.Drawing.Size(68, 30);
             checkShowBuffs.TabIndex = 8;
             checkShowBuffs.Text = "Buffs";

@@ -95,7 +95,7 @@ namespace RSBot.General.Views
             btnOK.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             btnOK.Name = "btnOK";
             btnOK.Radius = 6;
-            btnOK.ShadowDepth = 4F;
+            btnOK.ShadowDepth = 0F;
             btnOK.Size = new System.Drawing.Size(90, 26);
             btnOK.TabIndex = 6;
             btnOK.Text = "OK";
@@ -111,7 +111,7 @@ namespace RSBot.General.Views
             btnCancel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             btnCancel.Name = "btnCancel";
             btnCancel.Radius = 6;
-            btnCancel.ShadowDepth = 4F;
+            btnCancel.ShadowDepth = 0F;
             btnCancel.Size = new System.Drawing.Size(90, 26);
             btnCancel.TabIndex = 7;
             btnCancel.Text = "Cancel";
@@ -131,7 +131,7 @@ namespace RSBot.General.Views
             panel1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             panel1.Name = "panel1";
             panel1.Radius = 0;
-            panel1.ShadowDepth = 4F;
+            panel1.ShadowDepth = 0F;
             panel1.Size = new System.Drawing.Size(559, 56);
             panel1.TabIndex = 7;
             // 
@@ -144,7 +144,7 @@ namespace RSBot.General.Views
             chkUniqueInRange.Margin = new System.Windows.Forms.Padding(0);
             chkUniqueInRange.MouseLocation = new System.Drawing.Point(-1, -1);
             chkUniqueInRange.Name = "chkUniqueInRange";
-            chkUniqueInRange.Ripple = true;
+            chkUniqueInRange.Ripple = false;
             chkUniqueInRange.Size = new System.Drawing.Size(143, 30);
             chkUniqueInRange.TabIndex = 8;
             chkUniqueInRange.Text = "Unique in range:";
@@ -162,7 +162,7 @@ namespace RSBot.General.Views
             btnUniqueInRange.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             btnUniqueInRange.Name = "btnUniqueInRange";
             btnUniqueInRange.Radius = 6;
-            btnUniqueInRange.ShadowDepth = 4F;
+            btnUniqueInRange.ShadowDepth = 0F;
             btnUniqueInRange.Size = new System.Drawing.Size(52, 29);
             btnUniqueInRange.TabIndex = 9;
             btnUniqueInRange.Text = "...";
@@ -178,7 +178,7 @@ namespace RSBot.General.Views
             chkUniqueAppearedGeneral.Margin = new System.Windows.Forms.Padding(0);
             chkUniqueAppearedGeneral.MouseLocation = new System.Drawing.Point(-1, -1);
             chkUniqueAppearedGeneral.Name = "chkUniqueAppearedGeneral";
-            chkUniqueAppearedGeneral.Ripple = true;
+            chkUniqueAppearedGeneral.Ripple = false;
             chkUniqueAppearedGeneral.Size = new System.Drawing.Size(153, 30);
             chkUniqueAppearedGeneral.TabIndex = 10;
             chkUniqueAppearedGeneral.Text = "Unique appeared:";
@@ -196,7 +196,7 @@ namespace RSBot.General.Views
             btnUniqueAppearedGeneral.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             btnUniqueAppearedGeneral.Name = "btnUniqueAppearedGeneral";
             btnUniqueAppearedGeneral.Radius = 6;
-            btnUniqueAppearedGeneral.ShadowDepth = 4F;
+            btnUniqueAppearedGeneral.ShadowDepth = 0F;
             btnUniqueAppearedGeneral.Size = new System.Drawing.Size(52, 29);
             btnUniqueAppearedGeneral.TabIndex = 12;
             btnUniqueAppearedGeneral.Text = "...";
@@ -278,7 +278,7 @@ namespace RSBot.General.Views
             chkTigerGirl.Margin = new System.Windows.Forms.Padding(0);
             chkTigerGirl.MouseLocation = new System.Drawing.Point(-1, -1);
             chkTigerGirl.Name = "chkTigerGirl";
-            chkTigerGirl.Ripple = true;
+            chkTigerGirl.Ripple = false;
             chkTigerGirl.Size = new System.Drawing.Size(102, 30);
             chkTigerGirl.TabIndex = 17;
             chkTigerGirl.Text = "Tiger Girl::";
@@ -294,7 +294,7 @@ namespace RSBot.General.Views
             chkIvy.Margin = new System.Windows.Forms.Padding(0);
             chkIvy.MouseLocation = new System.Drawing.Point(-1, -1);
             chkIvy.Name = "chkIvy";
-            chkIvy.Ripple = true;
+            chkIvy.Ripple = false;
             chkIvy.Size = new System.Drawing.Size(111, 30);
             chkIvy.TabIndex = 18;
             chkIvy.Text = "Captain Ivy:";
@@ -310,7 +310,7 @@ namespace RSBot.General.Views
             chkUruchi.Margin = new System.Windows.Forms.Padding(0);
             chkUruchi.MouseLocation = new System.Drawing.Point(-1, -1);
             chkUruchi.Name = "chkUruchi";
-            chkUruchi.Ripple = true;
+            chkUruchi.Ripple = false;
             chkUruchi.Size = new System.Drawing.Size(80, 30);
             chkUruchi.TabIndex = 19;
             chkUruchi.Text = "Uruchi:";
@@ -326,7 +326,7 @@ namespace RSBot.General.Views
             chkCerberus.Margin = new System.Windows.Forms.Padding(0);
             chkCerberus.MouseLocation = new System.Drawing.Point(-1, -1);
             chkCerberus.Name = "chkCerberus";
-            chkCerberus.Ripple = true;
+            chkCerberus.Ripple = false;
             chkCerberus.Size = new System.Drawing.Size(96, 30);
             chkCerberus.TabIndex = 20;
             chkCerberus.Text = "Cerberus:";
@@ -342,7 +342,7 @@ namespace RSBot.General.Views
             chkIsyutaru.Margin = new System.Windows.Forms.Padding(0);
             chkIsyutaru.MouseLocation = new System.Drawing.Point(-1, -1);
             chkIsyutaru.Name = "chkIsyutaru";
-            chkIsyutaru.Ripple = true;
+            chkIsyutaru.Ripple = false;
             chkIsyutaru.Size = new System.Drawing.Size(89, 30);
             chkIsyutaru.TabIndex = 21;
             chkIsyutaru.Text = "Isyutaru:";
@@ -358,7 +358,7 @@ namespace RSBot.General.Views
             chkLordYarkan.Margin = new System.Windows.Forms.Padding(0);
             chkLordYarkan.MouseLocation = new System.Drawing.Point(-1, -1);
             chkLordYarkan.Name = "chkLordYarkan";
-            chkLordYarkan.Ripple = true;
+            chkLordYarkan.Ripple = false;
             chkLordYarkan.Size = new System.Drawing.Size(115, 30);
             chkLordYarkan.TabIndex = 22;
             chkLordYarkan.Text = "Lord Yarkan:";
@@ -374,7 +374,7 @@ namespace RSBot.General.Views
             chkDemonChaitan.Margin = new System.Windows.Forms.Padding(0);
             chkDemonChaitan.MouseLocation = new System.Drawing.Point(-1, -1);
             chkDemonChaitan.Name = "chkDemonChaitan";
-            chkDemonChaitan.Ripple = true;
+            chkDemonChaitan.Ripple = false;
             chkDemonChaitan.Size = new System.Drawing.Size(140, 30);
             chkDemonChaitan.TabIndex = 23;
             chkDemonChaitan.Text = "Demon Shaitan:";
@@ -504,7 +504,7 @@ namespace RSBot.General.Views
             btnTigerGirl.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             btnTigerGirl.Name = "btnTigerGirl";
             btnTigerGirl.Radius = 6;
-            btnTigerGirl.ShadowDepth = 4F;
+            btnTigerGirl.ShadowDepth = 0F;
             btnTigerGirl.Size = new System.Drawing.Size(52, 29);
             btnTigerGirl.TabIndex = 31;
             btnTigerGirl.Text = "...";
@@ -522,7 +522,7 @@ namespace RSBot.General.Views
             btnCerberus.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             btnCerberus.Name = "btnCerberus";
             btnCerberus.Radius = 6;
-            btnCerberus.ShadowDepth = 4F;
+            btnCerberus.ShadowDepth = 0F;
             btnCerberus.Size = new System.Drawing.Size(52, 29);
             btnCerberus.TabIndex = 32;
             btnCerberus.Text = "...";
@@ -540,7 +540,7 @@ namespace RSBot.General.Views
             btnIvy.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             btnIvy.Name = "btnIvy";
             btnIvy.Radius = 6;
-            btnIvy.ShadowDepth = 4F;
+            btnIvy.ShadowDepth = 0F;
             btnIvy.Size = new System.Drawing.Size(52, 29);
             btnIvy.TabIndex = 33;
             btnIvy.Text = "...";
@@ -558,7 +558,7 @@ namespace RSBot.General.Views
             btnUruchi.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             btnUruchi.Name = "btnUruchi";
             btnUruchi.Radius = 6;
-            btnUruchi.ShadowDepth = 4F;
+            btnUruchi.ShadowDepth = 0F;
             btnUruchi.Size = new System.Drawing.Size(52, 29);
             btnUruchi.TabIndex = 34;
             btnUruchi.Text = "...";
@@ -576,7 +576,7 @@ namespace RSBot.General.Views
             btnIsyutaru.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             btnIsyutaru.Name = "btnIsyutaru";
             btnIsyutaru.Radius = 6;
-            btnIsyutaru.ShadowDepth = 4F;
+            btnIsyutaru.ShadowDepth = 0F;
             btnIsyutaru.Size = new System.Drawing.Size(52, 29);
             btnIsyutaru.TabIndex = 35;
             btnIsyutaru.Text = "...";
@@ -594,7 +594,7 @@ namespace RSBot.General.Views
             btnLordYarkan.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             btnLordYarkan.Name = "btnLordYarkan";
             btnLordYarkan.Radius = 6;
-            btnLordYarkan.ShadowDepth = 4F;
+            btnLordYarkan.ShadowDepth = 0F;
             btnLordYarkan.Size = new System.Drawing.Size(52, 29);
             btnLordYarkan.TabIndex = 36;
             btnLordYarkan.Text = "...";
@@ -612,7 +612,7 @@ namespace RSBot.General.Views
             btnDemonChaitan.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             btnDemonChaitan.Name = "btnDemonChaitan";
             btnDemonChaitan.Radius = 6;
-            btnDemonChaitan.ShadowDepth = 4F;
+            btnDemonChaitan.ShadowDepth = 0F;
             btnDemonChaitan.Size = new System.Drawing.Size(52, 29);
             btnDemonChaitan.TabIndex = 37;
             btnDemonChaitan.Text = "...";
@@ -676,7 +676,7 @@ namespace RSBot.General.Views
             gbxUnique.Name = "gbxUnique";
             gbxUnique.Padding = new System.Windows.Forms.Padding(4, 10, 4, 4);
             gbxUnique.Radius = 10;
-            gbxUnique.ShadowDepth = 4;
+            gbxUnique.ShadowDepth = 0;
             gbxUnique.Size = new System.Drawing.Size(542, 479);
             gbxUnique.TabIndex = 39;
             gbxUnique.TabStop = false;

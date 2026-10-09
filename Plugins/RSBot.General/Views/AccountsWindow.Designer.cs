@@ -75,7 +75,7 @@
             comboBoxChannel.Location = new System.Drawing.Point(320, 126);
             comboBoxChannel.Name = "comboBoxChannel";
             comboBoxChannel.Radius = 5;
-            comboBoxChannel.ShadowDepth = 4F;
+            comboBoxChannel.ShadowDepth = 0F;
             comboBoxChannel.Size = new System.Drawing.Size(74, 23);
             comboBoxChannel.TabIndex = 11;
             // 
@@ -87,7 +87,7 @@
             buttonRemove.Location = new System.Drawing.Point(195, 207);
             buttonRemove.Name = "buttonRemove";
             buttonRemove.Radius = 6;
-            buttonRemove.ShadowDepth = 4F;
+            buttonRemove.ShadowDepth = 0F;
             buttonRemove.Size = new System.Drawing.Size(72, 21);
             buttonRemove.TabIndex = 10;
             buttonRemove.Text = "Remove";
@@ -219,7 +219,7 @@
             btnSave.Location = new System.Drawing.Point(322, 207);
             btnSave.Name = "btnSave";
             btnSave.Radius = 6;
-            btnSave.ShadowDepth = 4F;
+            btnSave.ShadowDepth = 0F;
             btnSave.Size = new System.Drawing.Size(72, 21);
             btnSave.TabIndex = 5;
             btnSave.Text = "Save";
@@ -234,7 +234,7 @@
             btnAdd.Location = new System.Drawing.Point(195, 207);
             btnAdd.Name = "btnAdd";
             btnAdd.Radius = 6;
-            btnAdd.ShadowDepth = 4F;
+            btnAdd.ShadowDepth = 0F;
             btnAdd.Size = new System.Drawing.Size(72, 21);
             btnAdd.TabIndex = 4;
             btnAdd.Text = "Add";
@@ -292,7 +292,7 @@
             btnOK.Location = new System.Drawing.Point(12, 12);
             btnOK.Name = "btnOK";
             btnOK.Radius = 6;
-            btnOK.ShadowDepth = 4F;
+            btnOK.ShadowDepth = 0F;
             btnOK.Size = new System.Drawing.Size(72, 21);
             btnOK.TabIndex = 6;
             btnOK.Text = "OK";
@@ -307,7 +307,7 @@
             btnCancel.Location = new System.Drawing.Point(328, 12);
             btnCancel.Name = "btnCancel";
             btnCancel.Radius = 6;
-            btnCancel.ShadowDepth = 4F;
+            btnCancel.ShadowDepth = 0F;
             btnCancel.Size = new System.Drawing.Size(72, 21);
             btnCancel.TabIndex = 7;
             btnCancel.Text = "Cancel";
@@ -325,7 +325,7 @@
             panel1.Location = new System.Drawing.Point(0, 242);
             panel1.Name = "panel1";
             panel1.Radius = 0;
-            panel1.ShadowDepth = 4F;
+            panel1.ShadowDepth = 0F;
             panel1.Size = new System.Drawing.Size(408, 45);
             panel1.TabIndex = 7;
             // 

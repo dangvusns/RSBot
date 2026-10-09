@@ -97,7 +97,7 @@
             buttonNext.Location = new System.Drawing.Point(0, 0);
             buttonNext.Name = "buttonNext";
             buttonNext.Radius = 4;
-            buttonNext.ShadowDepth = 4F;
+            buttonNext.ShadowDepth = 0F;
             buttonNext.Size = new System.Drawing.Size(23, 56);
             buttonNext.TabIndex = 1;
             buttonNext.Text = "4";
@@ -123,7 +123,7 @@
             buttonPrev.Location = new System.Drawing.Point(0, 0);
             buttonPrev.Name = "buttonPrev";
             buttonPrev.Radius = 4;
-            buttonPrev.ShadowDepth = 4F;
+            buttonPrev.ShadowDepth = 0F;
             buttonPrev.Size = new System.Drawing.Size(23, 56);
             buttonPrev.TabIndex = 2;
             buttonPrev.Text = "3";

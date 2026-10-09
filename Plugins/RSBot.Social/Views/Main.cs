@@ -438,7 +438,7 @@ public partial class Main : SDUI.Controls.DoubleBufferedControl
             Dock = DockStyle.Top,
             Padding = new Padding(Px(16), Px(32), Px(16), Px(16)),
             Radius = 10,
-            ShadowDepth = 4,
+            ShadowDepth = 0,
         };
 
         var label = CreateWrappingLabel("ExchangePrompt", "When a player invites me to an exchange:");

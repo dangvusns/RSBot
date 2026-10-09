@@ -1332,7 +1332,7 @@ public partial class Main : DoubleBufferedControl
             BackColor = System.Drawing.Color.Transparent,
             Depth = 0,
             Margin = new System.Windows.Forms.Padding(0),
-            Ripple = true,
+            Ripple = false,
             UseVisualStyleBackColor = false,
         };
         checkBoxAttackLeaderTarget.CheckedChanged += (_, _) =>

@@ -68,7 +68,7 @@
             this.buttonCancel.Location = new System.Drawing.Point(165, 6);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Radius = 6;
-            this.buttonCancel.ShadowDepth = 4F;
+            this.buttonCancel.ShadowDepth = 0F;
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
             this.buttonCancel.TabIndex = 3;
             this.buttonCancel.Text = "Cancel";
@@ -82,7 +82,7 @@
             this.buttonAccept.Location = new System.Drawing.Point(5, 6);
             this.buttonAccept.Name = "buttonAccept";
             this.buttonAccept.Radius = 6;
-            this.buttonAccept.ShadowDepth = 4F;
+            this.buttonAccept.ShadowDepth = 0F;
             this.buttonAccept.Size = new System.Drawing.Size(75, 23);
             this.buttonAccept.TabIndex = 2;
             this.buttonAccept.Text = "Accept";
@@ -202,7 +202,7 @@
             this.buttonUseMyPosition.Location = new System.Drawing.Point(122, 147);
             this.buttonUseMyPosition.Name = "buttonUseMyPosition";
             this.buttonUseMyPosition.Radius = 6;
-            this.buttonUseMyPosition.ShadowDepth = 4F;
+            this.buttonUseMyPosition.ShadowDepth = 0F;
             this.buttonUseMyPosition.Size = new System.Drawing.Size(120, 23);
             this.buttonUseMyPosition.TabIndex = 5;
             this.buttonUseMyPosition.Text = "Use my position";
@@ -251,7 +251,7 @@
             this.bottomPanel.Location = new System.Drawing.Point(1, 234);
             this.bottomPanel.Name = "bottomPanel";
             this.bottomPanel.Radius = 0;
-            this.bottomPanel.ShadowDepth = 4F;
+            this.bottomPanel.ShadowDepth = 0F;
             this.bottomPanel.Size = new System.Drawing.Size(251, 35);
             this.bottomPanel.TabIndex = 6;
             // 

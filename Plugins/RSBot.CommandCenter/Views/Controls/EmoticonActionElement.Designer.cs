@@ -51,7 +51,7 @@
             comboAction.Location = new System.Drawing.Point(58, 19);
             comboAction.Name = "comboAction";
             comboAction.Radius = 5;
-            comboAction.ShadowDepth = 4F;
+            comboAction.ShadowDepth = 0F;
             comboAction.Size = new System.Drawing.Size(188, 24);
             comboAction.TabIndex = 1;
             comboAction.SelectedIndexChanged += comboAction_SelectedIndexChanged;

@@ -58,7 +58,7 @@
             panel1.Location = new System.Drawing.Point(0, 314);
             panel1.Name = "panel1";
             panel1.Radius = 0;
-            panel1.ShadowDepth = 4F;
+            panel1.ShadowDepth = 0F;
             panel1.Size = new System.Drawing.Size(327, 49);
             panel1.TabIndex = 1;
             // 
@@ -70,7 +70,7 @@
             btnCancel.Location = new System.Drawing.Point(236, 14);
             btnCancel.Name = "btnCancel";
             btnCancel.Radius = 6;
-            btnCancel.ShadowDepth = 4F;
+            btnCancel.ShadowDepth = 0F;
             btnCancel.Size = new System.Drawing.Size(75, 23);
             btnCancel.TabIndex = 1;
             btnCancel.Text = "Cancel";
@@ -84,7 +84,7 @@
             btnConfirm.Location = new System.Drawing.Point(12, 14);
             btnConfirm.Name = "btnConfirm";
             btnConfirm.Radius = 6;
-            btnConfirm.ShadowDepth = 4F;
+            btnConfirm.ShadowDepth = 0F;
             btnConfirm.Size = new System.Drawing.Size(75, 23);
             btnConfirm.TabIndex = 0;
             btnConfirm.Text = "Confirm";
@@ -164,7 +164,7 @@
             comboBoxProxyVersion.Location = new System.Drawing.Point(14, 265);
             comboBoxProxyVersion.Name = "comboBoxProxyVersion";
             comboBoxProxyVersion.Radius = 5;
-            comboBoxProxyVersion.ShadowDepth = 4F;
+            comboBoxProxyVersion.ShadowDepth = 0F;
             comboBoxProxyVersion.Size = new System.Drawing.Size(301, 24);
             comboBoxProxyVersion.TabIndex = 5;
             // 
@@ -207,7 +207,7 @@
             checkBoxOnOf.Margin = new System.Windows.Forms.Padding(0);
             checkBoxOnOf.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxOnOf.Name = "checkBoxOnOf";
-            checkBoxOnOf.Ripple = true;
+            checkBoxOnOf.Ripple = false;
             checkBoxOnOf.Size = new System.Drawing.Size(73, 30);
             checkBoxOnOf.TabIndex = 8;
             checkBoxOnOf.Text = "Activate";

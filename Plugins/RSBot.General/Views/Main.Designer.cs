@@ -140,7 +140,7 @@
             comboBoxClientType.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             comboBoxClientType.Name = "comboBoxClientType";
             comboBoxClientType.Radius = 5;
-            comboBoxClientType.ShadowDepth = 4F;
+            comboBoxClientType.ShadowDepth = 0F;
             comboBoxClientType.Size = new System.Drawing.Size(131, 24);
             comboBoxClientType.TabIndex = 18;
             comboBoxClientType.SelectedIndexChanged += comboBoxClientType_SelectedIndexChanged;
@@ -155,7 +155,7 @@
             groupBox4.Name = "groupBox4";
             groupBox4.Padding = new System.Windows.Forms.Padding(3, 13, 3, 4);
             groupBox4.Radius = 10;
-            groupBox4.ShadowDepth = 4;
+            groupBox4.ShadowDepth = 0;
             groupBox4.Size = new System.Drawing.Size(410, 131);
             groupBox4.TabIndex = 17;
             groupBox4.TabStop = false;
@@ -190,7 +190,7 @@
             checkBoxBotTrayMinimized.Margin = new System.Windows.Forms.Padding(0);
             checkBoxBotTrayMinimized.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxBotTrayMinimized.Name = "checkBoxBotTrayMinimized";
-            checkBoxBotTrayMinimized.Ripple = true;
+            checkBoxBotTrayMinimized.Ripple = false;
             checkBoxBotTrayMinimized.Size = new System.Drawing.Size(308, 30);
             checkBoxBotTrayMinimized.TabIndex = 0;
             checkBoxBotTrayMinimized.Text = "Move bot to system tray when minimized";
@@ -207,7 +207,7 @@
             groupBox3.Name = "groupBox3";
             groupBox3.Padding = new System.Windows.Forms.Padding(3, 13, 3, 4);
             groupBox3.Radius = 10;
-            groupBox3.ShadowDepth = 4;
+            groupBox3.ShadowDepth = 0;
             groupBox3.Size = new System.Drawing.Size(410, 140);
             groupBox3.TabIndex = 16;
             groupBox3.TabStop = false;
@@ -242,7 +242,7 @@
             checkStayConnected.Margin = new System.Windows.Forms.Padding(0);
             checkStayConnected.MouseLocation = new System.Drawing.Point(-1, -1);
             checkStayConnected.Name = "checkStayConnected";
-            checkStayConnected.Ripple = true;
+            checkStayConnected.Ripple = false;
             checkStayConnected.Size = new System.Drawing.Size(315, 30);
             checkStayConnected.TabIndex = 17;
             checkStayConnected.Text = "Stay connected if client exits unexpectedly";
@@ -261,7 +261,7 @@
             groupBox2.Name = "groupBox2";
             groupBox2.Padding = new System.Windows.Forms.Padding(3, 13, 3, 4);
             groupBox2.Radius = 10;
-            groupBox2.ShadowDepth = 4;
+            groupBox2.ShadowDepth = 0;
             groupBox2.Size = new System.Drawing.Size(406, 140);
             groupBox2.TabIndex = 15;
             groupBox2.TabStop = false;
@@ -275,7 +275,7 @@
             btnClientHideShow.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnClientHideShow.Name = "btnClientHideShow";
             btnClientHideShow.Radius = 6;
-            btnClientHideShow.ShadowDepth = 4F;
+            btnClientHideShow.ShadowDepth = 0F;
             btnClientHideShow.Size = new System.Drawing.Size(143, 28);
             btnClientHideShow.TabIndex = 19;
             btnClientHideShow.Text = "Client Visibility";
@@ -289,7 +289,7 @@
             btnStartClient.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnStartClient.Name = "btnStartClient";
             btnStartClient.Radius = 6;
-            btnStartClient.ShadowDepth = 4F;
+            btnStartClient.ShadowDepth = 0F;
             btnStartClient.Size = new System.Drawing.Size(143, 28);
             btnStartClient.TabIndex = 16;
             btnStartClient.Text = "Start Client";
@@ -303,7 +303,7 @@
             btnStartClientless.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnStartClientless.Name = "btnStartClientless";
             btnStartClientless.Radius = 6;
-            btnStartClientless.ShadowDepth = 4F;
+            btnStartClientless.ShadowDepth = 0F;
             btnStartClientless.Size = new System.Drawing.Size(143, 28);
             btnStartClientless.TabIndex = 18;
             btnStartClientless.Text = "Start Clientless";
@@ -318,7 +318,7 @@
             btnGoClientless.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnGoClientless.Name = "btnGoClientless";
             btnGoClientless.Radius = 6;
-            btnGoClientless.ShadowDepth = 4F;
+            btnGoClientless.ShadowDepth = 0F;
             btnGoClientless.Size = new System.Drawing.Size(143, 28);
             btnGoClientless.TabIndex = 17;
             btnGoClientless.Text = "Go Clientless";
@@ -337,7 +337,7 @@
             groupBox1.Name = "groupBox1";
             groupBox1.Padding = new System.Windows.Forms.Padding(3, 13, 3, 4);
             groupBox1.Radius = 10;
-            groupBox1.ShadowDepth = 4;
+            groupBox1.ShadowDepth = 0;
             groupBox1.Size = new System.Drawing.Size(417, 457);
             groupBox1.TabIndex = 14;
             groupBox1.TabStop = false;
@@ -408,7 +408,7 @@
             checkWaitAfterDC.Margin = new System.Windows.Forms.Padding(0);
             checkWaitAfterDC.MouseLocation = new System.Drawing.Point(-1, -1);
             checkWaitAfterDC.Name = "checkWaitAfterDC";
-            checkWaitAfterDC.Ripple = true;
+            checkWaitAfterDC.Ripple = false;
             checkWaitAfterDC.Size = new System.Drawing.Size(124, 30);
             checkWaitAfterDC.TabIndex = 40;
             checkWaitAfterDC.Text = "Wait after DC";
@@ -433,7 +433,7 @@
             radioAutoSelectHigher.Location = new System.Drawing.Point(226, 151);
             radioAutoSelectHigher.Margin = new System.Windows.Forms.Padding(0);
             radioAutoSelectHigher.Name = "radioAutoSelectHigher";
-            radioAutoSelectHigher.Ripple = true;
+            radioAutoSelectHigher.Ripple = false;
             radioAutoSelectHigher.Size = new System.Drawing.Size(169, 30);
             radioAutoSelectHigher.TabIndex = 38;
             radioAutoSelectHigher.Text = "Auto Select (Higher)";
@@ -449,7 +449,7 @@
             radioAutoSelectFirst.Location = new System.Drawing.Point(75, 151);
             radioAutoSelectFirst.Margin = new System.Windows.Forms.Padding(0);
             radioAutoSelectFirst.Name = "radioAutoSelectFirst";
-            radioAutoSelectFirst.Ripple = true;
+            radioAutoSelectFirst.Ripple = false;
             radioAutoSelectFirst.Size = new System.Drawing.Size(151, 30);
             radioAutoSelectFirst.TabIndex = 37;
             radioAutoSelectFirst.TabStop = true;
@@ -467,7 +467,7 @@
             checkCharAutoSelect.Margin = new System.Windows.Forms.Padding(0);
             checkCharAutoSelect.MouseLocation = new System.Drawing.Point(-1, -1);
             checkCharAutoSelect.Name = "checkCharAutoSelect";
-            checkCharAutoSelect.Ripple = true;
+            checkCharAutoSelect.Ripple = false;
             checkCharAutoSelect.Size = new System.Drawing.Size(145, 30);
             checkCharAutoSelect.TabIndex = 36;
             checkCharAutoSelect.Text = "Auto Char Select";
@@ -483,7 +483,7 @@
             checkHideClient.Margin = new System.Windows.Forms.Padding(0);
             checkHideClient.MouseLocation = new System.Drawing.Point(-1, -1);
             checkHideClient.Name = "checkHideClient";
-            checkHideClient.Ripple = true;
+            checkHideClient.Ripple = false;
             checkHideClient.Size = new System.Drawing.Size(145, 30);
             checkHideClient.TabIndex = 31;
             checkHideClient.Text = "Auto Hide Client";
@@ -533,7 +533,7 @@
             checkEnableLoginDelay.Margin = new System.Windows.Forms.Padding(0);
             checkEnableLoginDelay.MouseLocation = new System.Drawing.Point(-1, -1);
             checkEnableLoginDelay.Name = "checkEnableLoginDelay";
-            checkEnableLoginDelay.Ripple = true;
+            checkEnableLoginDelay.Ripple = false;
             checkEnableLoginDelay.Size = new System.Drawing.Size(158, 30);
             checkEnableLoginDelay.TabIndex = 25;
             checkEnableLoginDelay.Text = "Enable login delay";
@@ -549,7 +549,7 @@
             checkStartBot.Margin = new System.Windows.Forms.Padding(0);
             checkStartBot.MouseLocation = new System.Drawing.Point(-1, -1);
             checkStartBot.Name = "checkStartBot";
-            checkStartBot.Ripple = true;
+            checkStartBot.Ripple = false;
             checkStartBot.Size = new System.Drawing.Size(127, 30);
             checkStartBot.TabIndex = 24;
             checkStartBot.Text = "Auto start bot";
@@ -565,7 +565,7 @@
             checkUseReturnScroll.Margin = new System.Windows.Forms.Padding(0);
             checkUseReturnScroll.MouseLocation = new System.Drawing.Point(-1, -1);
             checkUseReturnScroll.Name = "checkUseReturnScroll";
-            checkUseReturnScroll.Ripple = true;
+            checkUseReturnScroll.Ripple = false;
             checkUseReturnScroll.Size = new System.Drawing.Size(141, 30);
             checkUseReturnScroll.TabIndex = 16;
             checkUseReturnScroll.Text = "Use return scroll";
@@ -656,7 +656,7 @@
             checkEnableStaticCaptcha.Margin = new System.Windows.Forms.Padding(0);
             checkEnableStaticCaptcha.MouseLocation = new System.Drawing.Point(-1, -1);
             checkEnableStaticCaptcha.Name = "checkEnableStaticCaptcha";
-            checkEnableStaticCaptcha.Ripple = true;
+            checkEnableStaticCaptcha.Ripple = false;
             checkEnableStaticCaptcha.Size = new System.Drawing.Size(213, 30);
             checkEnableStaticCaptcha.TabIndex = 4;
             checkEnableStaticCaptcha.Text = "Enable static captcha solve";
@@ -689,7 +689,7 @@
             comboAccounts.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             comboAccounts.Name = "comboAccounts";
             comboAccounts.Radius = 5;
-            comboAccounts.ShadowDepth = 4F;
+            comboAccounts.ShadowDepth = 0F;
             comboAccounts.Size = new System.Drawing.Size(306, 24);
             comboAccounts.TabIndex = 0;
             comboAccounts.SelectedIndexChanged += comboAccounts_SelectedIndexChanged;
@@ -737,7 +737,7 @@
             checkEnableAutoLogin.Margin = new System.Windows.Forms.Padding(0);
             checkEnableAutoLogin.MouseLocation = new System.Drawing.Point(-1, -1);
             checkEnableAutoLogin.Name = "checkEnableAutoLogin";
-            checkEnableAutoLogin.Ripple = true;
+            checkEnableAutoLogin.Ripple = false;
             checkEnableAutoLogin.Size = new System.Drawing.Size(195, 30);
             checkEnableAutoLogin.TabIndex = 1;
             checkEnableAutoLogin.Text = "Enable automated login";
@@ -755,7 +755,7 @@
             comboCharacter.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             comboCharacter.Name = "comboCharacter";
             comboCharacter.Radius = 5;
-            comboCharacter.ShadowDepth = 4F;
+            comboCharacter.ShadowDepth = 0F;
             comboCharacter.Size = new System.Drawing.Size(306, 24);
             comboCharacter.TabIndex = 22;
             comboCharacter.SelectedIndexChanged += comboCharacter_SelectedIndexChanged;
@@ -767,7 +767,7 @@
             btnAutoLoginSettings.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnAutoLoginSettings.Name = "btnAutoLoginSettings";
             btnAutoLoginSettings.Radius = 6;
-            btnAutoLoginSettings.ShadowDepth = 4F;
+            btnAutoLoginSettings.ShadowDepth = 0F;
             btnAutoLoginSettings.Size = new System.Drawing.Size(86, 31);
             btnAutoLoginSettings.TabIndex = 2;
             btnAutoLoginSettings.Text = "Setup";
@@ -781,7 +781,7 @@
             btnBrowseSilkroadPath.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnBrowseSilkroadPath.Name = "btnBrowseSilkroadPath";
             btnBrowseSilkroadPath.Radius = 6;
-            btnBrowseSilkroadPath.ShadowDepth = 4F;
+            btnBrowseSilkroadPath.ShadowDepth = 0F;
             btnBrowseSilkroadPath.Size = new System.Drawing.Size(37, 28);
             btnBrowseSilkroadPath.TabIndex = 2;
             btnBrowseSilkroadPath.Text = "...";
@@ -816,7 +816,7 @@
             groupBox5.Name = "groupBox5";
             groupBox5.Padding = new System.Windows.Forms.Padding(3, 13, 3, 4);
             groupBox5.Radius = 10;
-            groupBox5.ShadowDepth = 4;
+            groupBox5.ShadowDepth = 0;
             groupBox5.Size = new System.Drawing.Size(410, 197);
             groupBox5.TabIndex = 24;
             groupBox5.TabStop = false;
@@ -831,7 +831,7 @@
             checkEnableQueueLogs.Margin = new System.Windows.Forms.Padding(0);
             checkEnableQueueLogs.MouseLocation = new System.Drawing.Point(-1, -1);
             checkEnableQueueLogs.Name = "checkEnableQueueLogs";
-            checkEnableQueueLogs.Ripple = true;
+            checkEnableQueueLogs.Ripple = false;
             checkEnableQueueLogs.Size = new System.Drawing.Size(216, 30);
             checkEnableQueueLogs.TabIndex = 42;
             checkEnableQueueLogs.Text = "Enable pending queue logs";
@@ -881,7 +881,7 @@
             checkAutoHidePendingWindow.Margin = new System.Windows.Forms.Padding(0);
             checkAutoHidePendingWindow.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAutoHidePendingWindow.Name = "checkAutoHidePendingWindow";
-            checkAutoHidePendingWindow.Ripple = true;
+            checkAutoHidePendingWindow.Ripple = false;
             checkAutoHidePendingWindow.Size = new System.Drawing.Size(240, 30);
             checkAutoHidePendingWindow.TabIndex = 41;
             checkAutoHidePendingWindow.Text = "Auto hide the pending window";
@@ -897,7 +897,7 @@
             checkEnableQueueNotification.Margin = new System.Windows.Forms.Padding(0);
             checkEnableQueueNotification.MouseLocation = new System.Drawing.Point(-1, -1);
             checkEnableQueueNotification.Name = "checkEnableQueueNotification";
-            checkEnableQueueNotification.Ripple = true;
+            checkEnableQueueNotification.Ripple = false;
             checkEnableQueueNotification.Size = new System.Drawing.Size(230, 30);
             checkEnableQueueNotification.TabIndex = 40;
             checkEnableQueueNotification.Text = "Enable queue notification on ";
@@ -912,7 +912,7 @@
             btnShowPending.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnShowPending.Name = "btnShowPending";
             btnShowPending.Radius = 6;
-            btnShowPending.ShadowDepth = 4F;
+            btnShowPending.ShadowDepth = 0F;
             btnShowPending.Size = new System.Drawing.Size(214, 31);
             btnShowPending.TabIndex = 24;
             btnShowPending.Text = "Toggle Pending Window";
@@ -928,7 +928,7 @@
             gbxSoundNotification.Name = "gbxSoundNotification";
             gbxSoundNotification.Padding = new System.Windows.Forms.Padding(3, 11, 3, 4);
             gbxSoundNotification.Radius = 10;
-            gbxSoundNotification.ShadowDepth = 4;
+            gbxSoundNotification.ShadowDepth = 0;
             gbxSoundNotification.Size = new System.Drawing.Size(410, 84);
             gbxSoundNotification.TabIndex = 25;
             gbxSoundNotification.TabStop = false;
@@ -941,7 +941,7 @@
             btnSoundSettingSetup.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             btnSoundSettingSetup.Name = "btnSoundSettingSetup";
             btnSoundSettingSetup.Radius = 6;
-            btnSoundSettingSetup.ShadowDepth = 4F;
+            btnSoundSettingSetup.ShadowDepth = 0F;
             btnSoundSettingSetup.Size = new System.Drawing.Size(174, 31);
             btnSoundSettingSetup.TabIndex = 24;
             btnSoundSettingSetup.Text = "Open Settings...";

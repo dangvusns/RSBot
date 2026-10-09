@@ -307,7 +307,7 @@
             panel1.Name = "panel1";
             panel1.Padding = new System.Windows.Forms.Padding(8);
             panel1.Radius = 0;
-            panel1.ShadowDepth = 4F;
+            panel1.ShadowDepth = 0F;
             panel1.Size = new System.Drawing.Size(926, 40);
             panel1.TabIndex = 8;
             // 
@@ -321,7 +321,7 @@
             btnLeaveParty.Margin = new System.Windows.Forms.Padding(4);
             btnLeaveParty.Name = "btnLeaveParty";
             btnLeaveParty.Radius = 6;
-            btnLeaveParty.ShadowDepth = 4F;
+            btnLeaveParty.ShadowDepth = 0F;
             btnLeaveParty.Size = new System.Drawing.Size(121, 24);
             btnLeaveParty.TabIndex = 2;
             btnLeaveParty.Text = "Leave party";
@@ -377,7 +377,7 @@
             grpPartySettings.Name = "grpPartySettings";
             grpPartySettings.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             grpPartySettings.Radius = 10;
-            grpPartySettings.ShadowDepth = 4;
+            grpPartySettings.ShadowDepth = 0;
             grpPartySettings.Size = new System.Drawing.Size(926, 100);
             grpPartySettings.TabIndex = 7;
             grpPartySettings.TabStop = false;
@@ -392,7 +392,7 @@
             checkCurrentAllowInvitations.Margin = new System.Windows.Forms.Padding(0);
             checkCurrentAllowInvitations.MouseLocation = new System.Drawing.Point(-1, -1);
             checkCurrentAllowInvitations.Name = "checkCurrentAllowInvitations";
-            checkCurrentAllowInvitations.Ripple = true;
+            checkCurrentAllowInvitations.Ripple = false;
             checkCurrentAllowInvitations.Size = new System.Drawing.Size(139, 19);
             checkCurrentAllowInvitations.TabIndex = 6;
             checkCurrentAllowInvitations.Text = "Allow invitations";
@@ -407,7 +407,7 @@
             checkCurrentAutoShareItems.Margin = new System.Windows.Forms.Padding(0);
             checkCurrentAutoShareItems.MouseLocation = new System.Drawing.Point(-1, -1);
             checkCurrentAutoShareItems.Name = "checkCurrentAutoShareItems";
-            checkCurrentAutoShareItems.Ripple = true;
+            checkCurrentAutoShareItems.Ripple = false;
             checkCurrentAutoShareItems.Size = new System.Drawing.Size(131, 19);
             checkCurrentAutoShareItems.TabIndex = 5;
             checkCurrentAutoShareItems.Text = "Item auto share";
@@ -422,7 +422,7 @@
             checkCurrentAutoShareEXP.Margin = new System.Windows.Forms.Padding(0);
             checkCurrentAutoShareEXP.MouseLocation = new System.Drawing.Point(-1, -1);
             checkCurrentAutoShareEXP.Name = "checkCurrentAutoShareEXP";
-            checkCurrentAutoShareEXP.Ripple = true;
+            checkCurrentAutoShareEXP.Ripple = false;
             checkCurrentAutoShareEXP.Size = new System.Drawing.Size(129, 19);
             checkCurrentAutoShareEXP.TabIndex = 5;
             checkCurrentAutoShareEXP.Text = "EXP Auto share";
@@ -469,7 +469,7 @@
             groupBox2.Name = "groupBox2";
             groupBox2.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             groupBox2.Radius = 10;
-            groupBox2.ShadowDepth = 4;
+            groupBox2.ShadowDepth = 0;
             groupBox2.Size = new System.Drawing.Size(638, 432);
             groupBox2.TabIndex = 11;
             groupBox2.TabStop = false;
@@ -484,7 +484,7 @@
             checkBoxFollowMaster.Margin = new System.Windows.Forms.Padding(0);
             checkBoxFollowMaster.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxFollowMaster.Name = "checkBoxFollowMaster";
-            checkBoxFollowMaster.Ripple = true;
+            checkBoxFollowMaster.Ripple = false;
             checkBoxFollowMaster.Size = new System.Drawing.Size(239, 30);
             checkBoxFollowMaster.TabIndex = 20;
             checkBoxFollowMaster.Text = "Always follow the party master";
@@ -559,7 +559,7 @@
             checkBoxListenCommandsOnlyList.Margin = new System.Windows.Forms.Padding(0);
             checkBoxListenCommandsOnlyList.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxListenCommandsOnlyList.Name = "checkBoxListenCommandsOnlyList";
-            checkBoxListenCommandsOnlyList.Ripple = true;
+            checkBoxListenCommandsOnlyList.Ripple = false;
             checkBoxListenCommandsOnlyList.Size = new System.Drawing.Size(189, 30);
             checkBoxListenCommandsOnlyList.TabIndex = 13;
             checkBoxListenCommandsOnlyList.Text = "Listen commands in list";
@@ -575,7 +575,7 @@
             checkBoxListenMasterCommands.Margin = new System.Windows.Forms.Padding(0);
             checkBoxListenMasterCommands.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxListenMasterCommands.Name = "checkBoxListenMasterCommands";
-            checkBoxListenMasterCommands.Ripple = true;
+            checkBoxListenMasterCommands.Ripple = false;
             checkBoxListenMasterCommands.Size = new System.Drawing.Size(237, 30);
             checkBoxListenMasterCommands.TabIndex = 13;
             checkBoxListenMasterCommands.Text = "Listen party master commands";
@@ -591,7 +591,7 @@
             checkBoxLeaveIfMasterNot.Margin = new System.Windows.Forms.Padding(0);
             checkBoxLeaveIfMasterNot.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxLeaveIfMasterNot.Name = "checkBoxLeaveIfMasterNot";
-            checkBoxLeaveIfMasterNot.Ripple = true;
+            checkBoxLeaveIfMasterNot.Ripple = false;
             checkBoxLeaveIfMasterNot.Size = new System.Drawing.Size(167, 30);
             checkBoxLeaveIfMasterNot.TabIndex = 13;
             checkBoxLeaveIfMasterNot.Text = "Leave, if master not:";
@@ -607,7 +607,7 @@
             checkAcceptIfBotStopped.Margin = new System.Windows.Forms.Padding(0);
             checkAcceptIfBotStopped.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAcceptIfBotStopped.Name = "checkAcceptIfBotStopped";
-            checkAcceptIfBotStopped.Ripple = true;
+            checkAcceptIfBotStopped.Ripple = false;
             checkAcceptIfBotStopped.Size = new System.Drawing.Size(219, 30);
             checkAcceptIfBotStopped.TabIndex = 12;
             checkAcceptIfBotStopped.Text = "Accept if the bot is stopped";
@@ -623,7 +623,7 @@
             checkAcceptAtTrainingPlace.Margin = new System.Windows.Forms.Padding(0);
             checkAcceptAtTrainingPlace.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAcceptAtTrainingPlace.Name = "checkAcceptAtTrainingPlace";
-            checkAcceptAtTrainingPlace.Ripple = true;
+            checkAcceptAtTrainingPlace.Ripple = false;
             checkAcceptAtTrainingPlace.Size = new System.Drawing.Size(267, 30);
             checkAcceptAtTrainingPlace.TabIndex = 10;
             checkAcceptAtTrainingPlace.Text = "Accept/Invite only at training place";
@@ -657,7 +657,7 @@
             checkInviteFromList.Margin = new System.Windows.Forms.Padding(0);
             checkInviteFromList.MouseLocation = new System.Drawing.Point(-1, -1);
             checkInviteFromList.Name = "checkInviteFromList";
-            checkInviteFromList.Ripple = true;
+            checkInviteFromList.Ripple = false;
             checkInviteFromList.Size = new System.Drawing.Size(282, 30);
             checkInviteFromList.TabIndex = 9;
             checkInviteFromList.Text = "Auto invite all players from player list";
@@ -673,7 +673,7 @@
             checkInviteAll.Margin = new System.Windows.Forms.Padding(0);
             checkInviteAll.MouseLocation = new System.Drawing.Point(-1, -1);
             checkInviteAll.Name = "checkInviteAll";
-            checkInviteAll.Ripple = true;
+            checkInviteAll.Ripple = false;
             checkInviteAll.Size = new System.Drawing.Size(178, 30);
             checkInviteAll.TabIndex = 8;
             checkInviteAll.Text = "Auto invite all players";
@@ -689,7 +689,7 @@
             checkAcceptFromList.Margin = new System.Windows.Forms.Padding(0);
             checkAcceptFromList.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAcceptFromList.Name = "checkAcceptFromList";
-            checkAcceptFromList.Ripple = true;
+            checkAcceptFromList.Ripple = false;
             checkAcceptFromList.Size = new System.Drawing.Size(257, 30);
             checkAcceptFromList.TabIndex = 7;
             checkAcceptFromList.Text = "Accept invitations from player list";
@@ -705,7 +705,7 @@
             checkAcceptAll.Margin = new System.Windows.Forms.Padding(0);
             checkAcceptAll.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAcceptAll.Name = "checkAcceptAll";
-            checkAcceptAll.Ripple = true;
+            checkAcceptAll.Ripple = false;
             checkAcceptAll.Size = new System.Drawing.Size(179, 30);
             checkAcceptAll.TabIndex = 6;
             checkAcceptAll.Text = "Accept all invitations*";
@@ -745,7 +745,7 @@
             groupBox7.Name = "groupBox7";
             groupBox7.Padding = new System.Windows.Forms.Padding(1, 10, 1, 1);
             groupBox7.Radius = 10;
-            groupBox7.ShadowDepth = 4;
+            groupBox7.ShadowDepth = 0;
             groupBox7.Size = new System.Drawing.Size(276, 196);
             groupBox7.TabIndex = 13;
             groupBox7.TabStop = false;
@@ -785,7 +785,7 @@
             panel4.Margin = new System.Windows.Forms.Padding(4);
             panel4.Name = "panel4";
             panel4.Radius = 1;
-            panel4.ShadowDepth = 4F;
+            panel4.ShadowDepth = 0F;
             panel4.Size = new System.Drawing.Size(274, 41);
             panel4.TabIndex = 10;
             // 
@@ -796,7 +796,7 @@
             buttonCommandPlayerAdd.Margin = new System.Windows.Forms.Padding(4);
             buttonCommandPlayerAdd.Name = "buttonCommandPlayerAdd";
             buttonCommandPlayerAdd.Radius = 6;
-            buttonCommandPlayerAdd.ShadowDepth = 4F;
+            buttonCommandPlayerAdd.ShadowDepth = 0F;
             buttonCommandPlayerAdd.Size = new System.Drawing.Size(102, 29);
             buttonCommandPlayerAdd.TabIndex = 10;
             buttonCommandPlayerAdd.Text = "Add";
@@ -810,7 +810,7 @@
             buttonCommandPlayerRemove.Margin = new System.Windows.Forms.Padding(4);
             buttonCommandPlayerRemove.Name = "buttonCommandPlayerRemove";
             buttonCommandPlayerRemove.Radius = 6;
-            buttonCommandPlayerRemove.ShadowDepth = 4F;
+            buttonCommandPlayerRemove.ShadowDepth = 0F;
             buttonCommandPlayerRemove.Size = new System.Drawing.Size(98, 29);
             buttonCommandPlayerRemove.TabIndex = 10;
             buttonCommandPlayerRemove.Text = "Remove";
@@ -837,7 +837,7 @@
             groupBox3.Name = "groupBox3";
             groupBox3.Padding = new System.Windows.Forms.Padding(1, 10, 1, 1);
             groupBox3.Radius = 10;
-            groupBox3.ShadowDepth = 4;
+            groupBox3.ShadowDepth = 0;
             groupBox3.Size = new System.Drawing.Size(276, 224);
             groupBox3.TabIndex = 12;
             groupBox3.TabStop = false;
@@ -877,7 +877,7 @@
             panel3.Margin = new System.Windows.Forms.Padding(4);
             panel3.Name = "panel3";
             panel3.Radius = 0;
-            panel3.ShadowDepth = 4F;
+            panel3.ShadowDepth = 0F;
             panel3.Size = new System.Drawing.Size(274, 41);
             panel3.TabIndex = 17;
             // 
@@ -888,7 +888,7 @@
             btnAddToAutoParty.Margin = new System.Windows.Forms.Padding(4);
             btnAddToAutoParty.Name = "btnAddToAutoParty";
             btnAddToAutoParty.Radius = 6;
-            btnAddToAutoParty.ShadowDepth = 4F;
+            btnAddToAutoParty.ShadowDepth = 0F;
             btnAddToAutoParty.Size = new System.Drawing.Size(102, 29);
             btnAddToAutoParty.TabIndex = 10;
             btnAddToAutoParty.Text = "Add";
@@ -902,7 +902,7 @@
             btnRemoveFromAutoParty.Margin = new System.Windows.Forms.Padding(4);
             btnRemoveFromAutoParty.Name = "btnRemoveFromAutoParty";
             btnRemoveFromAutoParty.Radius = 6;
-            btnRemoveFromAutoParty.ShadowDepth = 4F;
+            btnRemoveFromAutoParty.ShadowDepth = 0F;
             btnRemoveFromAutoParty.Size = new System.Drawing.Size(98, 29);
             btnRemoveFromAutoParty.TabIndex = 10;
             btnRemoveFromAutoParty.Text = "Remove";
@@ -930,7 +930,7 @@
             grbAutoPartySettings.Name = "grbAutoPartySettings";
             grbAutoPartySettings.Padding = new System.Windows.Forms.Padding(4, 12, 4, 4);
             grbAutoPartySettings.Radius = 10;
-            grbAutoPartySettings.ShadowDepth = 4;
+            grbAutoPartySettings.ShadowDepth = 0;
             grbAutoPartySettings.Size = new System.Drawing.Size(926, 100);
             grbAutoPartySettings.TabIndex = 8;
             grbAutoPartySettings.TabStop = false;
@@ -947,7 +947,7 @@
             checkAutoAllowInvitations.Margin = new System.Windows.Forms.Padding(0);
             checkAutoAllowInvitations.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAutoAllowInvitations.Name = "checkAutoAllowInvitations";
-            checkAutoAllowInvitations.Ripple = true;
+            checkAutoAllowInvitations.Ripple = false;
             checkAutoAllowInvitations.Size = new System.Drawing.Size(145, 30);
             checkAutoAllowInvitations.TabIndex = 6;
             checkAutoAllowInvitations.Text = "Allow invitations";
@@ -963,7 +963,7 @@
             checkAutoItemAutoShare.Margin = new System.Windows.Forms.Padding(0);
             checkAutoItemAutoShare.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAutoItemAutoShare.Name = "checkAutoItemAutoShare";
-            checkAutoItemAutoShare.Ripple = true;
+            checkAutoItemAutoShare.Ripple = false;
             checkAutoItemAutoShare.Size = new System.Drawing.Size(138, 30);
             checkAutoItemAutoShare.TabIndex = 5;
             checkAutoItemAutoShare.Text = "Item auto share";
@@ -981,7 +981,7 @@
             checkAutoExpAutoShare.Margin = new System.Windows.Forms.Padding(0);
             checkAutoExpAutoShare.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAutoExpAutoShare.Name = "checkAutoExpAutoShare";
-            checkAutoExpAutoShare.Ripple = true;
+            checkAutoExpAutoShare.Ripple = false;
             checkAutoExpAutoShare.Size = new System.Drawing.Size(135, 30);
             checkAutoExpAutoShare.TabIndex = 5;
             checkAutoExpAutoShare.Text = "EXP Auto share";
@@ -1082,7 +1082,7 @@
             topPartyPanel.Margin = new System.Windows.Forms.Padding(4);
             topPartyPanel.Name = "topPartyPanel";
             topPartyPanel.Radius = 0;
-            topPartyPanel.ShadowDepth = 4F;
+            topPartyPanel.ShadowDepth = 0F;
             topPartyPanel.Size = new System.Drawing.Size(926, 59);
             topPartyPanel.TabIndex = 16;
             // 
@@ -1094,7 +1094,7 @@
             buttonConfirmJoinConfig.Margin = new System.Windows.Forms.Padding(4);
             buttonConfirmJoinConfig.Name = "buttonConfirmJoinConfig";
             buttonConfirmJoinConfig.Radius = 6;
-            buttonConfirmJoinConfig.ShadowDepth = 4F;
+            buttonConfirmJoinConfig.ShadowDepth = 0F;
             buttonConfirmJoinConfig.Size = new System.Drawing.Size(100, 29);
             buttonConfirmJoinConfig.TabIndex = 23;
             buttonConfirmJoinConfig.Text = "Confirm";
@@ -1138,7 +1138,7 @@
             checkBoxJoinByTitle.Margin = new System.Windows.Forms.Padding(0);
             checkBoxJoinByTitle.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxJoinByTitle.Name = "checkBoxJoinByTitle";
-            checkBoxJoinByTitle.Ripple = true;
+            checkBoxJoinByTitle.Ripple = false;
             checkBoxJoinByTitle.Size = new System.Drawing.Size(146, 30);
             checkBoxJoinByTitle.TabIndex = 19;
             checkBoxJoinByTitle.Text = "Auto join by title";
@@ -1153,7 +1153,7 @@
             checkBoxJoinByName.Margin = new System.Windows.Forms.Padding(0);
             checkBoxJoinByName.MouseLocation = new System.Drawing.Point(-1, -1);
             checkBoxJoinByName.Name = "checkBoxJoinByName";
-            checkBoxJoinByName.Ripple = true;
+            checkBoxJoinByName.Ripple = false;
             checkBoxJoinByName.Size = new System.Drawing.Size(157, 30);
             checkBoxJoinByName.TabIndex = 20;
             checkBoxJoinByName.Text = "Auto join by name";
@@ -1176,7 +1176,7 @@
             buttonAutoJoinConfig.Margin = new System.Windows.Forms.Padding(4);
             buttonAutoJoinConfig.Name = "buttonAutoJoinConfig";
             buttonAutoJoinConfig.Radius = 6;
-            buttonAutoJoinConfig.ShadowDepth = 4F;
+            buttonAutoJoinConfig.ShadowDepth = 0F;
             buttonAutoJoinConfig.Size = new System.Drawing.Size(31, 29);
             buttonAutoJoinConfig.TabIndex = 13;
             buttonAutoJoinConfig.Text = "@";
@@ -1190,7 +1190,7 @@
             btnPartyRefresh.Margin = new System.Windows.Forms.Padding(4);
             btnPartyRefresh.Name = "btnPartyRefresh";
             btnPartyRefresh.Radius = 6;
-            btnPartyRefresh.ShadowDepth = 4F;
+            btnPartyRefresh.ShadowDepth = 0F;
             btnPartyRefresh.Size = new System.Drawing.Size(106, 26);
             btnPartyRefresh.TabIndex = 4;
             btnPartyRefresh.Text = "Refresh";
@@ -1203,7 +1203,7 @@
             btnPartySearch.Margin = new System.Windows.Forms.Padding(4);
             btnPartySearch.Name = "btnPartySearch";
             btnPartySearch.Radius = 6;
-            btnPartySearch.ShadowDepth = 4F;
+            btnPartySearch.ShadowDepth = 0F;
             btnPartySearch.Size = new System.Drawing.Size(109, 26);
             btnPartySearch.TabIndex = 4;
             btnPartySearch.Text = "Search";
@@ -1252,7 +1252,7 @@
             cbPartySearchPurpose.Margin = new System.Windows.Forms.Padding(4);
             cbPartySearchPurpose.Name = "cbPartySearchPurpose";
             cbPartySearchPurpose.Radius = 5;
-            cbPartySearchPurpose.ShadowDepth = 4F;
+            cbPartySearchPurpose.ShadowDepth = 0F;
             cbPartySearchPurpose.Size = new System.Drawing.Size(134, 23);
             cbPartySearchPurpose.TabIndex = 2;
             // 
@@ -1362,7 +1362,7 @@
             bottomPartyPanel.Margin = new System.Windows.Forms.Padding(4);
             bottomPartyPanel.Name = "bottomPartyPanel";
             bottomPartyPanel.Radius = 0;
-            bottomPartyPanel.ShadowDepth = 4F;
+            bottomPartyPanel.ShadowDepth = 0F;
             bottomPartyPanel.Size = new System.Drawing.Size(926, 64);
             bottomPartyPanel.TabIndex = 14;
             // 
@@ -1374,7 +1374,7 @@
             btnPartyMatchDeleteEntry.Margin = new System.Windows.Forms.Padding(4);
             btnPartyMatchDeleteEntry.Name = "btnPartyMatchDeleteEntry";
             btnPartyMatchDeleteEntry.Radius = 6;
-            btnPartyMatchDeleteEntry.ShadowDepth = 4F;
+            btnPartyMatchDeleteEntry.ShadowDepth = 0F;
             btnPartyMatchDeleteEntry.Size = new System.Drawing.Size(109, 29);
             btnPartyMatchDeleteEntry.TabIndex = 16;
             btnPartyMatchDeleteEntry.Text = "Delete Entry";
@@ -1388,7 +1388,7 @@
             btnPartyMatchChangeEntry.Margin = new System.Windows.Forms.Padding(4);
             btnPartyMatchChangeEntry.Name = "btnPartyMatchChangeEntry";
             btnPartyMatchChangeEntry.Radius = 6;
-            btnPartyMatchChangeEntry.ShadowDepth = 4F;
+            btnPartyMatchChangeEntry.ShadowDepth = 0F;
             btnPartyMatchChangeEntry.Size = new System.Drawing.Size(109, 29);
             btnPartyMatchChangeEntry.TabIndex = 15;
             btnPartyMatchChangeEntry.Text = "Change Entry";
@@ -1401,7 +1401,7 @@
             btnPartyMatchForm.Margin = new System.Windows.Forms.Padding(4);
             btnPartyMatchForm.Name = "btnPartyMatchForm";
             btnPartyMatchForm.Radius = 6;
-            btnPartyMatchForm.ShadowDepth = 4F;
+            btnPartyMatchForm.ShadowDepth = 0F;
             btnPartyMatchForm.Size = new System.Drawing.Size(112, 29);
             btnPartyMatchForm.TabIndex = 14;
             btnPartyMatchForm.Text = "Form Party";
@@ -1415,7 +1415,7 @@
             btnAutoMatchParty.Margin = new System.Windows.Forms.Padding(4);
             btnAutoMatchParty.Name = "btnAutoMatchParty";
             btnAutoMatchParty.Radius = 6;
-            btnAutoMatchParty.ShadowDepth = 4F;
+            btnAutoMatchParty.ShadowDepth = 0F;
             btnAutoMatchParty.Size = new System.Drawing.Size(120, 29);
             btnAutoMatchParty.TabIndex = 10;
             btnAutoMatchParty.Text = "Auto Match";
@@ -1428,7 +1428,7 @@
             btnWhisperPartyMaster.Margin = new System.Windows.Forms.Padding(4);
             btnWhisperPartyMaster.Name = "btnWhisperPartyMaster";
             btnWhisperPartyMaster.Radius = 6;
-            btnWhisperPartyMaster.ShadowDepth = 4F;
+            btnWhisperPartyMaster.ShadowDepth = 0F;
             btnWhisperPartyMaster.Size = new System.Drawing.Size(94, 29);
             btnWhisperPartyMaster.TabIndex = 9;
             btnWhisperPartyMaster.Text = "Whisper";
@@ -1440,7 +1440,7 @@
             btnJoinFormedParty.Margin = new System.Windows.Forms.Padding(4);
             btnJoinFormedParty.Name = "btnJoinFormedParty";
             btnJoinFormedParty.Radius = 6;
-            btnJoinFormedParty.ShadowDepth = 4F;
+            btnJoinFormedParty.ShadowDepth = 0F;
             btnJoinFormedParty.Size = new System.Drawing.Size(94, 29);
             btnJoinFormedParty.TabIndex = 8;
             btnJoinFormedParty.Text = "Join Party";
@@ -1456,7 +1456,7 @@
             btnPrev.Margin = new System.Windows.Forms.Padding(4);
             btnPrev.Name = "btnPrev";
             btnPrev.Radius = 6;
-            btnPrev.ShadowDepth = 4F;
+            btnPrev.ShadowDepth = 0F;
             btnPrev.Size = new System.Drawing.Size(29, 29);
             btnPrev.TabIndex = 11;
             btnPrev.Text = "◀";
@@ -1472,7 +1472,7 @@
             btnNext.Margin = new System.Windows.Forms.Padding(4);
             btnNext.Name = "btnNext";
             btnNext.Radius = 6;
-            btnNext.ShadowDepth = 4F;
+            btnNext.ShadowDepth = 0F;
             btnNext.Size = new System.Drawing.Size(29, 29);
             btnNext.TabIndex = 12;
             btnNext.Text = "▶";
@@ -1529,7 +1529,7 @@
             groupBox4.Name = "groupBox4";
             groupBox4.Padding = new System.Windows.Forms.Padding(2, 10, 2, 2);
             groupBox4.Radius = 10;
-            groupBox4.ShadowDepth = 4;
+            groupBox4.ShadowDepth = 0;
             groupBox4.Size = new System.Drawing.Size(269, 305);
             groupBox4.TabIndex = 11;
             groupBox4.TabStop = false;
@@ -1545,7 +1545,7 @@
             buttonAddCharToBuffing.Margin = new System.Windows.Forms.Padding(4);
             buttonAddCharToBuffing.Name = "buttonAddCharToBuffing";
             buttonAddCharToBuffing.Radius = 6;
-            buttonAddCharToBuffing.ShadowDepth = 4F;
+            buttonAddCharToBuffing.ShadowDepth = 0F;
             buttonAddCharToBuffing.Size = new System.Drawing.Size(29, 29);
             buttonAddCharToBuffing.TabIndex = 13;
             buttonAddCharToBuffing.Text = "a";
@@ -1560,7 +1560,7 @@
             btnAddBuffToMember.Margin = new System.Windows.Forms.Padding(4);
             btnAddBuffToMember.Name = "btnAddBuffToMember";
             btnAddBuffToMember.Radius = 6;
-            btnAddBuffToMember.ShadowDepth = 4F;
+            btnAddBuffToMember.ShadowDepth = 0F;
             btnAddBuffToMember.Size = new System.Drawing.Size(94, 26);
             btnAddBuffToMember.TabIndex = 11;
             btnAddBuffToMember.Text = "Add Buff";
@@ -1576,7 +1576,7 @@
             buttonRemoveCharFromBuffing.Margin = new System.Windows.Forms.Padding(4);
             buttonRemoveCharFromBuffing.Name = "buttonRemoveCharFromBuffing";
             buttonRemoveCharFromBuffing.Radius = 6;
-            buttonRemoveCharFromBuffing.ShadowDepth = 4F;
+            buttonRemoveCharFromBuffing.ShadowDepth = 0F;
             buttonRemoveCharFromBuffing.Size = new System.Drawing.Size(29, 29);
             buttonRemoveCharFromBuffing.TabIndex = 12;
             buttonRemoveCharFromBuffing.Text = "r";
@@ -1591,7 +1591,7 @@
             btnRemoveBuffFromMember.Margin = new System.Windows.Forms.Padding(4);
             btnRemoveBuffFromMember.Name = "btnRemoveBuffFromMember";
             btnRemoveBuffFromMember.Radius = 6;
-            btnRemoveBuffFromMember.ShadowDepth = 4F;
+            btnRemoveBuffFromMember.ShadowDepth = 0F;
             btnRemoveBuffFromMember.Size = new System.Drawing.Size(108, 26);
             btnRemoveBuffFromMember.TabIndex = 12;
             btnRemoveBuffFromMember.Text = "Remove Buff";
@@ -1648,7 +1648,7 @@
             groupBox6.Name = "groupBox6";
             groupBox6.Padding = new System.Windows.Forms.Padding(2, 10, 2, 2);
             groupBox6.Radius = 10;
-            groupBox6.ShadowDepth = 4;
+            groupBox6.ShadowDepth = 0;
             groupBox6.Size = new System.Drawing.Size(269, 219);
             groupBox6.TabIndex = 14;
             groupBox6.TabStop = false;
@@ -1663,7 +1663,7 @@
             buttonAddGroup.Margin = new System.Windows.Forms.Padding(4);
             buttonAddGroup.Name = "buttonAddGroup";
             buttonAddGroup.Radius = 6;
-            buttonAddGroup.ShadowDepth = 4F;
+            buttonAddGroup.ShadowDepth = 0F;
             buttonAddGroup.Size = new System.Drawing.Size(79, 26);
             buttonAddGroup.TabIndex = 0;
             buttonAddGroup.Text = "Create";
@@ -1678,7 +1678,7 @@
             buttonRemoveGroup.Margin = new System.Windows.Forms.Padding(4);
             buttonRemoveGroup.Name = "buttonRemoveGroup";
             buttonRemoveGroup.Radius = 6;
-            buttonRemoveGroup.ShadowDepth = 4F;
+            buttonRemoveGroup.ShadowDepth = 0F;
             buttonRemoveGroup.Size = new System.Drawing.Size(90, 26);
             buttonRemoveGroup.TabIndex = 0;
             buttonRemoveGroup.Text = "Remove";
@@ -1732,7 +1732,7 @@
             groupBox5.Name = "groupBox5";
             groupBox5.Padding = new System.Windows.Forms.Padding(2, 10, 2, 2);
             groupBox5.Radius = 10;
-            groupBox5.ShadowDepth = 4;
+            groupBox5.ShadowDepth = 0;
             groupBox5.Size = new System.Drawing.Size(291, 536);
             groupBox5.TabIndex = 12;
             groupBox5.TabStop = false;
@@ -1781,7 +1781,7 @@
             groupBox1.Name = "groupBox1";
             groupBox1.Padding = new System.Windows.Forms.Padding(2, 10, 2, 2);
             groupBox1.Radius = 10;
-            groupBox1.ShadowDepth = 4;
+            groupBox1.ShadowDepth = 0;
             groupBox1.Size = new System.Drawing.Size(334, 536);
             groupBox1.TabIndex = 10;
             groupBox1.TabStop = false;
@@ -1842,7 +1842,7 @@
             panel5.Name = "panel5";
             panel5.Padding = new System.Windows.Forms.Padding(12, 0, 0, 0);
             panel5.Radius = 1;
-            panel5.ShadowDepth = 4F;
+            panel5.ShadowDepth = 0F;
             panel5.Size = new System.Drawing.Size(330, 64);
             panel5.TabIndex = 11;
             // 
@@ -1856,7 +1856,7 @@
             checkHideLowerLevelSkills.Margin = new System.Windows.Forms.Padding(0);
             checkHideLowerLevelSkills.MouseLocation = new System.Drawing.Point(-1, -1);
             checkHideLowerLevelSkills.Name = "checkHideLowerLevelSkills";
-            checkHideLowerLevelSkills.Ripple = true;
+            checkHideLowerLevelSkills.Ripple = false;
             checkHideLowerLevelSkills.Size = new System.Drawing.Size(318, 32);
             checkHideLowerLevelSkills.TabIndex = 10;
             checkHideLowerLevelSkills.Text = "Hide lower level skills";

@@ -83,7 +83,7 @@
             panelStaticFilters.Name = "panelStaticFilters";
             panelStaticFilters.Padding = new System.Windows.Forms.Padding(8, 10, 3, 10);
             panelStaticFilters.Radius = 10;
-            panelStaticFilters.ShadowDepth = 4;
+            panelStaticFilters.ShadowDepth = 0;
             panelStaticFilters.Size = new System.Drawing.Size(235, 278);
             panelStaticFilters.TabIndex = 9;
             panelStaticFilters.TabStop = false;
@@ -107,7 +107,7 @@
             panelLiveFilters.Name = "panelLiveFilters";
             panelLiveFilters.Padding = new System.Windows.Forms.Padding(8, 10, 3, 10);
             panelLiveFilters.Radius = 10;
-            panelLiveFilters.ShadowDepth = 4;
+            panelLiveFilters.ShadowDepth = 0;
             panelLiveFilters.Size = new System.Drawing.Size(235, 190);
             panelLiveFilters.TabIndex = 1;
             panelLiveFilters.TabStop = false;
@@ -171,7 +171,7 @@
             panel1.Location = new System.Drawing.Point(10, 461);
             panel1.Name = "panel1";
             panel1.Radius = 0;
-            panel1.ShadowDepth = 4F;
+            panel1.ShadowDepth = 0F;
             panel1.Size = new System.Drawing.Size(483, 35);
             panel1.TabIndex = 2;
             // 
@@ -181,7 +181,7 @@
             btnReset.Location = new System.Drawing.Point(401, 6);
             btnReset.Name = "btnReset";
             btnReset.Radius = 6;
-            btnReset.ShadowDepth = 4F;
+            btnReset.ShadowDepth = 0F;
             btnReset.Size = new System.Drawing.Size(75, 23);
             btnReset.TabIndex = 0;
             btnReset.Text = "Reset ";

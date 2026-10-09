@@ -76,7 +76,7 @@
             btnNo.Location = new System.Drawing.Point(349, 14);
             btnNo.Name = "btnNo";
             btnNo.Radius = 2;
-            btnNo.ShadowDepth = 4F;
+            btnNo.ShadowDepth = 0F;
             btnNo.Size = new System.Drawing.Size(75, 23);
             btnNo.TabIndex = 1;
             btnNo.Text = "No";
@@ -90,7 +90,7 @@
             btnYes.Location = new System.Drawing.Point(268, 14);
             btnYes.Name = "btnYes";
             btnYes.Radius = 2;
-            btnYes.ShadowDepth = 4F;
+            btnYes.ShadowDepth = 0F;
             btnYes.Size = new System.Drawing.Size(75, 23);
             btnYes.TabIndex = 0;
             btnYes.Text = "Yes";
@@ -104,7 +104,7 @@
             checkDontAskAgain.Margin = new System.Windows.Forms.Padding(0);
             checkDontAskAgain.MouseLocation = new System.Drawing.Point(-1, -1);
             checkDontAskAgain.Name = "checkDontAskAgain";
-            checkDontAskAgain.Ripple = true;
+            checkDontAskAgain.Ripple = false;
             checkDontAskAgain.Size = new System.Drawing.Size(114, 30);
             checkDontAskAgain.TabIndex = 2;
             checkDontAskAgain.Text = "Don't ask again";

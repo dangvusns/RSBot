@@ -174,7 +174,7 @@ namespace RSBot.PacketAnalyzer.Views
             checkCapture.Margin = new System.Windows.Forms.Padding(0, 0, 6, 0);
             checkCapture.MouseLocation = new System.Drawing.Point(-1, -1);
             checkCapture.Name = "checkCapture";
-            checkCapture.Ripple = true;
+            checkCapture.Ripple = false;
             checkCapture.Size = new System.Drawing.Size(110, 30);
             checkCapture.TabIndex = 0;
             checkCapture.Text = "Live capture";
@@ -187,7 +187,7 @@ namespace RSBot.PacketAnalyzer.Views
             btnRecord.Margin = new System.Windows.Forms.Padding(0, 3, 6, 0);
             btnRecord.Name = "btnRecord";
             btnRecord.Radius = 6;
-            btnRecord.ShadowDepth = 4F;
+            btnRecord.ShadowDepth = 0F;
             btnRecord.Size = new System.Drawing.Size(120, 25);
             btnRecord.TabIndex = 1;
             btnRecord.Text = "Start recording";
@@ -203,7 +203,7 @@ namespace RSBot.PacketAnalyzer.Views
             checkAutoScroll.Margin = new System.Windows.Forms.Padding(0, 0, 6, 0);
             checkAutoScroll.MouseLocation = new System.Drawing.Point(-1, -1);
             checkAutoScroll.Name = "checkAutoScroll";
-            checkAutoScroll.Ripple = true;
+            checkAutoScroll.Ripple = false;
             checkAutoScroll.Size = new System.Drawing.Size(100, 30);
             checkAutoScroll.TabIndex = 2;
             checkAutoScroll.Text = "Auto scroll";
@@ -215,7 +215,7 @@ namespace RSBot.PacketAnalyzer.Views
             btnClear.Margin = new System.Windows.Forms.Padding(0, 3, 12, 0);
             btnClear.Name = "btnClear";
             btnClear.Radius = 6;
-            btnClear.ShadowDepth = 4F;
+            btnClear.ShadowDepth = 0F;
             btnClear.Size = new System.Drawing.Size(70, 25);
             btnClear.TabIndex = 3;
             btnClear.Text = "Clear";
@@ -246,7 +246,7 @@ namespace RSBot.PacketAnalyzer.Views
             btnOpenFolder.Margin = new System.Windows.Forms.Padding(0, 3, 12, 0);
             btnOpenFolder.Name = "btnOpenFolder";
             btnOpenFolder.Radius = 6;
-            btnOpenFolder.ShadowDepth = 4F;
+            btnOpenFolder.ShadowDepth = 0F;
             btnOpenFolder.Size = new System.Drawing.Size(100, 25);
             btnOpenFolder.TabIndex = 6;
             btnOpenFolder.Text = "Open log folder";
@@ -311,7 +311,7 @@ namespace RSBot.PacketAnalyzer.Views
             btnAddMarker.Margin = new System.Windows.Forms.Padding(0, 1, 0, 0);
             btnAddMarker.Name = "btnAddMarker";
             btnAddMarker.Radius = 6;
-            btnAddMarker.ShadowDepth = 4F;
+            btnAddMarker.ShadowDepth = 0F;
             btnAddMarker.Size = new System.Drawing.Size(100, 25);
             btnAddMarker.TabIndex = 2;
             btnAddMarker.Text = "Add marker";
@@ -399,7 +399,7 @@ namespace RSBot.PacketAnalyzer.Views
             checkShowClient.Depth = 0;
             checkShowClient.MouseLocation = new System.Drawing.Point(-1, -1);
             checkShowClient.Name = "checkShowClient";
-            checkShowClient.Ripple = true;
+            checkShowClient.Ripple = false;
             checkShowClient.Size = new System.Drawing.Size(200, 30);
             checkShowClient.TabIndex = 4;
             checkShowClient.Text = "Client -> Server";
@@ -412,7 +412,7 @@ namespace RSBot.PacketAnalyzer.Views
             checkShowServer.Depth = 0;
             checkShowServer.MouseLocation = new System.Drawing.Point(-1, -1);
             checkShowServer.Name = "checkShowServer";
-            checkShowServer.Ripple = true;
+            checkShowServer.Ripple = false;
             checkShowServer.Size = new System.Drawing.Size(200, 30);
             checkShowServer.TabIndex = 5;
             checkShowServer.Text = "Server -> Client";
@@ -425,7 +425,7 @@ namespace RSBot.PacketAnalyzer.Views
             checkShowBot.Depth = 0;
             checkShowBot.MouseLocation = new System.Drawing.Point(-1, -1);
             checkShowBot.Name = "checkShowBot";
-            checkShowBot.Ripple = true;
+            checkShowBot.Ripple = false;
             checkShowBot.Size = new System.Drawing.Size(200, 30);
             checkShowBot.TabIndex = 6;
             checkShowBot.Text = "Sent by the bot";
@@ -457,7 +457,7 @@ namespace RSBot.PacketAnalyzer.Views
             btnAddOpcode.Color = System.Drawing.Color.Transparent;
             btnAddOpcode.Name = "btnAddOpcode";
             btnAddOpcode.Radius = 6;
-            btnAddOpcode.ShadowDepth = 4F;
+            btnAddOpcode.ShadowDepth = 0F;
             btnAddOpcode.Size = new System.Drawing.Size(75, 25);
             btnAddOpcode.TabIndex = 1;
             btnAddOpcode.Text = "Add";
@@ -469,7 +469,7 @@ namespace RSBot.PacketAnalyzer.Views
             btnRemoveOpcode.Color = System.Drawing.Color.Transparent;
             btnRemoveOpcode.Name = "btnRemoveOpcode";
             btnRemoveOpcode.Radius = 6;
-            btnRemoveOpcode.ShadowDepth = 4F;
+            btnRemoveOpcode.ShadowDepth = 0F;
             btnRemoveOpcode.Size = new System.Drawing.Size(75, 25);
             btnRemoveOpcode.TabIndex = 2;
             btnRemoveOpcode.Text = "Remove";
@@ -490,7 +490,7 @@ namespace RSBot.PacketAnalyzer.Views
             btnNoisy.Color = System.Drawing.Color.Transparent;
             btnNoisy.Name = "btnNoisy";
             btnNoisy.Radius = 6;
-            btnNoisy.ShadowDepth = 4F;
+            btnNoisy.ShadowDepth = 0F;
             btnNoisy.Size = new System.Drawing.Size(150, 25);
             btnNoisy.TabIndex = 0;
             btnNoisy.Text = "Add noisy opcodes";
@@ -502,7 +502,7 @@ namespace RSBot.PacketAnalyzer.Views
             btnClearOpcodes.Color = System.Drawing.Color.Transparent;
             btnClearOpcodes.Name = "btnClearOpcodes";
             btnClearOpcodes.Radius = 6;
-            btnClearOpcodes.ShadowDepth = 4F;
+            btnClearOpcodes.ShadowDepth = 0F;
             btnClearOpcodes.Size = new System.Drawing.Size(120, 25);
             btnClearOpcodes.TabIndex = 1;
             btnClearOpcodes.Text = "Clear list";
@@ -603,7 +603,7 @@ namespace RSBot.PacketAnalyzer.Views
             checkInjectEncrypted.Depth = 0;
             checkInjectEncrypted.MouseLocation = new System.Drawing.Point(-1, -1);
             checkInjectEncrypted.Name = "checkInjectEncrypted";
-            checkInjectEncrypted.Ripple = true;
+            checkInjectEncrypted.Ripple = false;
             checkInjectEncrypted.Size = new System.Drawing.Size(120, 30);
             checkInjectEncrypted.TabIndex = 6;
             checkInjectEncrypted.Text = "Encrypted";
@@ -615,7 +615,7 @@ namespace RSBot.PacketAnalyzer.Views
             checkInjectMassive.Depth = 0;
             checkInjectMassive.MouseLocation = new System.Drawing.Point(-1, -1);
             checkInjectMassive.Name = "checkInjectMassive";
-            checkInjectMassive.Ripple = true;
+            checkInjectMassive.Ripple = false;
             checkInjectMassive.Size = new System.Drawing.Size(120, 30);
             checkInjectMassive.TabIndex = 7;
             checkInjectMassive.Text = "Massive";
@@ -627,7 +627,7 @@ namespace RSBot.PacketAnalyzer.Views
             btnInject.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
             btnInject.Name = "btnInject";
             btnInject.Radius = 6;
-            btnInject.ShadowDepth = 4F;
+            btnInject.ShadowDepth = 0F;
             btnInject.Size = new System.Drawing.Size(120, 25);
             btnInject.TabIndex = 8;
             btnInject.Text = "Inject";
@@ -738,7 +738,7 @@ namespace RSBot.PacketAnalyzer.Views
             checkRecordOnLaunch.Margin = new System.Windows.Forms.Padding(3, 8, 3, 0);
             checkRecordOnLaunch.MouseLocation = new System.Drawing.Point(-1, -1);
             checkRecordOnLaunch.Name = "checkRecordOnLaunch";
-            checkRecordOnLaunch.Ripple = true;
+            checkRecordOnLaunch.Ripple = false;
             checkRecordOnLaunch.Size = new System.Drawing.Size(250, 30);
             checkRecordOnLaunch.TabIndex = 6;
             checkRecordOnLaunch.Text = "Start recording when RSBot starts";
@@ -751,7 +751,7 @@ namespace RSBot.PacketAnalyzer.Views
             checkRecordOnBotStart.Depth = 0;
             checkRecordOnBotStart.MouseLocation = new System.Drawing.Point(-1, -1);
             checkRecordOnBotStart.Name = "checkRecordOnBotStart";
-            checkRecordOnBotStart.Ripple = true;
+            checkRecordOnBotStart.Ripple = false;
             checkRecordOnBotStart.Size = new System.Drawing.Size(250, 30);
             checkRecordOnBotStart.TabIndex = 7;
             checkRecordOnBotStart.Text = "Start recording when the bot starts";
@@ -764,7 +764,7 @@ namespace RSBot.PacketAnalyzer.Views
             checkIncludeHex.Depth = 0;
             checkIncludeHex.MouseLocation = new System.Drawing.Point(-1, -1);
             checkIncludeHex.Name = "checkIncludeHex";
-            checkIncludeHex.Ripple = true;
+            checkIncludeHex.Ripple = false;
             checkIncludeHex.Size = new System.Drawing.Size(250, 30);
             checkIncludeHex.TabIndex = 8;
             checkIncludeHex.Text = "Write the hex dump of each packet";
@@ -777,7 +777,7 @@ namespace RSBot.PacketAnalyzer.Views
             checkIncludeLog.Depth = 0;
             checkIncludeLog.MouseLocation = new System.Drawing.Point(-1, -1);
             checkIncludeLog.Name = "checkIncludeLog";
-            checkIncludeLog.Ripple = true;
+            checkIncludeLog.Ripple = false;
             checkIncludeLog.Size = new System.Drawing.Size(250, 30);
             checkIncludeLog.TabIndex = 9;
             checkIncludeLog.Text = "Write the bot log lines";
@@ -790,7 +790,7 @@ namespace RSBot.PacketAnalyzer.Views
             btnReloadNames.Margin = new System.Windows.Forms.Padding(3, 10, 3, 3);
             btnReloadNames.Name = "btnReloadNames";
             btnReloadNames.Radius = 6;
-            btnReloadNames.ShadowDepth = 4F;
+            btnReloadNames.ShadowDepth = 0F;
             btnReloadNames.Size = new System.Drawing.Size(180, 25);
             btnReloadNames.TabIndex = 10;
             btnReloadNames.Text = "Reload opcode names";
@@ -802,7 +802,7 @@ namespace RSBot.PacketAnalyzer.Views
             btnEditNames.Color = System.Drawing.Color.Transparent;
             btnEditNames.Name = "btnEditNames";
             btnEditNames.Radius = 6;
-            btnEditNames.ShadowDepth = 4F;
+            btnEditNames.ShadowDepth = 0F;
             btnEditNames.Size = new System.Drawing.Size(180, 25);
             btnEditNames.TabIndex = 11;
             btnEditNames.Text = "Edit custom opcode names";

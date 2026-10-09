@@ -45,7 +45,7 @@
             comboProfiles.Margin = new System.Windows.Forms.Padding(4);
             comboProfiles.Name = "comboProfiles";
             comboProfiles.Radius = 5;
-            comboProfiles.ShadowDepth = 4F;
+            comboProfiles.ShadowDepth = 0F;
             comboProfiles.Size = new System.Drawing.Size(238, 28);
             comboProfiles.TabIndex = 1;
             comboProfiles.SelectedIndexChanged += comboProfiles_SelectedIndexChanged;
@@ -79,7 +79,7 @@
             btnOK.Margin = new System.Windows.Forms.Padding(4);
             btnOK.Name = "btnOK";
             btnOK.Radius = 8;
-            btnOK.ShadowDepth = 4F;
+            btnOK.ShadowDepth = 0F;
             btnOK.Size = new System.Drawing.Size(236, 45);
             btnOK.TabIndex = 4;
             btnOK.Text = "CONTINUE";
@@ -95,7 +95,7 @@
             checkSaveSelection.Margin = new System.Windows.Forms.Padding(0);
             checkSaveSelection.MouseLocation = new System.Drawing.Point(-1, -1);
             checkSaveSelection.Name = "checkSaveSelection";
-            checkSaveSelection.Ripple = true;
+            checkSaveSelection.Ripple = false;
             checkSaveSelection.Size = new System.Drawing.Size(129, 30);
             checkSaveSelection.TabIndex = 6;
             checkSaveSelection.Text = "Save selection";
@@ -111,7 +111,7 @@
             buttonCreateProfile.Margin = new System.Windows.Forms.Padding(4);
             buttonCreateProfile.Name = "buttonCreateProfile";
             buttonCreateProfile.Radius = 6;
-            buttonCreateProfile.ShadowDepth = 4F;
+            buttonCreateProfile.ShadowDepth = 0F;
             buttonCreateProfile.Size = new System.Drawing.Size(32, 32);
             buttonCreateProfile.TabIndex = 8;
             buttonCreateProfile.Text = "";
@@ -127,7 +127,7 @@
             buttonDeleteProfile.Margin = new System.Windows.Forms.Padding(4);
             buttonDeleteProfile.Name = "buttonDeleteProfile";
             buttonDeleteProfile.Radius = 6;
-            buttonDeleteProfile.ShadowDepth = 4F;
+            buttonDeleteProfile.ShadowDepth = 0F;
             buttonDeleteProfile.Size = new System.Drawing.Size(32, 32);
             buttonDeleteProfile.TabIndex = 8;
             buttonDeleteProfile.Text = "✕";

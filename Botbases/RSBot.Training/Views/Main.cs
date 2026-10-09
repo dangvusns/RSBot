@@ -478,7 +478,7 @@ public partial class Main : DoubleBufferedControl
             Checked = true,
             Depth = 0,
             Margin = new Padding(0),
-            Ripple = true,
+            Ripple = false,
             UseVisualStyleBackColor = false,
         };
         checkAutoPath.CheckedChanged += settings_CheckedChanged;

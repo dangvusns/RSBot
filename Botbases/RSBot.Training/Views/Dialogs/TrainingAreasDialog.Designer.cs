@@ -153,7 +153,7 @@
             this.buttonCancel.Location = new System.Drawing.Point(526, 8);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Radius = 6;
-            this.buttonCancel.ShadowDepth = 4F;
+            this.buttonCancel.ShadowDepth = 0F;
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
             this.buttonCancel.TabIndex = 0;
             this.buttonCancel.Text = "Cancel";
@@ -167,7 +167,7 @@
             this.buttonAccept.Location = new System.Drawing.Point(12, 8);
             this.buttonAccept.Name = "buttonAccept";
             this.buttonAccept.Radius = 6;
-            this.buttonAccept.ShadowDepth = 4F;
+            this.buttonAccept.ShadowDepth = 0F;
             this.buttonAccept.Size = new System.Drawing.Size(75, 23);
             this.buttonAccept.TabIndex = 0;
             this.buttonAccept.Text = "Accept";
@@ -207,7 +207,7 @@
             this.checkSwapArea.Margin = new System.Windows.Forms.Padding(0);
             this.checkSwapArea.MouseLocation = new System.Drawing.Point(-1, -1);
             this.checkSwapArea.Name = "checkSwapArea";
-            this.checkSwapArea.Ripple = true;
+            this.checkSwapArea.Ripple = false;
             this.checkSwapArea.Size = new System.Drawing.Size(300, 30);
             this.checkSwapArea.TabIndex = 0;
             this.checkSwapArea.Text = "Move to the next area when there are no monsters for";

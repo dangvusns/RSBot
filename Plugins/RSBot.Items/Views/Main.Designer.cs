@@ -314,7 +314,7 @@ namespace RSBot.Items.Views
             panel1.Margin = new Padding(4);
             panel1.Name = "panel1";
             panel1.Radius = 0;
-            panel1.ShadowDepth = 4F;
+            panel1.ShadowDepth = 0F;
             panel1.Size = new Size(420, 71);
             panel1.TabIndex = 6;
             // 
@@ -346,7 +346,7 @@ namespace RSBot.Items.Views
             checkShowEquipment.Margin = new Padding(0);
             checkShowEquipment.MouseLocation = new Point(-1, -1);
             checkShowEquipment.Name = "checkShowEquipment";
-            checkShowEquipment.Ripple = true;
+            checkShowEquipment.Ripple = false;
             checkShowEquipment.Size = new Size(147, 30);
             checkShowEquipment.TabIndex = 9;
             checkShowEquipment.Text = "Show equipment";
@@ -381,7 +381,7 @@ namespace RSBot.Items.Views
             comboStore.Margin = new Padding(4);
             comboStore.Name = "comboStore";
             comboStore.Radius = 5;
-            comboStore.ShadowDepth = 4F;
+            comboStore.ShadowDepth = 0F;
             comboStore.Size = new Size(179, 23);
             comboStore.TabIndex = 2;
             comboStore.SelectedIndexChanged += comboStore_SelectedIndexChanged;
@@ -456,7 +456,7 @@ namespace RSBot.Items.Views
             panel2.Margin = new Padding(4);
             panel2.Name = "panel2";
             panel2.Radius = 0;
-            panel2.ShadowDepth = 4F;
+            panel2.ShadowDepth = 0F;
             panel2.Size = new Size(493, 71);
             panel2.TabIndex = 7;
             // 
@@ -483,7 +483,7 @@ namespace RSBot.Items.Views
             groupBox1.Name = "groupBox1";
             groupBox1.Padding = new Padding(4, 12, 4, 4);
             groupBox1.Radius = 10;
-            groupBox1.ShadowDepth = 4;
+            groupBox1.ShadowDepth = 0;
             groupBox1.Size = new Size(914, 75);
             groupBox1.TabIndex = 8;
             groupBox1.TabStop = false;
@@ -500,7 +500,7 @@ namespace RSBot.Items.Views
             checkSellItemsFromPet.Margin = new Padding(0);
             checkSellItemsFromPet.MouseLocation = new Point(-1, -1);
             checkSellItemsFromPet.Name = "checkSellItemsFromPet";
-            checkSellItemsFromPet.Ripple = true;
+            checkSellItemsFromPet.Ripple = false;
             checkSellItemsFromPet.Size = new Size(161, 30);
             checkSellItemsFromPet.TabIndex = 3;
             checkSellItemsFromPet.Text = "Sell items from pet";
@@ -518,7 +518,7 @@ namespace RSBot.Items.Views
             checkStoreItemsFromPet.Margin = new Padding(0);
             checkStoreItemsFromPet.MouseLocation = new Point(-1, -1);
             checkStoreItemsFromPet.Name = "checkStoreItemsFromPet";
-            checkStoreItemsFromPet.Ripple = true;
+            checkStoreItemsFromPet.Ripple = false;
             checkStoreItemsFromPet.Size = new Size(172, 30);
             checkStoreItemsFromPet.TabIndex = 4;
             checkStoreItemsFromPet.Text = "Store items from pet";
@@ -536,7 +536,7 @@ namespace RSBot.Items.Views
             checkRepairGear.Margin = new Padding(0);
             checkRepairGear.MouseLocation = new Point(-1, -1);
             checkRepairGear.Name = "checkRepairGear";
-            checkRepairGear.Ripple = true;
+            checkRepairGear.Ripple = false;
             checkRepairGear.Size = new Size(220, 30);
             checkRepairGear.TabIndex = 1;
             checkRepairGear.Text = "Automaticaly repair all gear";
@@ -554,7 +554,7 @@ namespace RSBot.Items.Views
             checkEnable.Margin = new Padding(0);
             checkEnable.MouseLocation = new Point(-1, -1);
             checkEnable.Name = "checkEnable";
-            checkEnable.Ripple = true;
+            checkEnable.Ripple = false;
             checkEnable.Size = new Size(240, 30);
             checkEnable.TabIndex = 0;
             checkEnable.Text = "Automaticaly run when in town";
@@ -722,7 +722,7 @@ namespace RSBot.Items.Views
             filterPanel.Name = "filterPanel";
             filterPanel.Padding = new Padding(15);
             filterPanel.Radius = 0;
-            filterPanel.ShadowDepth = 4F;
+            filterPanel.ShadowDepth = 0F;
             filterPanel.Size = new Size(331, 514);
             filterPanel.TabIndex = 20;
             // 
@@ -740,7 +740,7 @@ namespace RSBot.Items.Views
             groupOthers.Name = "groupOthers";
             groupOthers.Padding = new Padding(4, 12, 4, 4);
             groupOthers.Radius = 10;
-            groupOthers.ShadowDepth = 4;
+            groupOthers.ShadowDepth = 0;
             groupOthers.Size = new Size(280, 139);
             groupOthers.TabIndex = 42;
             groupOthers.TabStop = false;
@@ -755,7 +755,7 @@ namespace RSBot.Items.Views
             checkAlchemy.Margin = new Padding(0);
             checkAlchemy.MouseLocation = new Point(-1, -1);
             checkAlchemy.Name = "checkAlchemy";
-            checkAlchemy.Ripple = true;
+            checkAlchemy.Ripple = false;
             checkAlchemy.Size = new Size(92, 30);
             checkAlchemy.TabIndex = 19;
             checkAlchemy.Text = "Alchemy";
@@ -770,7 +770,7 @@ namespace RSBot.Items.Views
             checkQuest.Margin = new Padding(0);
             checkQuest.MouseLocation = new Point(-1, -1);
             checkQuest.Name = "checkQuest";
-            checkQuest.Ripple = true;
+            checkQuest.Ripple = false;
             checkQuest.Size = new Size(73, 30);
             checkQuest.TabIndex = 19;
             checkQuest.Text = "Quest";
@@ -785,7 +785,7 @@ namespace RSBot.Items.Views
             checkAmmo.Margin = new Padding(0);
             checkAmmo.MouseLocation = new Point(-1, -1);
             checkAmmo.Name = "checkAmmo";
-            checkAmmo.Ripple = true;
+            checkAmmo.Ripple = false;
             checkAmmo.Size = new Size(80, 30);
             checkAmmo.TabIndex = 19;
             checkAmmo.Text = "Ammo";
@@ -800,7 +800,7 @@ namespace RSBot.Items.Views
             checkCoin.Margin = new Padding(0);
             checkCoin.MouseLocation = new Point(-1, -1);
             checkCoin.Name = "checkCoin";
-            checkCoin.Ripple = true;
+            checkCoin.Ripple = false;
             checkCoin.Size = new Size(65, 30);
             checkCoin.TabIndex = 19;
             checkCoin.Text = "Coin";
@@ -815,7 +815,7 @@ namespace RSBot.Items.Views
             checkOther.Margin = new Padding(0);
             checkOther.MouseLocation = new Point(-1, -1);
             checkOther.Name = "checkOther";
-            checkOther.Ripple = true;
+            checkOther.Ripple = false;
             checkOther.Size = new Size(72, 30);
             checkOther.TabIndex = 19;
             checkOther.Text = "Other";
@@ -855,7 +855,7 @@ namespace RSBot.Items.Views
             groupWeapons.Name = "groupWeapons";
             groupWeapons.Padding = new Padding(4, 12, 4, 4);
             groupWeapons.Radius = 10;
-            groupWeapons.ShadowDepth = 4;
+            groupWeapons.ShadowDepth = 0;
             groupWeapons.Size = new Size(280, 271);
             groupWeapons.TabIndex = 40;
             groupWeapons.TabStop = false;
@@ -870,7 +870,7 @@ namespace RSBot.Items.Views
             checkAxe.Margin = new Padding(0);
             checkAxe.MouseLocation = new Point(-1, -1);
             checkAxe.Name = "checkAxe";
-            checkAxe.Ripple = true;
+            checkAxe.Ripple = false;
             checkAxe.Size = new Size(60, 30);
             checkAxe.TabIndex = 10;
             checkAxe.Text = "Axe";
@@ -885,7 +885,7 @@ namespace RSBot.Items.Views
             checkHarp.Margin = new Padding(0);
             checkHarp.MouseLocation = new Point(-1, -1);
             checkHarp.Name = "checkHarp";
-            checkHarp.Ripple = true;
+            checkHarp.Ripple = false;
             checkHarp.Size = new Size(68, 30);
             checkHarp.TabIndex = 10;
             checkHarp.Text = "Harp";
@@ -900,7 +900,7 @@ namespace RSBot.Items.Views
             checkDagger.Margin = new Padding(0);
             checkDagger.MouseLocation = new Point(-1, -1);
             checkDagger.Name = "checkDagger";
-            checkDagger.Ripple = true;
+            checkDagger.Ripple = false;
             checkDagger.Size = new Size(85, 30);
             checkDagger.TabIndex = 9;
             checkDagger.Text = "Dagger";
@@ -915,7 +915,7 @@ namespace RSBot.Items.Views
             checkXBow.Margin = new Padding(0);
             checkXBow.MouseLocation = new Point(-1, -1);
             checkXBow.Name = "checkXBow";
-            checkXBow.Ripple = true;
+            checkXBow.Ripple = false;
             checkXBow.Size = new Size(79, 30);
             checkXBow.TabIndex = 9;
             checkXBow.Text = "X-Bow";
@@ -930,7 +930,7 @@ namespace RSBot.Items.Views
             checkWRod.Margin = new Padding(0);
             checkWRod.MouseLocation = new Point(-1, -1);
             checkWRod.Name = "checkWRod";
-            checkWRod.Ripple = true;
+            checkWRod.Ripple = false;
             checkWRod.Size = new Size(82, 30);
             checkWRod.TabIndex = 8;
             checkWRod.Text = "W-Rod";
@@ -945,7 +945,7 @@ namespace RSBot.Items.Views
             checkShield.Margin = new Padding(0);
             checkShield.MouseLocation = new Point(-1, -1);
             checkShield.Name = "checkShield";
-            checkShield.Ripple = true;
+            checkShield.Ripple = false;
             checkShield.Size = new Size(76, 30);
             checkShield.TabIndex = 5;
             checkShield.Text = "Shield";
@@ -960,7 +960,7 @@ namespace RSBot.Items.Views
             checkCRod.Margin = new Padding(0);
             checkCRod.MouseLocation = new Point(-1, -1);
             checkCRod.Name = "checkCRod";
-            checkCRod.Ripple = true;
+            checkCRod.Ripple = false;
             checkCRod.Size = new Size(77, 30);
             checkCRod.TabIndex = 7;
             checkCRod.Text = "C-Rod";
@@ -975,7 +975,7 @@ namespace RSBot.Items.Views
             check2HSword.Margin = new Padding(0);
             check2HSword.MouseLocation = new Point(-1, -1);
             check2HSword.Name = "check2HSword";
-            check2HSword.Ripple = true;
+            check2HSword.Ripple = false;
             check2HSword.Size = new Size(100, 30);
             check2HSword.TabIndex = 6;
             check2HSword.Text = "2H Sword";
@@ -990,7 +990,7 @@ namespace RSBot.Items.Views
             check1HSword.Margin = new Padding(0);
             check1HSword.MouseLocation = new Point(-1, -1);
             check1HSword.Name = "check1HSword";
-            check1HSword.Ripple = true;
+            check1HSword.Ripple = false;
             check1HSword.Size = new Size(100, 30);
             check1HSword.TabIndex = 5;
             check1HSword.Text = "1H Sword";
@@ -1005,7 +1005,7 @@ namespace RSBot.Items.Views
             checkStaff.Margin = new Padding(0);
             checkStaff.MouseLocation = new Point(-1, -1);
             checkStaff.Name = "checkStaff";
-            checkStaff.Ripple = true;
+            checkStaff.Ripple = false;
             checkStaff.Size = new Size(66, 30);
             checkStaff.TabIndex = 5;
             checkStaff.Text = "Staff";
@@ -1020,7 +1020,7 @@ namespace RSBot.Items.Views
             checkBow.Margin = new Padding(0);
             checkBow.MouseLocation = new Point(-1, -1);
             checkBow.Name = "checkBow";
-            checkBow.Ripple = true;
+            checkBow.Ripple = false;
             checkBow.Size = new Size(64, 30);
             checkBow.TabIndex = 4;
             checkBow.Text = "Bow";
@@ -1035,7 +1035,7 @@ namespace RSBot.Items.Views
             checkSpear.Margin = new Padding(0);
             checkSpear.MouseLocation = new Point(-1, -1);
             checkSpear.Name = "checkSpear";
-            checkSpear.Ripple = true;
+            checkSpear.Ripple = false;
             checkSpear.Size = new Size(73, 30);
             checkSpear.TabIndex = 3;
             checkSpear.Text = "Spear";
@@ -1050,7 +1050,7 @@ namespace RSBot.Items.Views
             checkGlave.Margin = new Padding(0);
             checkGlave.MouseLocation = new Point(-1, -1);
             checkGlave.Name = "checkGlave";
-            checkGlave.Ripple = true;
+            checkGlave.Ripple = false;
             checkGlave.Size = new Size(72, 30);
             checkGlave.TabIndex = 2;
             checkGlave.Text = "Glave";
@@ -1065,7 +1065,7 @@ namespace RSBot.Items.Views
             checkSword.Margin = new Padding(0);
             checkSword.MouseLocation = new Point(-1, -1);
             checkSword.Name = "checkSword";
-            checkSword.Ripple = true;
+            checkSword.Ripple = false;
             checkSword.Size = new Size(77, 30);
             checkSword.TabIndex = 1;
             checkSword.Text = "Sword";
@@ -1080,7 +1080,7 @@ namespace RSBot.Items.Views
             checkBlade.Margin = new Padding(0);
             checkBlade.MouseLocation = new Point(-1, -1);
             checkBlade.Name = "checkBlade";
-            checkBlade.Ripple = true;
+            checkBlade.Ripple = false;
             checkBlade.Size = new Size(73, 30);
             checkBlade.TabIndex = 0;
             checkBlade.Text = "Blade";
@@ -1108,7 +1108,7 @@ namespace RSBot.Items.Views
             groupAccessories.Name = "groupAccessories";
             groupAccessories.Padding = new Padding(4, 12, 4, 4);
             groupAccessories.Radius = 10;
-            groupAccessories.ShadowDepth = 4;
+            groupAccessories.ShadowDepth = 0;
             groupAccessories.Size = new Size(280, 72);
             groupAccessories.TabIndex = 44;
             groupAccessories.TabStop = false;
@@ -1123,7 +1123,7 @@ namespace RSBot.Items.Views
             checkNecklace.Margin = new Padding(0);
             checkNecklace.MouseLocation = new Point(-1, -1);
             checkNecklace.Name = "checkNecklace";
-            checkNecklace.Ripple = true;
+            checkNecklace.Ripple = false;
             checkNecklace.Size = new Size(95, 30);
             checkNecklace.TabIndex = 4;
             checkNecklace.Text = "Necklace";
@@ -1138,7 +1138,7 @@ namespace RSBot.Items.Views
             checkEarring.Margin = new Padding(0);
             checkEarring.MouseLocation = new Point(-1, -1);
             checkEarring.Name = "checkEarring";
-            checkEarring.Ripple = true;
+            checkEarring.Ripple = false;
             checkEarring.Size = new Size(82, 30);
             checkEarring.TabIndex = 3;
             checkEarring.Text = "Earring";
@@ -1153,7 +1153,7 @@ namespace RSBot.Items.Views
             checkRing.Margin = new Padding(0);
             checkRing.MouseLocation = new Point(-1, -1);
             checkRing.Name = "checkRing";
-            checkRing.Ripple = true;
+            checkRing.Ripple = false;
             checkRing.Size = new Size(65, 30);
             checkRing.TabIndex = 2;
             checkRing.Text = "Ring";
@@ -1187,7 +1187,7 @@ namespace RSBot.Items.Views
             groupClothes.Name = "groupClothes";
             groupClothes.Padding = new Padding(4, 12, 4, 4);
             groupClothes.Radius = 10;
-            groupClothes.ShadowDepth = 4;
+            groupClothes.ShadowDepth = 0;
             groupClothes.Size = new Size(280, 181);
             groupClothes.TabIndex = 41;
             groupClothes.TabStop = false;
@@ -1202,7 +1202,7 @@ namespace RSBot.Items.Views
             checkHand.Margin = new Padding(0);
             checkHand.MouseLocation = new Point(-1, -1);
             checkHand.Name = "checkHand";
-            checkHand.Ripple = true;
+            checkHand.Ripple = false;
             checkHand.Size = new Size(71, 30);
             checkHand.TabIndex = 8;
             checkHand.Text = "Hand";
@@ -1217,7 +1217,7 @@ namespace RSBot.Items.Views
             checkLegs.Margin = new Padding(0);
             checkLegs.MouseLocation = new Point(-1, -1);
             checkLegs.Name = "checkLegs";
-            checkLegs.Ripple = true;
+            checkLegs.Ripple = false;
             checkLegs.Size = new Size(59, 30);
             checkLegs.TabIndex = 7;
             checkLegs.Text = "Leg";
@@ -1232,7 +1232,7 @@ namespace RSBot.Items.Views
             checkHeavy.Margin = new Padding(0);
             checkHeavy.MouseLocation = new Point(-1, -1);
             checkHeavy.Name = "checkHeavy";
-            checkHeavy.Ripple = true;
+            checkHeavy.Ripple = false;
             checkHeavy.Size = new Size(76, 30);
             checkHeavy.TabIndex = 6;
             checkHeavy.Text = "Heavy";
@@ -1247,7 +1247,7 @@ namespace RSBot.Items.Views
             checkLight.Margin = new Padding(0);
             checkLight.MouseLocation = new Point(-1, -1);
             checkLight.Name = "checkLight";
-            checkLight.Ripple = true;
+            checkLight.Ripple = false;
             checkLight.Size = new Size(68, 30);
             checkLight.TabIndex = 6;
             checkLight.Text = "Light";
@@ -1262,7 +1262,7 @@ namespace RSBot.Items.Views
             checkClothes.Margin = new Padding(0);
             checkClothes.MouseLocation = new Point(-1, -1);
             checkClothes.Name = "checkClothes";
-            checkClothes.Ripple = true;
+            checkClothes.Ripple = false;
             checkClothes.Size = new Size(84, 30);
             checkClothes.TabIndex = 6;
             checkClothes.Text = "Clothes";
@@ -1277,7 +1277,7 @@ namespace RSBot.Items.Views
             checkBoot.Margin = new Padding(0);
             checkBoot.MouseLocation = new Point(-1, -1);
             checkBoot.Name = "checkBoot";
-            checkBoot.Ripple = true;
+            checkBoot.Ripple = false;
             checkBoot.Size = new Size(67, 30);
             checkBoot.TabIndex = 4;
             checkBoot.Text = "Boot";
@@ -1292,7 +1292,7 @@ namespace RSBot.Items.Views
             checkChest.Margin = new Padding(0);
             checkChest.MouseLocation = new Point(-1, -1);
             checkChest.Name = "checkChest";
-            checkChest.Ripple = true;
+            checkChest.Ripple = false;
             checkChest.Size = new Size(71, 30);
             checkChest.TabIndex = 4;
             checkChest.Text = "Chest";
@@ -1307,7 +1307,7 @@ namespace RSBot.Items.Views
             checkShoulder.Margin = new Padding(0);
             checkShoulder.MouseLocation = new Point(-1, -1);
             checkShoulder.Name = "checkShoulder";
-            checkShoulder.Ripple = true;
+            checkShoulder.Ripple = false;
             checkShoulder.Size = new Size(94, 30);
             checkShoulder.TabIndex = 4;
             checkShoulder.Text = "Shoulder";
@@ -1322,7 +1322,7 @@ namespace RSBot.Items.Views
             checkHead.Margin = new Padding(0);
             checkHead.MouseLocation = new Point(-1, -1);
             checkHead.Name = "checkHead";
-            checkHead.Ripple = true;
+            checkHead.Ripple = false;
             checkHead.Size = new Size(71, 30);
             checkHead.TabIndex = 4;
             checkHead.Text = "Head";
@@ -1356,7 +1356,7 @@ namespace RSBot.Items.Views
             groupGender.Name = "groupGender";
             groupGender.Padding = new Padding(4, 12, 4, 4);
             groupGender.Radius = 10;
-            groupGender.ShadowDepth = 4;
+            groupGender.ShadowDepth = 0;
             groupGender.Size = new Size(280, 174);
             groupGender.TabIndex = 44;
             groupGender.TabStop = false;
@@ -1371,7 +1371,7 @@ namespace RSBot.Items.Views
             checkEuropean.Margin = new Padding(0);
             checkEuropean.MouseLocation = new Point(-1, -1);
             checkEuropean.Name = "checkEuropean";
-            checkEuropean.Ripple = true;
+            checkEuropean.Ripple = false;
             checkEuropean.Size = new Size(98, 30);
             checkEuropean.TabIndex = 9;
             checkEuropean.Text = "European";
@@ -1386,7 +1386,7 @@ namespace RSBot.Items.Views
             checkChinese.Margin = new Padding(0);
             checkChinese.MouseLocation = new Point(-1, -1);
             checkChinese.Name = "checkChinese";
-            checkChinese.Ripple = true;
+            checkChinese.Ripple = false;
             checkChinese.Size = new Size(86, 30);
             checkChinese.TabIndex = 9;
             checkChinese.Text = "Chinese";
@@ -1401,7 +1401,7 @@ namespace RSBot.Items.Views
             checkFemale.Margin = new Padding(0);
             checkFemale.MouseLocation = new Point(-1, -1);
             checkFemale.Name = "checkFemale";
-            checkFemale.Ripple = true;
+            checkFemale.Ripple = false;
             checkFemale.Size = new Size(83, 30);
             checkFemale.TabIndex = 9;
             checkFemale.Text = "Female";
@@ -1416,7 +1416,7 @@ namespace RSBot.Items.Views
             checkBoxRareItems.Margin = new Padding(0);
             checkBoxRareItems.MouseLocation = new Point(-1, -1);
             checkBoxRareItems.Name = "checkBoxRareItems";
-            checkBoxRareItems.Ripple = true;
+            checkBoxRareItems.Ripple = false;
             checkBoxRareItems.Size = new Size(103, 30);
             checkBoxRareItems.TabIndex = 40;
             checkBoxRareItems.Text = "Rare (Sox)";
@@ -1431,7 +1431,7 @@ namespace RSBot.Items.Views
             checkMale.Margin = new Padding(0);
             checkMale.MouseLocation = new Point(-1, -1);
             checkMale.Name = "checkMale";
-            checkMale.Ripple = true;
+            checkMale.Ripple = false;
             checkMale.Size = new Size(68, 30);
             checkMale.TabIndex = 9;
             checkMale.Text = "Male";
@@ -1520,7 +1520,7 @@ namespace RSBot.Items.Views
             panel3.Margin = new Padding(0);
             panel3.Name = "panel3";
             panel3.Radius = 0;
-            panel3.ShadowDepth = 4F;
+            panel3.ShadowDepth = 0F;
             panel3.Size = new Size(934, 45);
             panel3.TabIndex = 40;
             // 
@@ -1534,7 +1534,7 @@ namespace RSBot.Items.Views
             panel7.Margin = new Padding(0);
             panel7.Name = "panel7";
             panel7.Radius = 1;
-            panel7.ShadowDepth = 4F;
+            panel7.ShadowDepth = 0F;
             panel7.Size = new Size(934, 1);
             panel7.TabIndex = 41;
             // 
@@ -1562,7 +1562,7 @@ namespace RSBot.Items.Views
             btnResetFilter.Margin = new Padding(4);
             btnResetFilter.Name = "btnResetFilter";
             btnResetFilter.Radius = 6;
-            btnResetFilter.ShadowDepth = 4F;
+            btnResetFilter.ShadowDepth = 0F;
             btnResetFilter.Size = new Size(120, 29);
             btnResetFilter.TabIndex = 39;
             btnResetFilter.Text = "Reset";
@@ -1579,7 +1579,7 @@ namespace RSBot.Items.Views
             btnSearch.Margin = new Padding(4);
             btnSearch.Name = "btnSearch";
             btnSearch.Radius = 6;
-            btnSearch.ShadowDepth = 4F;
+            btnSearch.ShadowDepth = 0F;
             btnSearch.Size = new Size(94, 29);
             btnSearch.TabIndex = 21;
             btnSearch.Text = "Search";
@@ -1593,7 +1593,7 @@ namespace RSBot.Items.Views
             btnReload.Margin = new Padding(4);
             btnReload.Name = "btnReload";
             btnReload.Radius = 6;
-            btnReload.ShadowDepth = 4F;
+            btnReload.ShadowDepth = 0F;
             btnReload.Size = new Size(171, 29);
             btnReload.TabIndex = 39;
             btnReload.Text = "Apply";
@@ -1655,7 +1655,7 @@ namespace RSBot.Items.Views
             groupBoxOptions.Name = "groupBoxOptions";
             groupBoxOptions.Padding = new Padding(4, 10, 4, 4);
             groupBoxOptions.Radius = 10;
-            groupBoxOptions.ShadowDepth = 4;
+            groupBoxOptions.ShadowDepth = 0;
             groupBoxOptions.Size = new Size(918, 125);
             groupBoxOptions.TabIndex = 0;
             groupBoxOptions.TabStop = false;
@@ -1672,7 +1672,7 @@ namespace RSBot.Items.Views
             checkPickupGold.Margin = new Padding(0);
             checkPickupGold.MouseLocation = new Point(-1, -1);
             checkPickupGold.Name = "checkPickupGold";
-            checkPickupGold.Ripple = true;
+            checkPickupGold.Ripple = false;
             checkPickupGold.Size = new Size(113, 30);
             checkPickupGold.TabIndex = 0;
             checkPickupGold.Text = "Pickup gold";
@@ -1688,7 +1688,7 @@ namespace RSBot.Items.Views
             checkAllEquips.Margin = new Padding(0);
             checkAllEquips.MouseLocation = new Point(-1, -1);
             checkAllEquips.Name = "checkAllEquips";
-            checkAllEquips.Ripple = true;
+            checkAllEquips.Ripple = false;
             checkAllEquips.Size = new Size(180, 30);
             checkAllEquips.TabIndex = 4;
             checkAllEquips.Text = "Pickup all equip items";
@@ -1704,7 +1704,7 @@ namespace RSBot.Items.Views
             checkEverything.Margin = new Padding(0);
             checkEverything.MouseLocation = new Point(-1, -1);
             checkEverything.Name = "checkEverything";
-            checkEverything.Ripple = true;
+            checkEverything.Ripple = false;
             checkEverything.Size = new Size(151, 30);
             checkEverything.TabIndex = 5;
             checkEverything.Text = "Pickup everything";
@@ -1722,7 +1722,7 @@ namespace RSBot.Items.Views
             checkPickupRare.Margin = new Padding(0);
             checkPickupRare.MouseLocation = new Point(-1, -1);
             checkPickupRare.Name = "checkPickupRare";
-            checkPickupRare.Ripple = true;
+            checkPickupRare.Ripple = false;
             checkPickupRare.Size = new Size(199, 30);
             checkPickupRare.TabIndex = 3;
             checkPickupRare.Text = "Always pickup rare items";
@@ -1738,7 +1738,7 @@ namespace RSBot.Items.Views
             checkQuestItems.Margin = new Padding(0);
             checkQuestItems.MouseLocation = new Point(-1, -1);
             checkQuestItems.Name = "checkQuestItems";
-            checkQuestItems.Ripple = true;
+            checkQuestItems.Ripple = false;
             checkQuestItems.Size = new Size(158, 30);
             checkQuestItems.TabIndex = 2;
             checkQuestItems.Text = "Pickup quest items";
@@ -1754,7 +1754,7 @@ namespace RSBot.Items.Views
             checkPickupBlue.Margin = new Padding(0);
             checkPickupBlue.MouseLocation = new Point(-1, -1);
             checkPickupBlue.Name = "checkPickupBlue";
-            checkPickupBlue.Ripple = true;
+            checkPickupBlue.Ripple = false;
             checkPickupBlue.Size = new Size(202, 30);
             checkPickupBlue.TabIndex = 1;
             checkPickupBlue.Text = "Always pickup blue items";
@@ -1773,7 +1773,7 @@ namespace RSBot.Items.Views
             groupBoxGeneral.Name = "groupBoxGeneral";
             groupBoxGeneral.Padding = new Padding(4, 12, 4, 4);
             groupBoxGeneral.Radius = 10;
-            groupBoxGeneral.ShadowDepth = 4;
+            groupBoxGeneral.ShadowDepth = 0;
             groupBoxGeneral.Size = new Size(918, 119);
             groupBoxGeneral.TabIndex = 0;
             groupBoxGeneral.TabStop = false;
@@ -1789,7 +1789,7 @@ namespace RSBot.Items.Views
             cbDontPickupWhileBotting.Margin = new Padding(0);
             cbDontPickupWhileBotting.MouseLocation = new Point(-1, -1);
             cbDontPickupWhileBotting.Name = "cbDontPickupWhileBotting";
-            cbDontPickupWhileBotting.Ripple = true;
+            cbDontPickupWhileBotting.Ripple = false;
             cbDontPickupWhileBotting.Size = new Size(251, 30);
             cbDontPickupWhileBotting.TabIndex = 3;
             cbDontPickupWhileBotting.Text = "Don't pickup items while botting";
@@ -1805,7 +1805,7 @@ namespace RSBot.Items.Views
             cbJustpickmyitems.Margin = new Padding(0);
             cbJustpickmyitems.MouseLocation = new Point(-1, -1);
             cbJustpickmyitems.Name = "cbJustpickmyitems";
-            cbJustpickmyitems.Ripple = true;
+            cbJustpickmyitems.Ripple = false;
             cbJustpickmyitems.Size = new Size(154, 30);
             cbJustpickmyitems.TabIndex = 1;
             cbJustpickmyitems.Text = "Just pick my items";
@@ -1822,7 +1822,7 @@ namespace RSBot.Items.Views
             checkDontPickupInBerzerk.Margin = new Padding(0);
             checkDontPickupInBerzerk.MouseLocation = new Point(-1, -1);
             checkDontPickupInBerzerk.Name = "checkDontPickupInBerzerk";
-            checkDontPickupInBerzerk.Ripple = true;
+            checkDontPickupInBerzerk.Ripple = false;
             checkDontPickupInBerzerk.Size = new Size(271, 30);
             checkDontPickupInBerzerk.TabIndex = 2;
             checkDontPickupInBerzerk.Text = "Don't pickup items in berzerk mode";
@@ -1840,7 +1840,7 @@ namespace RSBot.Items.Views
             checkEnableAbilityPet.Margin = new Padding(0);
             checkEnableAbilityPet.MouseLocation = new Point(-1, -1);
             checkEnableAbilityPet.Name = "checkEnableAbilityPet";
-            checkEnableAbilityPet.Ripple = true;
+            checkEnableAbilityPet.Ripple = false;
             checkEnableAbilityPet.Size = new Size(240, 30);
             checkEnableAbilityPet.TabIndex = 0;
             checkEnableAbilityPet.Text = "Use ability pet to pickup items ";
