@@ -58,8 +58,8 @@ public partial class ScriptRecorder : UIWindow
         EventManager.SubscribeEvent("OnVehicleMove", OnPlayerMove);
         Disposed += (_, _) =>
         {
-            EventManager.UnsubscribeEvent("OnPlayerMove", (Action)OnPlayerMove);
-            EventManager.UnsubscribeEvent("OnVehicleMove", (Action)OnPlayerMove);
+            EventManager.UnsubscribeEvent("OnPlayerMove", (System.Action)OnPlayerMove);
+            EventManager.UnsubscribeEvent("OnVehicleMove", (System.Action)OnPlayerMove);
         };
         _uiEvents.Subscribe("OnRequestTeleport", new Action<uint, string>(OnRequestTeleport));
         _uiEvents.Subscribe("OnTerminateVehicle", OnTerminateVehicle);

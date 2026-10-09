@@ -77,10 +77,10 @@ public partial class Main : DoubleBufferedControl
         _inventoryTimer.Start();
         Disposed += (_, _) =>
         {
-            EventManager.UnsubscribeEvent("OnLoadCharacter", (Action)OnLoadCharacter);
+            EventManager.UnsubscribeEvent("OnLoadCharacter", (System.Action)OnLoadCharacter);
             EventManager.UnsubscribeEvent("OnUpdateInventoryItem", (Action<byte>)OnUpdateInventoryItem);
             EventManager.UnsubscribeEvent("OnUseItem", (Action<byte>)OnUpdateInventoryItem);
-            EventManager.UnsubscribeEvent("OnInventoryUpdate", (Action)UpdateInventoryList);
+            EventManager.UnsubscribeEvent("OnInventoryUpdate", (System.Action)UpdateInventoryList);
             _boldItemFont?.Dispose();
             _itemDetailsTitleFont?.Dispose();
             _itemDetails.Font.Dispose();
