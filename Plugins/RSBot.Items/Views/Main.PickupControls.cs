@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Windows.Forms;
 using RSBot.Core;
 using RSBot.Core.Components;
@@ -51,13 +52,30 @@ public partial class Main
         radiusRow.Controls.Add(_petPickupRadius);
         flow.Controls.Add(radiusRow);
 
+        var categoryRow = new FlowLayoutPanel
+        {
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            FlowDirection = FlowDirection.LeftToRight, WrapContents = true,
+            Margin = new Padding(0, Px(8), 0, 0),
+        };
+        flow.Controls.Add(categoryRow);
+        flow.SizeChanged += (_, _) =>
+        {
+            var width = Math.Max(Px(260), flow.ClientSize.Width - flow.Padding.Horizontal);
+            categoryRow.MinimumSize = new Size(width, 0);
+            categoryRow.MaximumSize = new Size(width, 0);
+        };
+
         foreach (var pet in new[] { false, true })
         {
             var group = new SDUI.Controls.GroupBox
             {
                 Name = pet ? "pickupPetCategories" : "pickupPlayerCategories",
                 Text = pet ? "Pet categories" : "Character categories",
-                AutoSize = true, Padding = new Padding(Px(10), Px(26), Px(10), Px(10)),
+                AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                MinimumSize = new Size(Px(250), 0),
+                Margin = new Padding(0, 0, Px(12), Px(12)),
+                Padding = new Padding(Px(10), Px(26), Px(10), Px(10)),
             };
             var categories = new FlowLayoutPanel
             {
@@ -77,7 +95,7 @@ public partial class Main
                 check.CheckedChanged += (_, _) => SavePickupCategories(pet);
                 categories.Controls.Add(check);
             }
-            flow.Controls.Add(group);
+            categoryRow.Controls.Add(group);
         }
         _separatePickupRules.CheckedChanged += (_, _) => UpdatePickupCategoryControls();
         UpdatePickupCategoryControls();
