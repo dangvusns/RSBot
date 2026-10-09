@@ -121,16 +121,14 @@ public partial class Main : DoubleBufferedControl
     }
 
     /// <summary>
-    ///     The designer sizes are 96 DPI and nothing auto-scales this view, so scale it once to the display.
+    ///     AutoScaleMode.Dpi scales the controls from the 96 DPI design; column widths are not part of the
+    ///     control bounds (and PacketListView is not an SDUI list view), so scale them here.
     /// </summary>
     private void ScaleForDpi()
     {
         var factor = DeviceDpi / 96f;
         if (factor > 1.01f)
         {
-            Scale(new SizeF(factor, factor));
-
-            // Column widths are not part of the control bounds
             foreach (ColumnHeader column in listPackets.Columns)
                 column.Width = (int)Math.Ceiling(column.Width * factor);
         }

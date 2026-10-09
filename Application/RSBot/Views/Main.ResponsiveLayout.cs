@@ -47,6 +47,9 @@ public partial class Main
         };
         viewToolStripMenuItem.DropDownItems.Add(pagesMenu);
 
+        windowPageControl.SelectedIndexChanged += (_, _) => UpdateResponsiveLayout();
+        // The page host gets its new DeviceDpi after the form's DpiChanged event.
+        windowPageControl.DpiChangedAfterParent += (_, _) => UpdateResponsiveLayout();
         bottomPanel.Layout += (_, _) => UpdateResponsiveLayout();
         SizeChanged += (_, _) => UpdateResponsiveLayout();
         DpiChanged += (_, _) =>
@@ -113,9 +116,17 @@ public partial class Main
             btnStartStop.Bounds = new Rectangle(startLeft, actionTop, startWidth, buttonHeight);
             btnSave.Bounds = new Rectangle(Math.Max(edge, startLeft - gap - saveWidth), actionTop, saveWidth, buttonHeight);
 
-            // Retain the user's sidebar preference when temporarily hiding it for space.
+            // Retain the user's sidebar preference when temporarily hiding it for space:
+            // the selected page must fit next to it without horizontal scrolling.
             pSidebar.Width = LayoutPixels(250);
-            pSidebar.Visible = menuSidebar.Checked && ClientSize.Width >= LayoutPixels(950);
+            var page = windowPageControl is ScrollablePageControl pages ? pages.SelectedPageSize : Size.Empty;
+            // Pages fill the width the sidebar leaves; Visible is false until the form is shown.
+            var pageArea = ClientSize.Width - Padding.Horizontal;
+            var pageWidth = page.Width;
+            if (page.Height > windowPageControl.Height)
+                pageWidth += SystemInformation.GetVerticalScrollBarWidthForDpi(DeviceDpi);
+            pSidebar.Visible = menuSidebar.Checked && ClientSize.Width >= LayoutPixels(950)
+                && pageArea - pSidebar.Width >= pageWidth;
         }
         finally
         {

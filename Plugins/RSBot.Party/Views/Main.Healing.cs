@@ -137,8 +137,8 @@ public partial class Main
         lists.Controls.Add(available, 0, 0);
         lists.Controls.Add(
             CreateHealButtons(
-                ($"button{namePrefix}Add", "►", () => AddHealSkills(available, selected)),
-                ($"button{namePrefix}Remove", "◄", () => RemoveHealSkills(selected)),
+                ($"button{namePrefix}Add", "▶", () => AddHealSkills(available, selected)),
+                ($"button{namePrefix}Remove", "◀", () => RemoveHealSkills(selected)),
                 ($"button{namePrefix}Refresh", "↻", refresh)
             ),
             1,

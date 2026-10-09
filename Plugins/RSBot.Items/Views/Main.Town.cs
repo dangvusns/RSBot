@@ -206,7 +206,7 @@ public partial class Main
     /// </summary>
     private void InitializeDropFilter()
     {
-        listFilter.Columns.Add("Drop");
+        listFilter.Columns.Add("Drop", Px(60));
 
         _btnAddToDrop = new ToolStripMenuItem("Drop in town") { ForeColor = Color.FromArgb(0, 0, 0) };
         _btnAddToDrop.Click += (_, _) => SetSelectedDropFilter(true);

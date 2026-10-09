@@ -45,6 +45,23 @@ internal sealed class ScrollablePageControl : WindowPageControl
 
     private void PageVisibilityChanged(object sender, EventArgs e) => PerformLayout();
 
+    /// <summary>
+    /// The selected page's designed size in current device pixels, or empty when there is no page.
+    /// </summary>
+    public Size SelectedPageSize
+    {
+        get
+        {
+            var page = SelectedIndex >= 0 && SelectedIndex < Count ? GetPage(SelectedIndex) : null;
+            if (page == null || !_logicalSizes.TryGetValue(page, out var pageSize))
+                return Size.Empty;
+
+            var scale = DeviceDpi / 96f;
+            return new Size((int)Math.Ceiling(pageSize.LogicalSize.Width * scale),
+                (int)Math.Ceiling(pageSize.LogicalSize.Height * scale));
+        }
+    }
+
     protected override void OnDpiChangedAfterParent(EventArgs e)
     {
         base.OnDpiChangedAfterParent(e);
@@ -60,12 +77,9 @@ internal sealed class ScrollablePageControl : WindowPageControl
             // Visibility changes during selection happen one page at a time. Only the
             // selected page should contribute to the scrollable extent.
             var page = SelectedIndex >= 0 && SelectedIndex < Count ? GetPage(SelectedIndex) : null;
-            if (page != null && _logicalSizes.TryGetValue(page, out var pageSize))
+            var minimum = SelectedPageSize;
+            if (page != null && minimum != Size.Empty)
             {
-                var logicalSize = pageSize.LogicalSize;
-                var scale = DeviceDpi / 96f;
-                var minimum = new Size((int)Math.Ceiling(logicalSize.Width * scale),
-                    (int)Math.Ceiling(logicalSize.Height * scale));
                 if (AutoScrollMinSize != minimum) AutoScrollMinSize = minimum;
                 base.OnLayout(e);
                 page.Bounds = new Rectangle(AutoScrollPosition,

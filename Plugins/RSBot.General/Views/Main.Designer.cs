@@ -619,6 +619,7 @@
             // label5
             // 
             label5.ApplyGradient = false;
+            label5.AutoSize = true;
             label5.ForeColor = System.Drawing.Color.FromArgb(0, 0, 0);
             label5.Gradient = new System.Drawing.Color[]
     {

@@ -54,9 +54,9 @@ public class LanguageManager
         var languages = new LangDict();
         var lines = File.ReadAllLines(file);
 
-        foreach (var line in lines)
+        for (var i = 0; i < lines.Length; i++)
         {
-            var trimmedLine = line.Trim();
+            var trimmedLine = lines[i].Trim();
             if (string.IsNullOrEmpty(trimmedLine) || !trimmedLine.Contains("="))
                 continue;
 
@@ -65,7 +65,13 @@ public class LanguageManager
                 continue;
 
             var key = parts[0].Trim();
-            var value = parts[1].Trim().Trim('"');
+            var raw = parts[1].Trim();
+            // A quoted value may continue on the next lines until its closing quote.
+            if (raw.StartsWith('"'))
+                while ((raw.Length < 2 || !raw.EndsWith('"')) && i + 1 < lines.Length && !IsKeyLine(lines[i + 1]))
+                    raw += "\r\n" + lines[++i].TrimEnd();
+
+            var value = raw.Trim('"');
 
             value = value
                 .Replace("\\r\\n", "\r\n") // CRLF
@@ -80,6 +86,10 @@ public class LanguageManager
 
         return languages;
     }
+
+    // A missing closing quote must not swallow the following translations.
+    private static bool IsKeyLine(string line) =>
+        line.Length > 0 && !char.IsWhiteSpace(line[0]) && line[0] != '"' && line.Contains('=');
 
     /// <summary>
     ///     Compare between controls ang languages strings if there have any missing complete and write to language file
