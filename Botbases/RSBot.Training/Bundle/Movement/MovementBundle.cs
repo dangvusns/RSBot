@@ -1,9 +1,11 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using RSBot.Core;
 using RSBot.Core.Components;
 using RSBot.Core.Components.Tracing;
 using RSBot.Core.Objects;
 using RSBot.Core.Objects.Spawn;
+using RSBot.NavMeshApi;
 
 namespace RSBot.Training.Bundle.Movement;
 
@@ -32,6 +34,78 @@ internal class MovementBundle : IBundle
     private TraceSession _masterTrace;
     private bool _returningToArea;
     private int _lastAreaReturnTick;
+    private ObstacleRecovery _recovery = new();
+    private int _recoveryRequested;
+
+    public bool Recovering => _recovery.Active || Volatile.Read(ref _recoveryRequested) != 0;
+
+    public void RequestObstacleRecovery()
+    {
+        if (Kernel.Bot.Running)
+            Interlocked.Exchange(ref _recoveryRequested, 1);
+    }
+
+    public bool RecoverFromObstacle()
+    {
+        var player = Game.Player;
+        if (!Kernel.Bot.Running || player.State.LifeState != LifeState.Alive)
+        {
+            Interlocked.Exchange(ref _recoveryRequested, 0);
+            _recovery.Finish(Kernel.TickCount);
+            return false;
+        }
+
+        var position = player.Position;
+        if (Interlocked.Exchange(ref _recoveryRequested, 0) != 0
+            && _recovery.Start(Kernel.TickCount, position.X, position.Y))
+        {
+            StopMasterTrace();
+            Log.Status("Recovering from obstacle");
+        }
+
+        var step = _recovery.Update(Kernel.TickCount, position.X, position.Y);
+        if (step == ObstacleRecovery.Step.Recovered || step == ObstacleRecovery.Step.Exhausted)
+        {
+            LastEntityWasBehindObstacle = false;
+            Log.Status("Resuming training");
+            Log.Debug(step == ObstacleRecovery.Step.Recovered
+                ? "[Recovery] Position changed; resuming training"
+                : "[Recovery] Escape attempts exhausted; resuming target selection");
+            return false;
+        }
+        if (step != ObstacleRecovery.Step.Attempt)
+            return _recovery.Active;
+
+        // Resurrects, heals and buffs keep their cast ownership; recovery still expires while waiting.
+        if (player.InAction || SkillManager.IsCasting || Bundles.Resurrect.HasPendingResurrect()
+            || PickupManager.RunningPlayerPickup)
+            return true;
+
+        var area = Container.Bot.Area;
+        var angle = Math.Atan2(area.Position.Y - position.Y, area.Position.X - position.X);
+        if (!position.TryGetNavMeshTransform(out var source))
+            return true;
+        for (var direction = 0; direction < 8; direction++)
+        {
+            var offset = angle + (direction + _recovery.Attempts - 1) * Math.PI / 4;
+            var destination = new Position(position.X + (float)Math.Cos(offset) * 4,
+                position.Y + (float)Math.Sin(offset) * 4, position.Region)
+            {
+                WorldId = position.WorldId,
+                LayerId = position.LayerId,
+                ZOffset = position.ZOffset,
+            };
+            if (area.Position.DistanceTo(destination) > area.Radius
+                || !destination.TryGetNavMeshTransform(out var target)
+                || !NavMeshManager.Raycast(new NavMeshTransform(source), new NavMeshTransform(target), NavMeshRaycastType.Move))
+                continue;
+            destination.ZOffset = target.Offset.Y;
+            if (Kernel.Bot.Running && !player.InAction && !SkillManager.IsCasting)
+                player.MoveTo(destination, false);
+            break;
+        }
+        return true;
+    }
 
     /// <summary>
     ///     How far the player may step over the radius before being brought back, so a step just outside does not trigger it.
@@ -62,6 +136,9 @@ internal class MovementBundle : IBundle
 
         if (!_returningToArea)
         {
+            Interlocked.Exchange(ref _recoveryRequested, 0);
+            if (_recovery.Active)
+                _recovery.Finish(Kernel.TickCount);
             _returningToArea = true;
             _lastAreaReturnTick = Kernel.TickCount - 2000;
             Log.Warn($"[Training boundary] Returning to center: distance={distance:F1} radius={area.Radius} "
@@ -74,7 +151,7 @@ internal class MovementBundle : IBundle
         }
 
         // Retry bounded movement periodically; a selected target or stale threat flag cannot block recovery.
-        if (Kernel.Bot.Running && Kernel.TickCount - _lastAreaReturnTick >= 2000)
+        if (Kernel.Bot.Running && ((Kernel.TickCount - _lastAreaReturnTick) & int.MaxValue) >= 2000)
         {
             _lastAreaReturnTick = Kernel.TickCount;
             Game.Player.MoveTo(area.Position, false);
@@ -88,6 +165,8 @@ internal class MovementBundle : IBundle
     public void Invoke()
     {
         if (EnsureInsideTrainingArea())
+            return;
+        if (RecoverFromObstacle())
             return;
         if (Game.SelectedEntity != null && !LastEntityWasBehindObstacle)
             return;
@@ -156,6 +235,8 @@ internal class MovementBundle : IBundle
     {
         LastEntityWasBehindObstacle = false;
         _returningToArea = false;
+        Interlocked.Exchange(ref _recoveryRequested, 0);
+        _recovery = new ObstacleRecovery();
 
         StopMasterTrace();
     }

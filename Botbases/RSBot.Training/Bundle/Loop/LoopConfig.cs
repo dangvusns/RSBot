@@ -2,6 +2,8 @@
 
 public class LoopConfig
 {
+    public bool SkipTownNpcs { get; set; }
+
     /// <summary>
     ///     Gets or sets the walk script.
     /// </summary>

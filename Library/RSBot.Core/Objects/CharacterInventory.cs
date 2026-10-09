@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using RSBot.Core.Client.ReferenceObjects;
+using RSBot.Core.Components;
+using RSBot.Core.Components.Tracing;
 using RSBot.Core.Network;
 
 namespace RSBot.Core.Objects;
@@ -57,7 +61,8 @@ public class CharacterInventory : InventoryItemCollection
     /// <value>
     ///     <c>true</c> if this instance is sorting; otherwise, <c>false</c>.
     /// </value>
-    public bool IsSorting { get; private set; }
+    private int _sorting;
+    public bool IsSorting => Volatile.Read(ref _sorting) != 0;
 
     /// <summary>
     ///     Gets the number of free slots in NormalPart inventory.
@@ -122,6 +127,9 @@ public class CharacterInventory : InventoryItemCollection
     /// <param name="amount">The amount.</param>
     /// <returns><c>true</c> if successfully moved; otherwise, <c>false</c>.</returns>
     public bool MoveItem(byte sourceSlot, byte destinationSlot, ushort amount = 0)
+        => MoveItem(sourceSlot, destinationSlot, amount, 500);
+
+    private bool MoveItem(byte sourceSlot, byte destinationSlot, ushort amount, int timeout)
     {
         var itemAtSource = GetItemAt(sourceSlot);
         if (itemAtSource == null)
@@ -150,6 +158,7 @@ public class CharacterInventory : InventoryItemCollection
                     var destination = response.ReadByte();
                     if (source == sourceSlot && destination == destinationSlot)
                         return AwaitCallbackResult.Success;
+                    return AwaitCallbackResult.ConditionFailed;
                 }
 
                 return AwaitCallbackResult.Fail;
@@ -158,38 +167,155 @@ public class CharacterInventory : InventoryItemCollection
         );
 
         PacketManager.SendPacket(packet, PacketDestination.Server, asyncResult);
-        asyncResult.AwaitResponse(500);
+        asyncResult.AwaitResponse(timeout);
 
         return asyncResult.IsCompleted;
     }
 
     public void Sort()
     {
-        if (IsSorting || Game.Player.InAction)
+        if (Game.Player?.Inventory != this || Game.Player.InAction || Game.Player.Exchanging
+            || PickupManager.RunningPlayerPickup || PickupManager.RunningAbilityPetPickup
+            || Interlocked.CompareExchange(ref _sorting, 1, 0) != 0)
             return;
 
-        IsSorting = true;
+        try
+        {
+            if (PickupManager.RunningPlayerPickup || PickupManager.RunningAbilityPetPickup)
+                return;
+            MergeStacks(false);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _sorting, 0);
+        }
+    }
+
+    public void Organize()
+    {
+        if (!CanOrganize() || Interlocked.CompareExchange(ref _sorting, 1, 0) != 0)
+        {
+            Log.Notify("Inventory organization requires an idle character and a stopped bot.");
+            return;
+        }
+
+        try
+        {
+            if (!CanOrganize())
+                return;
+            Log.Notify("Organizing inventory...");
+            if (!MergeStacks(true))
+                return;
+
+            var expected = Snapshot();
+            var ordered = GetNormalPartItems().OrderBy(i => GetOrganizationCategory(i.Record))
+                .ThenBy(i => i.Record.CodeName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(i => i.ItemId).ThenByDescending(i => i.Amount).ThenBy(i => i.Slot).ToList();
+            for (var index = 0; index < ordered.Count; index++)
+            {
+                if (!CanOrganize() || !Matches(expected))
+                {
+                    Log.Notify("Inventory organization stopped: character or inventory changed.");
+                    return;
+                }
+                var item = ordered[index];
+                var slot = (byte)(NORMAL_PART_MIN_SLOT + index);
+                if (item.Slot != slot && !MoveForOrganization(item.Slot, slot, item.Amount, expected))
+                    return;
+            }
+            Log.Notify("Inventory organization finished.");
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _sorting, 0);
+        }
+    }
+
+    private bool CanOrganize()
+    {
+        var player = Game.Player;
+        var trace = TraceManager.Current;
+        return Game.Ready && player?.Inventory == this
+            && Kernel.Bot?.Running != true && !player.InAction && !player.Exchanging
+            && !SkillManager.IsCasting && !PickupManager.RunningPlayerPickup && !PickupManager.RunningAbilityPetPickup
+            && (trace == null || trace.State == TraceState.Stopped)
+            && !ScriptManager.Running && !ShoppingManager.Running
+            && player.State.LifeState != LifeState.Dead && !player.Movement.Moving
+            && player.State.ScrollState != ScrollState.NormalScroll
+            && player.State.ScrollState != ScrollState.ThiefScroll
+            && player.Teleportation?.IsTeleporting != true;
+    }
+
+    private static int GetOrganizationCategory(RefObjItem record)
+    {
+        if (record.IsPotion || record.IsPurificationPill || record.IsUniversalPill || record.IsAbnormalPotion) return 0;
+        if (record.IsAmmunition) return 1;
+        if (record.IsEquip || record.IsJobEquip || record.IsFellowEquip) return 2;
+        if (record.IsQuest) return 3;
+        if (record.IsPet) return 4;
+        return 5;
+    }
+
+    private Dictionary<byte, (InventoryItem Item, uint ItemId, ushort Amount)> Snapshot() =>
+        this.ToDictionary(i => i.Slot, i => (i, i.ItemId, i.Amount));
+
+    private bool Matches(Dictionary<byte, (InventoryItem Item, uint ItemId, ushort Amount)> expected) =>
+        Count == expected.Count && this.All(i => expected.TryGetValue(i.Slot, out var entry)
+            && ReferenceEquals(i, entry.Item) && i.ItemId == entry.ItemId && i.Amount == entry.Amount);
+
+    private bool MoveForOrganization(byte source, byte destination, ushort amount,
+        Dictionary<byte, (InventoryItem Item, uint ItemId, ushort Amount)> expected)
+    {
+        if (!CanOrganize() || !Matches(expected))
+        {
+            Log.Notify("Inventory organization stopped: character or inventory changed.");
+            return false;
+        }
+
+        var from = expected[source];
+        expected.TryGetValue(destination, out var to);
+        if (to.Item != null && to.Item.ItemId == from.Item.ItemId
+            && to.Amount + amount <= to.Item.Record.MaxStack)
+        {
+            expected[destination] = (to.Item, to.ItemId, (ushort)(to.Amount + amount));
+            if (amount == from.Amount) expected.Remove(source);
+            else expected[source] = (from.Item, from.ItemId, (ushort)(from.Amount - amount));
+        }
+        else
+        {
+            expected[destination] = from;
+            if (to.Item == null) expected.Remove(source);
+            else expected[source] = to;
+        }
+
+        // The server handler may finish updating local slots after the callback wakes this worker.
+        if (!MoveItem(source, destination, amount, 5_000)
+            || !SpinWait.SpinUntil(() => Matches(expected), 500) || !CanOrganize())
+        {
+            Log.Notify("Inventory organization stopped: move was not confirmed or inventory changed.");
+            return false;
+        }
+        return true;
+    }
+
+    private bool MergeStacks(bool organize)
+    {
         Log.Debug("Sorting the character inventory...");
 
         //Use iterations to avoid deadlocks!
-        const int maxIterations = 10;
+        var maxIterations = organize ? NormalPartSize * 2 : 10;
         var iterations = 0;
 
         //Ignore items which move operations failed in the next iteration
         var blacklistedItems = new List<uint>(4);
 
-        int firstSlot = 13;
-        if (Game.ClientType == GameClientType.Global
-            || Game.ClientType == GameClientType.Korean
-            || Game.ClientType == GameClientType.VTC_Game
-            || Game.ClientType == GameClientType.RuSro
-            || Game.ClientType == GameClientType.Turkey
-            || Game.ClientType == GameClientType.Taiwan
-            || Game.ClientType == GameClientType.Japanese)
-            firstSlot = 17; //4 slots for relics
+        var firstSlot = NORMAL_PART_MIN_SLOT;
+        var expected = organize ? Snapshot() : null;
 
         for (var iIteration = 0; iIteration < maxIterations; iIteration++)
         {
+            if (Game.Player?.Inventory != this || Game.Player.InAction || Game.Player.Exchanging)
+                return false;
             iterations++;
 
             var itemsToStackGroups = this.Where(i =>
@@ -219,11 +345,16 @@ public class CharacterInventory : InventoryItemCollection
             var amount = destination.Record.MaxStack - destination.Amount;
             var actualAmount = source.Amount > amount ? amount : source.Amount;
 
-            if (!MoveItem(source.Slot, destination.Slot, (ushort)actualAmount))
+            if (organize)
+            {
+                if (!MoveForOrganization(source.Slot, destination.Slot, (ushort)actualAmount, expected))
+                    return false;
+            }
+            else if (!MoveItem(source.Slot, destination.Slot, (ushort)actualAmount))
                 blacklistedItems.Add(source.ItemId);
         }
 
-        IsSorting = false;
         Log.Debug($"Sorting finished after {iterations}/{maxIterations}");
+        return true;
     }
 }

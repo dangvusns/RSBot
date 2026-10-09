@@ -41,6 +41,7 @@ public partial class Main : DoubleBufferedControl
 
         InitializeTownTab();
         InitializeDropFilter();
+        InitializePickupControls();
 
         listFilter.MultiSelect = true;
         listFilter.HideSelection = false;
@@ -459,6 +460,7 @@ public partial class Main : DoubleBufferedControl
             checkDontPickupInBerzerk.Checked = PlayerConfig.Get("RSBot.Items.Pickup.DontPickupInBerzerk", true);
             cbJustpickmyitems.Checked = PlayerConfig.Get("RSBot.Items.Pickup.JustPickMyItems", false);
             cbDontPickupWhileBotting.Checked = PlayerConfig.Get<bool>("RSBot.Items.Pickup.DontPickupWhileBotting");
+            LoadPickupControls();
 
             checkQuestItems.Checked = PlayerConfig.Get<bool>("RSBot.Items.Pickup.Quest", true);
             checkAllEquips.Checked = PlayerConfig.Get<bool>("RSBot.Items.Pickup.AnyEquips");

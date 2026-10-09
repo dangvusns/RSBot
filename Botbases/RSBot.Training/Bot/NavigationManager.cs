@@ -19,7 +19,7 @@ namespace RSBot.Training.Bot;
 ///     Builds a walk script to the training area from the community navigation graph (Silkroad-NavLink).
 ///     The graph holds waypoints joined by walk edges (both ways) and teleport edges (one way, via an NPC).
 /// </summary>
-internal static class NavigationManager
+internal static partial class NavigationManager
 {
     private const string DefaultLinkageUrl =
         "https://github.com/Silkroad-Developer-Community/Silkroad-NavLink/releases/latest/download/navigation_linkage.json.gz";
@@ -60,27 +60,35 @@ internal static class NavigationManager
         {
             Log.Notify(Lang("AutoPathGenerating", "No walkscript set. Calculating a path to the training area..."));
 
-            var graph = GetGraph();
-            if (graph == null && !File.Exists(CustomPath))
+            Graph graph = null;
+            try
             {
-                Log.Notify(Lang("AutoPathDownloading", "Downloading navigation data..."));
-                UpdateLinkageAsync(onlyIfMissing: true).GetAwaiter().GetResult();
-
-                // Another bot process may have written the file meanwhile
                 graph = GetGraph();
-            }
+                if (graph == null && !File.Exists(CustomPath))
+                {
+                    Log.Notify(Lang("AutoPathDownloading", "Downloading navigation data..."));
+                    UpdateLinkageAsync(onlyIfMissing: true).GetAwaiter().GetResult();
 
-            if (graph == null)
+                    // Another bot process may have written the file meanwhile
+                    graph = GetGraph();
+                }
+            }
+            catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
             {
-                Log.Warn(Lang("AutoPathDataMissing", "Navigation data is not available. Record a walkscript instead."));
-                return null;
+                Log.Warn($"[Navigation] Cannot load the graph: {e.Message}. Trying a local route.");
             }
 
-            var path = graph.FindPath(from, target);
+            var path = graph?.FindPath(from, target);
             if (path == null)
             {
-                Log.Warn(Lang("AutoPathNotFound", "No path found to the training area. Record a walkscript instead."));
-                return null;
+                Log.Status("Finding a local route");
+                if (!TryBuildLocalPath(from, target, out var route))
+                {
+                    Log.Warn(Lang("AutoPathNotFound", "No safe route found to the training area. Record a walkscript or update NavLink."));
+                    return null;
+                }
+                path = route.Select(position => new PathStep { Position = position }).ToList();
+                Log.Notify("[Navigation] Using a local NavMesh route because the navigation graph has no route.");
             }
 
             return WriteScript(path, from, target);
@@ -326,6 +334,23 @@ internal static class NavigationManager
     ///     Splits a straight walk into steps of at most <see cref="MoveStep" /> units.
     /// </summary>
     private static void AddMoveCommands(List<string> lines, Position start, Position end)
+    {
+        if (start.DistanceTo(end) < 1)
+            return;
+        if (start.TryGetNavMeshTransform(out var source) && end.TryGetNavMeshTransform(out var destination)
+            && !RSBot.NavMeshApi.NavMeshManager.Raycast(source, destination, RSBot.NavMeshApi.NavMeshRaycastType.Move))
+        {
+            if (!TryBuildLocalPath(start, end, out var route))
+                throw new InvalidOperationException("A navigation segment is blocked and no safe local detour was found.");
+            for (var i = 1; i < route.Count; i++)
+                AddStraightMoveCommands(lines, route[i - 1], route[i]);
+            Log.Notify("[Navigation] Added a local detour around a blocked segment.");
+            return;
+        }
+        AddStraightMoveCommands(lines, start, end);
+    }
+
+    private static void AddStraightMoveCommands(List<string> lines, Position start, Position end)
     {
         var distance = start.DistanceTo(end);
         if (distance < 1)

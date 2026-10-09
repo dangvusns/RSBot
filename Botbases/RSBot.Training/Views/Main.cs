@@ -25,6 +25,7 @@ public partial class Main : DoubleBufferedControl
 
     private bool _settingsLoaded;
     private CheckBox checkAutoPath;
+    private CheckBox checkSkipTownNpcs;
     private LinkLabel linkUpdateNavLink;
 
     #endregion Fields
@@ -491,11 +492,25 @@ public partial class Main : DoubleBufferedControl
         };
         linkUpdateNavLink.LinkClicked += linkUpdateNavLink_LinkClicked;
 
+        checkSkipTownNpcs = new CheckBox
+        {
+            Name = "checkSkipTownNpcs",
+            Text = "Skip town NPCs (no purchases, storage or repairs)",
+            AutoSize = true,
+            BackColor = System.Drawing.Color.Transparent,
+            Ripple = false,
+            TabIndex = 10,
+        };
+        checkSkipTownNpcs.CheckedChanged += settings_CheckedChanged;
+
         groupBoxWalkback.Controls.Add(checkAutoPath);
         groupBoxWalkback.Controls.Add(linkUpdateNavLink);
+        groupBoxWalkback.Controls.Add(checkSkipTownNpcs);
+        AutoScroll = true;
 
         // Positioned relative to the designer controls so it follows DPI scaling and translated text widths.
         groupBoxWalkback.Layout += (_, _) => LayoutAutoPathControls();
+        LayoutAutoPathControls();
     }
 
     private void LayoutAutoPathControls()
@@ -510,6 +525,14 @@ public partial class Main : DoubleBufferedControl
             linkRecord.Left - linkUpdateNavLink.Width - LogicalToDeviceUnits(6),
             linkRecord.Top
         );
+        checkSkipTownNpcs.Location = new System.Drawing.Point(checkUseMount.Left, checkUseMount.Bottom + LogicalToDeviceUnits(4));
+        var height = checkSkipTownNpcs.Bottom + LogicalToDeviceUnits(8);
+        if (groupBoxWalkback.Height != height)
+        {
+            groupBoxWalkback.Height = height;
+            groupBoxBerserk.Top = groupBoxWalkback.Bottom + LogicalToDeviceUnits(11);
+            groupBoxAdvanced.Top = groupBoxBerserk.Bottom + LogicalToDeviceUnits(6);
+        }
     }
 
     private async void linkUpdateNavLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)

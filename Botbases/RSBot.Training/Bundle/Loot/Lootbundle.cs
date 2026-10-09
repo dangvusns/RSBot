@@ -27,10 +27,11 @@ internal class LootBundle : IBundle
         if (Config.UseAbilityPet && Game.Player.HasActiveAbilityPet && !PickupManager.RunningAbilityPetPickup)
         {
             PickupManager.RunAbilityPet(Container.Bot.Area.Position, Container.Bot.Area.Radius);
-            return;
+            if (!PickupManager.SeparateRules)
+                return;
         }
 
-        if ((Bundles.Loot.Config.DontPickupInBerzerk && Game.Player.Berzerking) || ScriptManager.Running)
+        if (PickupManager.PlayerPaused || (Bundles.Loot.Config.DontPickupInBerzerk && Game.Player.Berzerking) || ScriptManager.Running)
             return;
 
         //Don't pickup if a mob is selected

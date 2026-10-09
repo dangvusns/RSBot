@@ -10,13 +10,32 @@ namespace RSBot.Core.Components;
 
 public class PickupManager
 {
+    private static int _playerBusy;
+    private static int _petBusy;
+    private static int _generation;
+
+    public static bool SeparateRules => PlayerConfig.Get("RSBot.Items.Pickup.SeparateRules", false);
+    public static bool PlayerPaused => PlayerConfig.Get("RSBot.Items.Pickup.PausePlayer", false);
+    public static bool FallbackWithoutPet => PlayerConfig.Get("RSBot.Items.Pickup.FallbackWithoutPet", true);
+    public static int PetRadius => Math.Clamp(PlayerConfig.Get("RSBot.Items.Pickup.PetRadius", 0), 0, 100);
+
+    public static PickupCategories LegacyCategories =>
+        (PickupGold ? PickupCategories.Gold : 0)
+        | (PickupRareItems ? PickupCategories.Rare : 0)
+        | (PickupBlueItems ? PickupCategories.Blue : 0)
+        | (PickupAnyEquips ? PickupCategories.Equipment : 0)
+        | (PickupQuestItems ? PickupCategories.Quest : 0)
+        | (PickupEverything ? PickupCategories.Everything : 0);
+
+    public static PickupCategories Categories(bool pet) => (PickupCategories)PlayerConfig.Get(
+        "RSBot.Items.Pickup." + (pet ? "PetCategories" : "PlayerCategories"), (int)LegacyCategories);
     /// <summary>
     ///     Gets or sets a value indicating whether this <see cref="PickupManager" /> is running.
     /// </summary>
     /// <value>
     ///     <c>true</c> if running; otherwise, <c>false</c>.
     /// </value>
-    public static bool RunningPlayerPickup { get; private set; }
+    public static bool RunningPlayerPickup => Volatile.Read(ref _playerBusy) != 0;
 
     /// <summary>
     ///     Gets or sets a value indicating whether this <see cref="PickupManager" /> is running for AbilityPet.
@@ -24,7 +43,7 @@ public class PickupManager
     /// <value>
     ///     <c>true</c> if running; otherwise, <c>false</c>.
     /// </value>
-    public static bool RunningAbilityPetPickup { get; private set; }
+    public static bool RunningAbilityPetPickup => Volatile.Read(ref _petBusy) != 0;
 
     /// <summary>
     ///     Gets or sets the pickup items.
@@ -106,21 +125,25 @@ public class PickupManager
     /// <param name="radius">The radius.</param>
     public static void RunPlayer(Position playerPosition, Position centerPosition, int radius = 50)
     {
-        if (RunningPlayerPickup)
+        var player = Game.Player;
+        var generation = Volatile.Read(ref _generation);
+        if (!Game.Ready || player == null || player.Inventory?.IsSorting == true || PlayerPaused
+            || (UseAbilityPet && !player.HasActiveAbilityPet && !FallbackWithoutPet)
+            || Interlocked.CompareExchange(ref _playerBusy, 1, 0) != 0)
             return;
 
-        RunningPlayerPickup = true;
         try
         {
+            if (Game.Player != player || player.Inventory?.IsSorting == true)
+                return;
             var flag = UseAbilityPet && Game.Player.HasActiveAbilityPet;
             if (
                 !SpawnManager.TryGetEntities<SpawnedItem>(
-                    i => Condition(i, centerPosition, radius, flag, flag),
+                    i => Condition(i, centerPosition, radius, flag, flag, false),
                     out var entities
                 )
             )
             {
-                RunningPlayerPickup = false;
                 return;
             }
 
@@ -130,11 +153,19 @@ public class PickupManager
                 )
             )
             {
-                if (!RunningPlayerPickup)
+                if (generation != Volatile.Read(ref _generation) || !Game.Ready || Game.Player != player || PlayerPaused)
                     return;
 
                 while (Game.Player.InAction)
+                {
+                    if (generation != Volatile.Read(ref _generation) || !Game.Ready || Game.Player != player || PlayerPaused)
+                        return;
                     Thread.Sleep(50);
+                }
+
+                if (!SpawnManager.TryGetEntity<SpawnedItem>(item.UniqueId, out var current) || current != item
+                    || !Condition(item, centerPosition, radius, flag, flag, false))
+                    continue;
 
                 if (item.Record.IsSpecialtyGoodBox && Game.Player.Job2SpecialtyBag.Full)
                     continue;
@@ -150,41 +181,51 @@ public class PickupManager
         }
         finally
         {
-            RunningPlayerPickup = false;
+            Interlocked.Exchange(ref _playerBusy, 0);
         }
     }
 
     public static async void RunAbilityPet(Position centerPosition, int radius = 50)
     {
-        if (RunningAbilityPetPickup)
+        var player = Game.Player;
+        var generation = Volatile.Read(ref _generation);
+        if (!Game.Ready || player?.HasActiveAbilityPet != true || player.Inventory?.IsSorting == true || !UseAbilityPet
+            || Interlocked.CompareExchange(ref _petBusy, 1, 0) != 0)
             return;
-
-        RunningAbilityPetPickup = true;
 
         try
         {
+            if (Game.Player != player || player.Inventory?.IsSorting == true)
+                return;
+            var pet = player.AbilityPet;
+            if (pet == null)
+                return;
             if (
                 !SpawnManager.TryGetEntities<SpawnedItem>(
-                    i => Condition(i, centerPosition, radius, true),
+                    i => Condition(i, centerPosition, radius, true, false, true),
                     out var entities
                 )
             )
             {
-                RunningAbilityPetPickup = false;
                 return;
             }
 
             foreach (
-                var item in entities.OrderBy(item => item.Movement.Source.DistanceTo(Game.Player.AbilityPet.Position))
+                var item in entities.OrderBy(item => item.Movement.Source.DistanceTo(pet.Position))
             )
             {
-                if (!RunningAbilityPetPickup)
+                if (generation != Volatile.Read(ref _generation) || !Game.Ready || Game.Player != player
+                    || !player.HasActiveAbilityPet || player.AbilityPet != pet || !UseAbilityPet)
                     return;
+
+                if (!SpawnManager.TryGetEntity<SpawnedItem>(item.UniqueId, out var current) || current != item
+                    || !Condition(item, centerPosition, radius, true, false, true))
+                    continue;
 
                 if (item.Record.IsSpecialtyGoodBox && Game.Player.Job2SpecialtyBag.Full)
                     continue;
 
-                await Game.Player.AbilityPet.PickupAsync(item.UniqueId);
+                await pet.PickupAsync(item.UniqueId);
                 await Task.Yield();
             }
         }
@@ -194,7 +235,7 @@ public class PickupManager
         }
         finally
         {
-            RunningAbilityPetPickup = false;
+            Interlocked.Exchange(ref _petBusy, 0);
         }
     }
 
@@ -203,10 +244,17 @@ public class PickupManager
         Position centerPosition,
         int radius,
         bool applyPickOnlyChar = false,
-        bool pickOnlyChar = false
+        bool pickOnlyChar = false,
+        bool pet = false
     )
     {
-        var playerJid = Game.Player.JID;
+        var player = Game.Player;
+        if (!Game.Ready || player == null)
+            return false;
+        var activePet = player.AbilityPet;
+        if (pet && activePet == null)
+            return false;
+        var playerJid = player.JID;
 
         if (JustPickMyItems && e.OwnerJID != playerJid)
             return false;
@@ -216,13 +264,16 @@ public class PickupManager
         if (e.Movement.Source.DistanceTo(centerPosition) > radius + tolerance)
             return false;
 
+        if (pet && PetRadius > 0 && e.Movement.Source.DistanceTo(activePet.Position) > PetRadius)
+            return false;
+
         if (applyPickOnlyChar && e.IsBehindObstacle)
             return false;
 
         bool isItemAutoShareParty = Game.Party.IsInParty &&
                             Game.Party.Settings.GetPartyType() is 2 or 3 or 6 or 7;
 
-        if (isItemAutoShareParty && PickupGold && e.Record.IsGold)
+        if (!SeparateRules && isItemAutoShareParty && PickupGold && e.Record.IsGold)
         {
             if (!(applyPickOnlyChar && pickOnlyChar))
                 return true;
@@ -235,6 +286,22 @@ public class PickupManager
 
             if (e.Record.IsQuest && Game.Party.Members.Any(m => m.MemberId == e.OwnerJID))
                 return false;
+        }
+
+        if (SeparateRules)
+        {
+            var filter = PickupFilter.FirstOrDefault(p => p.CodeName == e.Record.CodeName);
+            if (pet && filter.PickOnlyChar)
+                return false;
+            if (!pet && activePet != null && UseAbilityPet && !filter.PickOnlyChar
+                && !e.IsBehindObstacle
+                && (PetRadius == 0 || e.Movement.Source.DistanceTo(activePet.Position) <= PetRadius)
+                && (PickupPolicy.Allows(Categories(true), e.Record.IsGold, e.Record.IsQuest,
+                    e.Record.IsEquip, (byte)e.Rarity) || filter.CodeName != null))
+                return false;
+            return PickupPolicy.Allows(Categories(pet), e.Record.IsGold, e.Record.IsQuest,
+                e.Record.IsEquip, (byte)e.Rarity)
+                || (filter.CodeName != null && (!pet || !filter.PickOnlyChar));
         }
 
         if (PickupGold && e.Record.IsGold && !(applyPickOnlyChar && pickOnlyChar))
@@ -318,7 +385,6 @@ public class PickupManager
     /// </summary>
     public static void Stop()
     {
-        RunningPlayerPickup = false;
-        RunningAbilityPetPickup = false;
+        Interlocked.Increment(ref _generation);
     }
 }

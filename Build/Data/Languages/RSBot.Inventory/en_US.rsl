@@ -1,4 +1,5 @@
 DisplayName="Inventory"
+RSBot.Inventory.Main.Panel.FlowLayoutPanel.buttonOrganizeInventory="Organize"
 RSBot.Inventory.Main.Panel.buttonUseItem="Use"
 RSBot.Inventory.Main.Panel.label1="Inventory:"
 RSBot.Inventory.Main.Panel.label2="Free Slots:"

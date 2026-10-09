@@ -57,6 +57,7 @@ public partial class Main : DoubleBufferedControl
     public Main()
     {
         InitializeComponent();
+        InitializeOrganizationAction();
         SubscribeEvents();
 
         listViewMain.SmallImageList = ListViewExtensions.StaticItemsImageList;
@@ -521,6 +522,7 @@ public partial class Main : DoubleBufferedControl
 
         //Only character inventory, storage and guild storage sorting is supported for now!
         btnSort.Visible = _selectedIndex == 0;
+        _organizeButton.Visible = _selectedIndex == 0;
         checkAutoSort.Visible = _selectedIndex is 0 or 4 or 5;
 
         foreach (var control in topPanel.Controls.OfType<Button>())

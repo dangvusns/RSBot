@@ -33,6 +33,8 @@ internal class LoopBundle : IBundle
     /// </value>
     public bool TownscriptRunning { get; private set; }
 
+    private int? _lastWalkbackFailure;
+
     /// <summary>
     ///     Invokes this instance.
     /// </summary>
@@ -66,6 +68,7 @@ internal class LoopBundle : IBundle
             UseVehicle = PlayerConfig.Get<bool>("RSBot.Training.checkUseMount", true),
             CastBuffs = PlayerConfig.Get<bool>("RSBot.Training.checkCastBuffs", true),
             UseReverse = PlayerConfig.Get<bool>("RSBot.Training.checkBoxUseReverse", false),
+            SkipTownNpcs = PlayerConfig.Get("RSBot.Training.checkSkipTownNpcs", false),
         };
     }
 
@@ -78,6 +81,8 @@ internal class LoopBundle : IBundle
             ShoppingManager.Stop();
 
         Running = false;
+        TownscriptRunning = false;
+        _lastWalkbackFailure = null;
     }
 
     /// <summary>
@@ -85,12 +90,20 @@ internal class LoopBundle : IBundle
     /// </summary>
     public void Start()
     {
+        if (Running || !Game.Ready || ScriptManager.Running
+            || (_lastWalkbackFailure is int last && ((Kernel.TickCount - last) & int.MaxValue) < 5000))
+            return;
         Running = true;
-
-        Refresh();
-        CheckForTownScript();
-
-        Running = false;
+        try
+        {
+            Refresh();
+            CheckForTownScript();
+        }
+        finally
+        {
+            TownscriptRunning = false;
+            Running = false;
+        }
     }
 
     /// <summary>
@@ -123,12 +136,29 @@ internal class LoopBundle : IBundle
             return;
         }
 
-        Log.NotifyLang("LoadingTownScript", filename);
+        if (Config.SkipTownNpcs)
+        {
+            Log.Status("Skipping town NPCs");
+            Log.Notify("[Town] Skipping purchases, storage and repairs; returning to training.");
+        }
+        else
+        {
+            Log.Status("Running town services");
+            Log.NotifyLang("LoadingTownScript", filename);
+            TownscriptRunning = true;
+            try
+            {
+                ScriptManager.Load(filename);
+                ScriptManager.RunScript(false);
+            }
+            finally
+            {
+                TownscriptRunning = false;
+            }
+        }
 
-        TownscriptRunning = true;
-
-        ScriptManager.Load(filename);
-        ScriptManager.RunScript(false);
+        if (!Running || !Game.Ready || !Kernel.Bot.Running)
+            return;
 
         if (Running && Config.UseReverse)
         {
@@ -149,6 +179,7 @@ internal class LoopBundle : IBundle
                     TownscriptRunning = false;
                     return;
                 }
+            Log.Notify("[Town] Reverse return was unavailable or refused; trying the walkback route.");
         }
 
         TownscriptRunning = false;
@@ -163,7 +194,7 @@ internal class LoopBundle : IBundle
     /// </summary>
     public void CheckForWalkbackScript(bool startFromTown = false)
     {
-        if (ScriptManager.Running || !Kernel.Bot.Running)
+        if (ScriptManager.Running || !Game.Ready || !Kernel.Bot.Running)
             return;
 
         var walkScript = Config.WalkScript;
@@ -176,13 +207,34 @@ internal class LoopBundle : IBundle
 
             walkScript = NavigationManager.TryBuildWalkScript(Game.Player.Movement.Source, Container.Bot.Area.Position);
             if (walkScript == null || !Kernel.Bot.Running)
+            {
+                _lastWalkbackFailure = Kernel.TickCount;
+                Log.Status("Waiting for a safe walkback route");
                 return;
+            }
         }
 
         Invoke();
+        if (!Game.Ready || !Kernel.Bot.Running)
+            return;
+        Log.Status("Returning to training");
         Log.NotifyLang("LoadingWalkScript", walkScript);
 
         ScriptManager.Load(walkScript);
         ScriptManager.RunScript(!startFromTown);
+        if (Game.Ready && Kernel.Bot.Running && !ScriptManager.Running)
+        {
+            if (Container.Bot.Area.Position.DistanceToPlayer() <= Container.Bot.Area.Radius)
+            {
+                Log.Status("Training area reached");
+                _lastWalkbackFailure = null;
+            }
+            else
+            {
+                _lastWalkbackFailure = Kernel.TickCount;
+                Log.Status("Walkback incomplete; waiting to retry");
+                Log.Warn("[Navigation] The walkback ended before reaching the training area. Check the route or update NavLink.");
+            }
+        }
     }
 }

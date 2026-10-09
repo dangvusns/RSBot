@@ -18,18 +18,17 @@ internal class AttackBundle : IBundle
     {
         // The network thread clears the selection when the target dies; work on one reference
         var selected = Game.SelectedEntity;
-        if (selected == null || !Game.Player.CanAttack)
+        if (selected == null || !Game.Player.CanAttack || Bundles.Movement.Recovering)
             return;
 
         if (selected.IsBehindObstacle)
         {
             Log.Debug("Deselecting entity because it moved behind an obstacle!");
 
-            if (Game.Player.InAction)
+            if (Game.Player.InAction && !SkillManager.IsCasting)
                 SkillManager.CancelAction();
 
-            Game.SelectedEntity?.TryDeselect();
-            Game.SelectedEntity = null;
+            Bundles.Target.RejectObstructedTarget();
 
             return;
         }

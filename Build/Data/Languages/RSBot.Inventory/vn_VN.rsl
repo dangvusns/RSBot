@@ -1,4 +1,5 @@
 DisplayName="Hòm Đồ"
+RSBot.Inventory.Main.Panel.FlowLayoutPanel.buttonOrganizeInventory="Sắp xếp theo nhóm"
 RSBot.Inventory.Main.Panel.buttonUseItem="Sử Dụng"
 RSBot.Inventory.Main.Panel.label1="Thùng đồ:"
 RSBot.Inventory.Main.Panel.label2="Ô trống:"

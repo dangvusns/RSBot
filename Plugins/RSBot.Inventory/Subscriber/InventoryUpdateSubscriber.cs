@@ -1,30 +1,47 @@
-﻿using RSBot.Core;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using RSBot.Core;
 using RSBot.Core.Event;
 
 namespace RSBot.Inventory.Subscriber;
 
 internal static class InventoryUpdateSubscriber
 {
-    private static object _lock;
+    private static int _queued;
 
     /// <summary>
     ///     Subscribes the events.
     /// </summary>
     public static void SubscribeEvents()
     {
-        _lock = new object();
         EventManager.SubscribeEvent("OnInventoryUpdate", OnInventoryUpdate);
     }
 
     private static void OnInventoryUpdate()
     {
         var autoSort = PlayerConfig.Get("RSBot.Inventory.AutoSort", false);
-        if (!autoSort)
+        var inventory = Game.Player?.Inventory;
+        if (!autoSort || inventory == null || inventory.IsSorting
+            || Interlocked.CompareExchange(ref _queued, 1, 0) != 0)
             return;
 
-        lock (_lock)
+        // Keep the packet handler free to process the move acknowledgments.
+        _ = Task.Run(() =>
         {
-            Game.Player.Inventory.Sort();
-        }
+            try
+            {
+                if (Game.Player?.Inventory == inventory)
+                    inventory.Sort();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _queued, 0);
+            }
+        });
     }
 }

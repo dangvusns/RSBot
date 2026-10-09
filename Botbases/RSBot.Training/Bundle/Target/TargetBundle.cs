@@ -51,6 +51,12 @@ internal class TargetBundle : IBundle
 
     private void OnTargetBehindObstacle()
     {
+        if (Kernel.Bot.Running)
+            RejectObstructedTarget();
+    }
+
+    public void RejectObstructedTarget()
+    {
         var selected = Game.SelectedEntity;
         if (selected == null)
             return;
@@ -61,6 +67,7 @@ internal class TargetBundle : IBundle
         Game.SelectedEntity = null;
 
         Bundles.Movement.LastEntityWasBehindObstacle = true;
+        Bundles.Movement.RequestObstacleRecovery();
 
         if (_blacklist?.TryAdd(selectedEntityUniqueId, Kernel.TickCount) == true)
             Log.Debug(() => $"Add mob [{selectedEntityUniqueId} to blacklist for {BLACKLIST_TIMEOUT}ms");
@@ -107,7 +114,7 @@ internal class TargetBundle : IBundle
             }
         );
 
-        if (!Kernel.Bot.Running)
+        if (!Kernel.Bot.Running || Bundles.Movement.Recovering)
             return;
 
         if (Game.Player.State.LifeState != LifeState.Alive)

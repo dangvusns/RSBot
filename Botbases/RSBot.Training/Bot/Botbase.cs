@@ -90,6 +90,9 @@ internal class Botbase
         // Buff the configured party members if needed
         Bundles.PartyBuff.Invoke();
 
+        if (Bundles.Movement.RecoverFromObstacle())
+            return;
+
         //Loot items
         Bundles.Loot.Invoke();
 
